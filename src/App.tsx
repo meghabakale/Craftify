@@ -237,7 +237,7 @@ function CraftifyApp() {
             setSelectedOrderForTracking(liveOrders[0]);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
 
       // Fetch pledges and merge with local state
       fetch('/api/campaigns/my-pledges/', {
@@ -266,7 +266,7 @@ function CraftifyApp() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [currentUser?.token, activeView]);
 
@@ -315,7 +315,7 @@ function CraftifyApp() {
             setCampaignComments((prev) => ({ ...prev, [campId]: liveComments }));
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [activeView, selectedCampaignForDetail?.slug]);
 
@@ -497,7 +497,7 @@ function CraftifyApp() {
       const updated = [category, ...prev.filter((c) => c !== category)].slice(0, 10);
       try {
         sessionStorage.setItem('craftify_viewed_categories', JSON.stringify(updated));
-      } catch {}
+      } catch { }
       return updated;
     });
   };
@@ -707,13 +707,13 @@ function CraftifyApp() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pledgePayload),
-    }).catch(() => {});
+    }).catch(() => { });
     if (campaign.slug) {
       fetch(`/api/campaigns/${campaign.slug}/pledge/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pledgePayload),
-      }).catch(() => {});
+      }).catch(() => { });
     }
 
     // 6. Show the exact confirmation message
@@ -979,8 +979,8 @@ function CraftifyApp() {
       authenticatedUser.role === 'admin'
         ? 'Platform Administrator'
         : authenticatedUser.role === 'artisan'
-        ? 'Verified Artisan'
-        : 'Craft Patron';
+          ? 'Verified Artisan'
+          : 'Craft Patron';
     showToast(`Welcome back, ${authenticatedUser.name}! (${roleLabel})`);
   };
 
@@ -1021,29 +1021,29 @@ function CraftifyApp() {
         savedPrevCamp?.daysLeft !== undefined
           ? savedPrevCamp.daysLeft
           : mockFallback?.daysLeft !== undefined
-          ? mockFallback.daysLeft
-          : calculateDaysRemaining(targetCamp.deadline, 14);
+            ? mockFallback.daysLeft
+            : calculateDaysRemaining(targetCamp.deadline, 14);
 
       const restoredPledgedAmount =
         savedPrevCamp?.pledgedAmount !== undefined
           ? savedPrevCamp.pledgedAmount
           : mockFallback?.pledgedAmount !== undefined
-          ? mockFallback.pledgedAmount
-          : targetCamp.pledgedAmount;
+            ? mockFallback.pledgedAmount
+            : targetCamp.pledgedAmount;
 
       const restoredAmountRaised =
         savedPrevCamp?.amountRaised !== undefined
           ? savedPrevCamp.amountRaised
           : mockFallback?.amountRaised !== undefined
-          ? mockFallback.amountRaised
-          : restoredPledgedAmount;
+            ? mockFallback.amountRaised
+            : restoredPledgedAmount;
 
       const restoredBackersCount =
         savedPrevCamp?.backersCount !== undefined
           ? savedPrevCamp.backersCount
           : mockFallback?.backersCount !== undefined
-          ? mockFallback.backersCount
-          : targetCamp.backersCount;
+            ? mockFallback.backersCount
+            : targetCamp.backersCount;
 
       const restoredStatus =
         savedPrevCamp?.status && savedPrevCamp.status !== 'failed'
@@ -1138,13 +1138,13 @@ function CraftifyApp() {
             localStorage.setItem('craftify_user_pledges', JSON.stringify(updated));
           }
         }
-      } catch {}
+      } catch { }
 
       fetch(`/api/campaigns/${targetCamp.id}/settle/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ outcome: 'reset' }),
-      }).catch(() => {});
+      }).catch(() => { });
 
       showToast(`Campaign "${targetCamp.title}" reset to previous state (${restoredDaysLeft} days remaining).`);
       return;
@@ -1244,7 +1244,7 @@ function CraftifyApp() {
           localStorage.setItem('craftify_user_pledges', JSON.stringify(updated));
         }
       }
-    } catch {}
+    } catch { }
 
     // Update campaignActivity.pledges
     campaignActivity.pledges = campaignActivity.pledges.map((p) => {
@@ -1263,7 +1263,7 @@ function CraftifyApp() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ outcome: result.isFunded ? 'funded' : 'unsuccessful' }),
-    }).catch(() => {});
+    }).catch(() => { });
 
     if (result.isFunded) {
       showToast(`Settlement reached for "${targetCamp.title}": 100%+ goal met! All backer pledges captured.`);
