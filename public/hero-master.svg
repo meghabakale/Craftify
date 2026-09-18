@@ -1,0 +1,461 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <defs>
+    <!-- Background & Lighting Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF4EB"/>
+      <stop offset="40%" stop-color="#F0E5D5"/>
+      <stop offset="70%" stop-color="#E5D4BE"/>
+      <stop offset="100%" stop-color="#D8C2A8"/>
+    </linearGradient>
+
+    <!-- Warm Sunlight Flare from Top-Left -->
+    <radialGradient id="sunBeam" cx="15%" cy="10%" r="80%">
+      <stop offset="0%" stop-color="#FFF9EE" stop-opacity="0.95"/>
+      <stop offset="30%" stop-color="#FDEAC6" stop-opacity="0.6"/>
+      <stop offset="70%" stop-color="#F5DCB4" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#E8CC9E" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Polished Teak Wood Table Surface Gradients -->
+    <linearGradient id="tableGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#A26535"/>
+      <stop offset="15%" stop-color="#8A5025"/>
+      <stop offset="50%" stop-color="#713D1A"/>
+      <stop offset="85%" stop-color="#592E12"/>
+      <stop offset="100%" stop-color="#42210B"/>
+    </linearGradient>
+
+    <linearGradient id="tableSheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
+      <stop offset="35%" stop-color="#FFA000" stop-opacity="0.15"/>
+      <stop offset="65%" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Turned Wood Carved Chair Post in Background -->
+    <linearGradient id="woodPost" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5D3418"/>
+      <stop offset="30%" stop-color="#A66838"/>
+      <stop offset="55%" stop-color="#CA884E"/>
+      <stop offset="80%" stop-color="#7E451F"/>
+      <stop offset="100%" stop-color="#41210C"/>
+    </linearGradient>
+
+    <!-- Royal Blue Silk Textiles Gradients -->
+    <linearGradient id="blueSilkDeep" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#1E57C8"/>
+      <stop offset="20%" stop-color="#1442A6"/>
+      <stop offset="50%" stop-color="#0C2B7A"/>
+      <stop offset="80%" stop-color="#081D54"/>
+      <stop offset="100%" stop-color="#040F30"/>
+    </linearGradient>
+
+    <linearGradient id="blueSilkHighlight" x1="0%" y1="20%" x2="80%" y2="80%">
+      <stop offset="0%" stop-color="#3A7DF6"/>
+      <stop offset="25%" stop-color="#2262DF"/>
+      <stop offset="60%" stop-color="#1443B0"/>
+      <stop offset="100%" stop-color="#0A2672"/>
+    </linearGradient>
+
+    <linearGradient id="blueSilkVibrant" x1="20%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2F74EE"/>
+      <stop offset="35%" stop-color="#1851C9"/>
+      <stop offset="70%" stop-color="#0E338A"/>
+      <stop offset="100%" stop-color="#061A4E"/>
+    </linearGradient>
+
+    <!-- Golden Zari Embroidery Gradients -->
+    <linearGradient id="goldZariBright" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF9D2"/>
+      <stop offset="30%" stop-color="#FFDC69"/>
+      <stop offset="65%" stop-color="#EAA620"/>
+      <stop offset="90%" stop-color="#FFD858"/>
+      <stop offset="100%" stop-color="#B5770E"/>
+    </linearGradient>
+
+    <linearGradient id="goldZariSoft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFEC9E"/>
+      <stop offset="50%" stop-color="#F0B938"/>
+      <stop offset="100%" stop-color="#C98816"/>
+    </linearGradient>
+
+    <!-- Handcrafted Antique Golden Brass Gradients -->
+    <linearGradient id="brassBright" x1="25%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDE8"/>
+      <stop offset="15%" stop-color="#FCE48B"/>
+      <stop offset="40%" stop-color="#E3B643"/>
+      <stop offset="70%" stop-color="#B8861B"/>
+      <stop offset="90%" stop-color="#81590C"/>
+      <stop offset="100%" stop-color="#523605"/>
+    </linearGradient>
+
+    <linearGradient id="brassBody" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#FFF0A8"/>
+      <stop offset="25%" stop-color="#E8BC4C"/>
+      <stop offset="55%" stop-color="#C29023"/>
+      <stop offset="80%" stop-color="#8E6111"/>
+      <stop offset="100%" stop-color="#4F3406"/>
+    </linearGradient>
+
+    <linearGradient id="brassDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C29023"/>
+      <stop offset="40%" stop-color="#8A5E0F"/>
+      <stop offset="80%" stop-color="#523707"/>
+      <stop offset="100%" stop-color="#2B1B02"/>
+    </linearGradient>
+
+    <!-- Jaipur Cobalt Blue Pottery Gradients -->
+    <radialGradient id="potterySpherical" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#2E72E8"/>
+      <stop offset="25%" stop-color="#1855C6"/>
+      <stop offset="55%" stop-color="#0F3891"/>
+      <stop offset="80%" stop-color="#082260"/>
+      <stop offset="100%" stop-color="#041238"/>
+    </radialGradient>
+
+    <linearGradient id="potteryRim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3878EC"/>
+      <stop offset="30%" stop-color="#1B54BF"/>
+      <stop offset="70%" stop-color="#0E3382"/>
+      <stop offset="100%" stop-color="#061B48"/>
+    </linearGradient>
+
+    <!-- Gloss Highlight for Porcelain Glaze -->
+    <linearGradient id="glazeHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.65"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Plant Leaves Gradient -->
+    <linearGradient id="leafGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8BC34A"/>
+      <stop offset="40%" stop-color="#4CAF50"/>
+      <stop offset="80%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </linearGradient>
+    <linearGradient id="leafGrad2" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#C8E6C9"/>
+      <stop offset="25%" stop-color="#66BB6A"/>
+      <stop offset="70%" stop-color="#388E3C"/>
+      <stop offset="100%" stop-color="#1B5E20"/>
+    </linearGradient>
+
+    <!-- Soft Drop Shadow Filters -->
+    <filter id="deepShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="18" dy="28" stdDeviation="20" flood-color="#201206" flood-opacity="0.55"/>
+    </filter>
+    <filter id="tableShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="10" dy="20" stdDeviation="14" flood-color="#2B1505" flood-opacity="0.6"/>
+    </filter>
+    <filter id="softBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- 1. Background Warm Wall / Studio Backdrop -->
+  <rect width="1600" height="900" fill="url(#bgGrad)"/>
+  <rect width="1600" height="900" fill="url(#sunBeam)"/>
+
+  <!-- Background Window / Architectural Shadow Lines (Subtle depth) -->
+  <path d="M220 0 L360 0 L180 720 L40 720 Z" fill="#E5D4BE" opacity="0.2"/>
+  <path d="M480 0 L620 0 L420 720 L280 720 Z" fill="#E5D4BE" opacity="0.15"/>
+
+  <!-- 2. Traditional Hand-Carved Turned Wood Column / Stand in Mid-Background Left -->
+  <g opacity="0.95">
+    <!-- Turned Finial and Pillar Segments -->
+    <path d="M310 90 C340 70 380 70 410 90 C430 110 420 140 395 160 L325 160 C300 140 290 110 310 90 Z" fill="url(#woodPost)"/>
+    <ellipse cx="360" cy="160" rx="50" ry="14" fill="url(#woodPost)"/>
+    
+    <!-- Bulbous segment -->
+    <path d="M310 160 C260 210 260 280 310 330 L410 330 C460 280 460 210 410 160 Z" fill="url(#woodPost)"/>
+    <ellipse cx="360" cy="245" rx="75" ry="22" fill="#CA884E" opacity="0.5"/>
+    <ellipse cx="360" cy="330" rx="60" ry="16" fill="url(#woodPost)"/>
+
+    <!-- Pillar shaft down to table -->
+    <path d="M320 330 C310 440 300 560 290 730 L430 730 C420 560 410 440 400 330 Z" fill="url(#woodPost)"/>
+    <!-- Wooden shadow details -->
+    <path d="M375 160 C395 210 395 280 375 330 L410 330 C460 280 460 210 410 160 Z" fill="#301606" opacity="0.4"/>
+    <path d="M370 330 L430 730 L400 730 L350 330 Z" fill="#301606" opacity="0.35"/>
+  </g>
+
+  <!-- 3. Polished Teakwood Tabletop Base -->
+  <g id="wooden-table">
+    <!-- Table Bevel and Surface -->
+    <path d="M0 690 L1600 690 L1600 900 L0 900 Z" fill="url(#tableGrad)"/>
+    <rect x="0" y="690" width="1600" height="210" fill="url(#tableSheen)"/>
+    <!-- Sharp table top edge highlight -->
+    <line x1="0" y1="690" x2="1600" y2="690" stroke="#FFD899" stroke-width="3.5" opacity="0.75"/>
+    <line x1="0" y1="693" x2="1600" y2="693" stroke="#42210B" stroke-width="2" opacity="0.8"/>
+
+    <!-- Fine Natural Woodgrain Lines across Table -->
+    <path d="M0 720 Q400 715 800 722 T1600 718" stroke="#52290D" stroke-width="1.8" opacity="0.5" fill="none"/>
+    <path d="M0 745 Q500 740 1000 746 T1600 742" stroke="#452109" stroke-width="2.2" opacity="0.45" fill="none"/>
+    <path d="M0 775 Q300 770 900 774 T1600 770" stroke="#52290D" stroke-width="1.5" opacity="0.4" fill="none"/>
+    <path d="M0 815 Q600 810 1200 816 T1600 812" stroke="#3D1D07" stroke-width="2" opacity="0.5" fill="none"/>
+    <path d="M0 860 Q450 855 1100 862 T1600 858" stroke="#301605" stroke-width="2.5" opacity="0.6" fill="none"/>
+  </g>
+
+  <!-- 4. Deep Draped Royal Blue Silk Shawl (Flowing from left/top over the post down to table) -->
+  <g id="royal-blue-silk" filter="url(#deepShadow)">
+    <!-- Main Back Swath of Silk Draping from Top-Left -->
+    <path d="M120 -20 C180 80 240 180 320 280 C400 380 520 480 620 540 C720 600 840 640 920 690 C850 710 650 740 450 780 C320 810 180 840 -40 860 L-40 -20 Z" fill="url(#blueSilkDeep)"/>
+
+    <!-- Silk Wave Fold 1 (Cascading over the wooden post) -->
+    <path d="M260 40 C340 140 420 230 520 310 C620 390 730 450 820 520 C910 590 980 650 1020 730 C900 730 760 720 620 710 C460 700 320 660 220 630 Z" fill="url(#blueSilkHighlight)"/>
+
+    <!-- Silk Crest Fold 2 (Lush Royal Blue Swell with Deep Creases) -->
+    <path d="M340 180 C440 260 540 330 650 400 C740 460 830 520 900 580 C960 630 1010 680 1010 740 C880 750 740 730 590 715 C450 700 350 670 280 640 Z" fill="url(#blueSilkVibrant)"/>
+
+    <!-- Deep Crease Shadows & Silky Shimmer Waves -->
+    <path d="M390 280 C480 350 580 410 680 460 C760 500 840 545 920 610 C820 620 720 590 620 550 C520 500 440 430 370 360 Z" fill="#061A4E" opacity="0.85"/>
+    <path d="M440 320 C530 380 630 430 720 475 C800 515 880 560 930 620 C870 615 790 580 710 540 C620 490 530 430 460 370 Z" fill="#3D7FF8" opacity="0.55"/>
+
+    <!-- Forefront Silk Cascade Falling across Table Edge -->
+    <path d="M160 620 C280 640 440 670 600 710 C740 740 850 780 940 840 C850 870 680 890 510 890 C340 890 180 880 -20 860 L-20 660 C50 645 100 630 160 620 Z" fill="url(#blueSilkDeep)"/>
+    <path d="M220 650 C360 675 510 710 650 745 C780 780 880 820 940 855 C840 885 680 895 520 895 C360 895 200 885 40 870 Z" fill="url(#blueSilkHighlight)"/>
+
+    <!-- ORNATE GOLDEN ZARI BORDER (Intricate Indian Brocade / Kadhwa Jaal along the draped silk edge) -->
+    <g id="gold-zari-trim">
+      <!-- Main golden border ribbon -->
+      <path d="M240 50 C330 150 420 240 520 320 C620 400 730 460 820 530 C910 600 980 660 1020 740 L995 745 C955 670 890 610 805 545 C715 475 605 415 505 335 C405 255 315 165 225 65 Z" fill="url(#goldZariBright)"/>
+      
+      <!-- Second golden ribbon on foreground fold -->
+      <path d="M40 855 C200 870 380 880 560 880 C720 880 860 865 940 845 L935 830 C855 850 715 865 560 865 C380 865 200 855 40 840 Z" fill="url(#goldZariBright)"/>
+
+      <!-- Delicate Gold Zari Motifs (Paisleys & Bootis) Scattered Across Blue Fabric -->
+      <!-- Cluster 1 (Top cascade) -->
+      <path d="M360 130 C375 115 390 125 385 140 C380 155 365 150 360 130 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="372" cy="133" r="3.5" fill="#FFF9D2"/>
+      <path d="M440 190 C455 175 470 185 465 200 C460 215 445 210 440 190 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="452" cy="193" r="3.5" fill="#FFF9D2"/>
+      <path d="M510 250 C525 235 540 245 535 260 C530 275 515 270 510 250 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="522" cy="253" r="3.5" fill="#FFF9D2"/>
+
+      <!-- Cluster 2 (Mid cascade) -->
+      <path d="M590 320 C605 305 620 315 615 330 C610 345 595 340 590 320 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="602" cy="323" r="4" fill="#FFF9D2"/>
+      <path d="M670 380 C685 365 700 375 695 390 C690 405 675 400 670 380 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="682" cy="383" r="4" fill="#FFF9D2"/>
+      <path d="M750 440 C765 425 780 435 775 450 C770 465 755 460 750 440 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="762" cy="443" r="4" fill="#FFF9D2"/>
+
+      <!-- Cluster 3 (Foreground drape) -->
+      <path d="M320 690 C335 675 350 685 345 700 C340 715 325 710 320 690 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="332" cy="693" r="4" fill="#FFF9D2"/>
+      <path d="M450 730 C465 715 480 725 475 740 C470 755 455 750 450 730 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="462" cy="733" r="4" fill="#FFF9D2"/>
+      <path d="M580 760 C595 745 610 755 605 770 C600 785 585 780 580 760 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="592" cy="763" r="4" fill="#FFF9D2"/>
+      <path d="M720 780 C735 765 750 775 745 790 C740 805 725 800 720 780 Z" fill="url(#goldZariSoft)"/>
+      <circle cx="732" cy="783" r="4" fill="#FFF9D2"/>
+    </g>
+  </g>
+
+  <!-- 5. HANDCRAFTED SOLID ANTIQUE BRASS ELEPHANT FIGURINE (Center Foreground, facing Right) -->
+  <g id="brass-elephant" filter="url(#tableShadow)" transform="translate(740, 430)">
+    <!-- Cast Shadow on Wooden Table directly under legs -->
+    <ellipse cx="190" cy="375" rx="190" ry="32" fill="#1F0E03" opacity="0.75" filter="url(#softBlur)"/>
+    <ellipse cx="190" cy="375" rx="160" ry="22" fill="#0D0501" opacity="0.85"/>
+
+    <!-- Elephant Rear Legs (Shadow side) -->
+    <path d="M95 240 C95 280 85 330 90 370 L135 370 C140 330 145 280 140 240 Z" fill="url(#brassDark)"/>
+    <ellipse cx="112" cy="370" rx="22" ry="8" fill="#422904"/>
+
+    <path d="M235 240 C235 280 230 330 235 370 L280 370 C285 330 290 280 285 240 Z" fill="url(#brassDark)"/>
+    <ellipse cx="257" cy="370" rx="22" ry="8" fill="#422904"/>
+
+    <!-- Elephant Main Sculpted Torso & Body -->
+    <path d="M75 220 C60 160 90 80 185 70 C280 60 335 100 360 150 C375 185 355 240 315 265 C265 290 125 285 75 220 Z" fill="url(#brassBody)"/>
+    
+    <!-- Heavy Muscular Shoulder & Flank Highlights -->
+    <path d="M110 180 C95 135 125 90 185 85 C245 80 290 105 310 145 C280 130 230 130 185 145 C145 160 125 185 110 180 Z" fill="url(#brassBright)" opacity="0.7"/>
+
+    <!-- Elephant Tail with Tassel -->
+    <path d="M70 180 C50 200 45 245 52 285" stroke="url(#brassDark)" stroke-width="9" stroke-linecap="round" fill="none"/>
+    <ellipse cx="54" cy="290" rx="8" ry="14" fill="url(#brassDark)"/>
+
+    <!-- Elephant Front Near Legs (Bright Polished Brass Highlights) -->
+    <!-- Back-left front leg -->
+    <path d="M120 220 C120 265 115 320 120 375 L170 375 C175 320 178 265 175 220 Z" fill="url(#brassBright)"/>
+    <ellipse cx="145" cy="375" rx="25" ry="9" fill="url(#brassDark)"/>
+    <!-- Nails / Toes detail in shining gold -->
+    <circle cx="132" cy="374" r="4" fill="#FFFDE8"/>
+    <circle cx="145" cy="375" r="4.5" fill="#FFFDE8"/>
+    <circle cx="158" cy="374" r="4" fill="#FFFDE8"/>
+
+    <!-- Front-right near leg -->
+    <path d="M260 215 C260 260 258 320 265 375 L315 375 C322 320 325 260 320 215 Z" fill="url(#brassBright)"/>
+    <ellipse cx="290" cy="375" rx="25" ry="9" fill="url(#brassDark)"/>
+    <circle cx="277" cy="374" r="4" fill="#FFFDE8"/>
+    <circle cx="290" cy="375" r="4.5" fill="#FFFDE8"/>
+    <circle cx="303" cy="374" r="4" fill="#FFFDE8"/>
+
+    <!-- Elephant Head & Temples facing Right -->
+    <path d="M310 160 C325 105 375 90 415 120 C440 140 445 180 425 210 C405 230 365 235 330 210 Z" fill="url(#brassBright)"/>
+
+    <!-- TRUNK: Authentic Indian Brass Pose - Gracefully curving DOWNWARDS & forward onto table -->
+    <path d="M385 180 C410 190 435 215 440 250 C445 290 430 330 420 355 C415 370 410 380 415 385 C422 390 435 385 440 375 C455 350 465 305 460 255 C455 210 430 170 395 155 Z" fill="url(#brassBright)"/>
+    <!-- Trunk curling tip resting near tabletop -->
+    <ellipse cx="422" cy="382" rx="10" ry="6" fill="url(#brassDark)"/>
+    
+    <!-- Trunk Creases / Rings (Authentic brass etching) -->
+    <path d="M400 195 Q415 190 430 205" stroke="#7E5409" stroke-width="3" fill="none"/>
+    <path d="M412 225 Q428 220 440 235" stroke="#7E5409" stroke-width="3" fill="none"/>
+    <path d="M420 260 Q435 255 446 270" stroke="#7E5409" stroke-width="3" fill="none"/>
+    <path d="M420 295 Q433 290 442 305" stroke="#7E5409" stroke-width="2.5" fill="none"/>
+    <path d="M415 330 Q425 325 432 338" stroke="#7E5409" stroke-width="2.5" fill="none"/>
+
+    <!-- Polished Brass Tusk pointing forward/down -->
+    <path d="M385 200 C415 215 445 215 465 195 C445 205 415 205 385 200 Z" fill="#FFFDE8" stroke="#ECC665" stroke-width="2"/>
+
+    <!-- Elephant Majestic Large Flapped Ear with Intricate Engravings -->
+    <path d="M320 125 C280 120 255 160 270 215 C285 250 325 250 345 220 C360 195 355 140 320 125 Z" fill="url(#brassDark)"/>
+    <path d="M318 135 C290 130 272 165 284 208 C296 235 328 235 340 212 C350 192 346 148 318 135 Z" fill="url(#brassBright)"/>
+    <!-- Ear scrollwork engravings -->
+    <path d="M295 155 Q310 180 300 205" stroke="#7A5008" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M310 150 Q325 175 318 200" stroke="#7A5008" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Elephant Eye & Forehead Plate (Matha-Patti) -->
+    <circle cx="372" cy="152" r="5.5" fill="#221402"/>
+    <circle cx="374" cy="150" r="2" fill="#FFFFFF"/>
+    <!-- Ornate Temple Forehead Crown -->
+    <path d="M345 120 Q385 105 415 130" stroke="#FFDC69" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <circle cx="380" cy="118" r="7.5" fill="#B71C1C" stroke="#FFFDE8" stroke-width="2"/>
+    <circle cx="380" cy="118" r="3.5" fill="#FFE082"/>
+
+    <!-- TRADITIONAL EMBOSSED SADDLE BLANKET (Royal Brass Jhool) -->
+    <!-- Outer ornate blanket drape -->
+    <path d="M135 125 C175 110 245 110 285 125 C300 165 295 210 285 240 C245 255 175 255 135 240 C125 210 120 165 135 125 Z" fill="url(#brassDark)" stroke="#FFE082" stroke-width="4"/>
+    <!-- Inner blanket relief field -->
+    <path d="M145 135 C180 122 240 122 275 135 C285 168 282 202 275 228 C240 240 180 240 145 228 C138 202 135 168 145 135 Z" fill="url(#brassBody)"/>
+    <!-- Diamond Jaal / Lattice Filigree on Blanket -->
+    <path d="M155 140 L265 225 M180 130 L280 210 M205 125 L285 190 M230 125 L285 170 M255 125 L285 150" stroke="#8B5D0C" stroke-width="2" opacity="0.8"/>
+    <path d="M265 140 L155 225 M240 130 L140 210 M215 125 L135 190 M190 125 L135 170 M165 125 L135 150" stroke="#8B5D0C" stroke-width="2" opacity="0.8"/>
+    
+    <!-- Central Royal Sun Medallion -->
+    <circle cx="210" cy="180" r="20" fill="url(#brassBright)" stroke="#FFFDE8" stroke-width="3"/>
+    <circle cx="210" cy="180" r="10" fill="#8B5D0C"/>
+    <circle cx="210" cy="180" r="5" fill="#FFFDE8"/>
+
+    <!-- Hanging Brass Bells / Fringe along saddle hem -->
+    <circle cx="152" cy="238" r="4.5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+    <circle cx="172" cy="244" r="4.5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+    <circle cx="192" cy="248" r="5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+    <circle cx="212" cy="250" r="5.5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+    <circle cx="232" cy="248" r="5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+    <circle cx="252" cy="244" r="4.5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+    <circle cx="270" cy="238" r="4.5" fill="#FFDC69" stroke="#6B4405" stroke-width="1.5"/>
+
+    <!-- Polished Specular Gleams & Sunlight Flares on Brass -->
+    <circle cx="190" cy="100" r="3.5" fill="#FFFFFF" opacity="0.9"/>
+    <circle cx="290" cy="160" r="4" fill="#FFFFFF" opacity="0.95"/>
+    <circle cx="405" cy="135" r="3" fill="#FFFFFF" opacity="0.9"/>
+    <circle cx="435" cy="230" r="3.5" fill="#FFFFFF" opacity="0.95"/>
+    <circle cx="300" cy="350" r="3" fill="#FFFFFF" opacity="0.85"/>
+  </g>
+
+  <!-- 6. JAIPUR HANDCRAFTED COBALT BLUE POTTERY CERAMIC VASE / GINGER JAR (Right Foreground) -->
+  <g id="jaipur-blue-pottery" filter="url(#tableShadow)" transform="translate(1120, 410)">
+    <!-- Cast Shadow on Wooden Table -->
+    <ellipse cx="190" cy="415" rx="200" ry="35" fill="#1B0A02" opacity="0.75" filter="url(#softBlur)"/>
+    <ellipse cx="190" cy="415" rx="170" ry="24" fill="#0D0401" opacity="0.85"/>
+
+    <!-- Spherical Bulbous Blue Pottery Jar Body -->
+    <circle cx="190" cy="250" r="175" fill="url(#potterySpherical)"/>
+
+    <!-- Ceramic Neck Collar & Wide Rim Mouth -->
+    <path d="M110 95 C110 80 145 60 190 60 C235 60 270 80 270 95 L255 125 C235 120 215 118 190 118 C165 118 145 120 125 125 Z" fill="url(#potteryRim)"/>
+    <ellipse cx="190" cy="75" rx="75" ry="20" fill="#071F52" stroke="#E8B95A" stroke-width="3"/>
+    <ellipse cx="190" cy="75" rx="60" ry="14" fill="#04102C"/>
+
+    <!-- Decorative Neck Bands (Gold & White concentric rings) -->
+    <path d="M125 120 Q190 132 255 120" stroke="#F5D68A" stroke-width="4.5" fill="none"/>
+    <path d="M120 132 Q190 146 260 132" stroke="#FFFFFF" stroke-width="3" fill="none" opacity="0.9"/>
+    <path d="M115 144 Q190 160 265 144" stroke="#F5D68A" stroke-width="4" fill="none"/>
+
+    <!-- INTRICATE HAND-PAINTED JAIPUR ARABESQUE FLORAL PATTERNS (Cream, Gold & White Jaal) -->
+    <!-- Upper Shoulder Geometric Chevrons / Lotus Petals -->
+    <g fill="#F5EAD4" stroke="#E5C578" stroke-width="1.5">
+      <!-- Repeating lotus buds around shoulder -->
+      <path d="M140 165 C135 150 150 145 155 160 C160 145 175 150 170 165 Z"/>
+      <path d="M175 170 C170 155 185 150 190 165 C195 150 210 155 205 170 Z"/>
+      <path d="M210 170 C205 155 220 150 225 165 C230 150 245 155 240 170 Z"/>
+    </g>
+
+    <!-- Main Body Grand Floral Medallions & Swirling Vines -->
+    <!-- Center Grand Floral Arabesque -->
+    <g transform="translate(190, 260)">
+      <!-- Central Rosette -->
+      <circle cx="0" cy="0" r="26" fill="none" stroke="#F5E6C8" stroke-width="5" stroke-dasharray="10,6"/>
+      <circle cx="0" cy="0" r="14" fill="#FFFFFF" opacity="0.95"/>
+      <circle cx="0" cy="0" r="6" fill="#E2AC3E"/>
+
+      <!-- 8-Directional Ornate Acanthus / Mughal Floral Leaves -->
+      <path d="M0 -26 C-12 -45 12 -45 0 -26 Z" fill="#FFFFFF" stroke="#F0CE7A" stroke-width="2"/>
+      <path d="M0 26 C-12 45 12 45 0 26 Z" fill="#FFFFFF" stroke="#F0CE7A" stroke-width="2"/>
+      <path d="M-26 0 C-45 -12 -45 12 -26 0 Z" fill="#FFFFFF" stroke="#F0CE7A" stroke-width="2"/>
+      <path d="M26 0 C45 -12 45 12 26 0 Z" fill="#FFFFFF" stroke="#F0CE7A" stroke-width="2"/>
+
+      <path d="M-18 -18 C-35 -30 -25 -40 -18 -18 Z" fill="#F7E9CF" stroke="#E2AC3E" stroke-width="1.5"/>
+      <path d="M18 -18 C35 -30 25 -40 18 -18 Z" fill="#F7E9CF" stroke="#E2AC3E" stroke-width="1.5"/>
+      <path d="M-18 18 C-35 30 -25 40 -18 18 Z" fill="#F7E9CF" stroke="#E2AC3E" stroke-width="1.5"/>
+      <path d="M18 18 C35 30 25 40 18 18 Z" fill="#F7E9CF" stroke="#E2AC3E" stroke-width="1.5"/>
+
+      <!-- Radiating Tendril Vines -->
+      <path d="M-45 -12 Q-85 -30 -105 10" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M45 -12 Q85 -30 105 10" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M-30 40 Q-70 70 -90 100" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M30 40 Q70 70 90 100" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+      <!-- Leaves on Vines -->
+      <circle cx="-75" cy="-15" r="8" fill="#F7EAD0" stroke="#E0AB3A" stroke-width="2"/>
+      <circle cx="75" cy="-15" r="8" fill="#F7EAD0" stroke="#E0AB3A" stroke-width="2"/>
+      <circle cx="-60" cy="65" r="8" fill="#F7EAD0" stroke="#E0AB3A" stroke-width="2"/>
+      <circle cx="60" cy="65" r="8" fill="#F7EAD0" stroke="#E0AB3A" stroke-width="2"/>
+    </g>
+
+    <!-- Lower Base Ring Band -->
+    <path d="M60 360 Q190 395 320 360" stroke="#F5D68A" stroke-width="6" fill="none"/>
+    <path d="M75 375 Q190 408 305 375" stroke="#FFFFFF" stroke-width="3.5" fill="none" opacity="0.85"/>
+    <path d="M95 390 Q190 418 285 390" stroke="#E5B550" stroke-width="4" fill="none"/>
+
+    <!-- Ceramic Gloss Specular Sheen (Reflecting window light) -->
+    <path d="M95 150 C70 200 65 270 90 330 C75 280 75 210 95 150 Z" fill="url(#glazeHighlight)"/>
+    <ellipse cx="135" cy="185" rx="22" ry="40" fill="#FFFFFF" opacity="0.45" transform="rotate(-20, 135, 185)" filter="url(#softBlur)"/>
+    <circle cx="145" cy="180" r="8" fill="#FFFFFF" opacity="0.9"/>
+  </g>
+
+  <!-- 7. FRESH GREEN BOTANICAL FOLIAGE (Top-Right Arching over Vase) -->
+  <g id="botanical-leaves" filter="url(#deepShadow)">
+    <!-- Leaf 1 (Large prominent leaf arching down from top right) -->
+    <path d="M1320 -30 C1300 80 1280 180 1240 260 C1290 220 1360 140 1390 50 Z" fill="url(#leafGrad1)"/>
+    <path d="M1320 -30 Q1280 120 1240 260" stroke="#C8E6C9" stroke-width="3.5" fill="none" opacity="0.8"/>
+
+    <!-- Leaf 2 (Main curved broad leaf) -->
+    <path d="M1380 40 C1340 140 1300 240 1200 320 C1270 300 1380 240 1430 140 Z" fill="url(#leafGrad2)"/>
+    <path d="M1380 40 Q1310 180 1200 320" stroke="#DCEDC8" stroke-width="4" fill="none" opacity="0.9"/>
+    <!-- Lateral leaf veins -->
+    <path d="M1330 130 Q1300 120 1270 145" stroke="#A5D6A7" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M1300 190 Q1265 180 1235 210" stroke="#A5D6A7" stroke-width="2" fill="none" opacity="0.7"/>
+    <path d="M1260 250 Q1230 245 1205 275" stroke="#A5D6A7" stroke-width="2" fill="none" opacity="0.7"/>
+
+    <!-- Leaf 3 (Right upright shoot) -->
+    <path d="M1450 10 C1460 100 1440 200 1380 290 C1430 240 1500 160 1510 70 Z" fill="url(#leafGrad1)"/>
+    <path d="M1450 10 Q1445 150 1380 290" stroke="#C8E6C9" stroke-width="3" fill="none" opacity="0.8"/>
+
+    <!-- Leaf 4 (Lower small green sprout behind brass elephant) -->
+    <path d="M620 540 C600 480 630 430 670 390 C665 440 655 490 635 540 Z" fill="url(#leafGrad2)"/>
+    <path d="M635 540 Q630 465 670 390" stroke="#C8E6C9" stroke-width="2.5" fill="none" opacity="0.8"/>
+    <path d="M590 560 C560 510 570 460 610 420 C600 470 595 520 590 560 Z" fill="url(#leafGrad1)"/>
+  </g>
+
+  <!-- 8. Soft Warm Vignette & Ambient Glow Filter -->
+  <radialGradient id="softVignette" cx="70%" cy="45%" r="65%">
+    <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>
+    <stop offset="60%" stop-color="#FFFFFF" stop-opacity="0"/>
+    <stop offset="85%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+    <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+  </radialGradient>
+  <rect width="1600" height="900" fill="url(#softVignette)" pointer-events="none"/>
+</svg>
