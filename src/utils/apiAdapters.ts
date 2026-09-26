@@ -278,7 +278,11 @@ export function transformBackendOrder(item: any): import('../types').CustomerOrd
       country: 'India',
       phone: '+91 98100 88990',
     },
-    paymentMethod: 'UPI / Escrow Direct',
+    paymentMethod: item.is_backer_reward ? 'Escrow Pledge Authorization' : 'UPI / Escrow Direct',
     history: trackingEvents,
+    isBackerReward: item.is_backer_reward || item.isBackerReward || false,
+    originatingCampaignId: item.originatingCampaignId ? String(item.originatingCampaignId) : (item.originating_campaign_id ? String(item.originating_campaign_id) : undefined),
+    originatingCampaignTitle: item.originatingCampaignTitle || item.originating_campaign_title,
+    originatingPledgeId: item.originatingPledgeId ? String(item.originatingPledgeId) : (item.originating_pledge_id ? String(item.originating_pledge_id) : undefined),
   };
 }

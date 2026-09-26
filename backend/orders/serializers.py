@@ -23,6 +23,10 @@ class OrderSerializer(serializers.ModelSerializer):
     status_history = OrderStatusHistorySerializer(many=True, read_only=True)
     trackingHistory = OrderStatusHistorySerializer(source='status_history', many=True, read_only=True)
     orderDate = serializers.SerializerMethodField()
+    isBackerReward = serializers.BooleanField(source='is_backer_reward', read_only=True)
+    originatingCampaignId = serializers.SerializerMethodField()
+    originatingCampaignTitle = serializers.SerializerMethodField()
+    originatingPledgeId = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -30,8 +34,19 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'order_number', 'orderNumber', 'order_id', 'status', 'payout_available',
             'total_amount', 'total', 'shipping_address_text', 'tracking_reference',
             'estimated_delivery_start', 'estimated_delivery_end', 'orderDate', 'created_at',
-            'items', 'status_history', 'trackingHistory'
+            'items', 'status_history', 'trackingHistory',
+            'is_backer_reward', 'isBackerReward',
+            'originatingCampaignId', 'originatingCampaignTitle', 'originatingPledgeId'
         ]
 
     def get_orderDate(self, obj):
         return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "Recent"
+
+    def get_originatingCampaignId(self, obj):
+        return str(obj.originating_campaign.id) if obj.originating_campaign else None
+
+    def get_originatingCampaignTitle(self, obj):
+        return obj.originating_campaign.title if obj.originating_campaign else None
+
+    def get_originatingPledgeId(self, obj):
+        return str(obj.originating_pledge.id) if obj.originating_pledge else None

@@ -40,17 +40,50 @@ class Campaign(models.Model):
         super().save(*args, **kwargs)
 
     def settle_pledges(self, outcome):
-        """Delayed-charge model for campaign pledges: charge only on goal met"""
+        """Delayed-charge model for campaign pledges: charge only on goal met and create reward orders"""
+        from orders.models import Order, OrderItem, OrderStatusHistory, OrderStatus
+
         if outcome == 'funded':
             self.status = CampaignStatus.FUNDED
             self.pledges.filter(status='authorized').update(status='captured')
+            self.save()
+
+            # Generate reward fulfillment orders for all captured pledges
+            captured_pledges = self.pledges.filter(status='captured')
+            for pledge in captured_pledges:
+                if not Order.objects.filter(originating_pledge=pledge).exists():
+                    order = Order.objects.create(
+                        user=pledge.user,
+                        status=OrderStatus.CONFIRMED,
+                        total_amount=0.00,
+                        is_backer_reward=True,
+                        originating_campaign=self,
+                        originating_pledge=pledge,
+                        shipping_address_text=f"Deliver to {pledge.backer_name}\n42, 3rd Cross, Indiranagar\nBengaluru, Karnataka 560038"
+                    )
+                    OrderItem.objects.create(
+                        order=order,
+                        title=pledge.tier_title or 'Backer Reward',
+                        price_at_purchase=0.00,
+                        quantity=1,
+                        image=self.image
+                    )
+                    OrderStatusHistory.objects.create(
+                        order=order,
+                        status=OrderStatus.CONFIRMED,
+                        note=f"Reward fulfillment order created upon campaign settlement ({self.title})"
+                    )
+
         elif outcome == 'failed':
             self.status = CampaignStatus.FAILED
             self.pledges.filter(status='authorized').update(status='released')
+            Order.objects.filter(originating_campaign=self, is_backer_reward=True).delete()
+            self.save()
         elif outcome == 'reset':
             self.status = CampaignStatus.IN_PROGRESS
             self.pledges.filter(status__in=['captured', 'released']).update(status='authorized')
-        self.save()
+            Order.objects.filter(originating_campaign=self, is_backer_reward=True).delete()
+            self.save()
 
     def __str__(self):
         return self.title

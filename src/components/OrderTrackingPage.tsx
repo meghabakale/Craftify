@@ -150,6 +150,19 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
 
         {/* Top Summary Banner */}
         <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-5 sm:p-6 mb-5 shadow-xs">
+          {order.isBackerReward && (
+            <div className="mb-3.5 p-3 rounded-[4px] bg-[#F3E5F5]/70 border border-[#E1BEE7] flex flex-wrap items-center justify-between gap-2 text-xs text-[#4A148C]">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#673AB7] shrink-0" />
+                <span className="font-bold">Backer Reward Fulfillment Order:</span>
+                <span>{order.originatingCampaignTitle || 'Artisan Crowdfunding Campaign'}</span>
+              </div>
+              <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-[#673AB7] text-white">
+                Included with pledge
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#F0F0F0]">
             <div>
               <div className="flex items-center gap-2 mb-1">

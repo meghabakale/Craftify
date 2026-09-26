@@ -79,11 +79,18 @@ class MyPledgesView(APIView):
         serializer = PledgeSerializer(pledges, many=True)
         return Response(serializer.data)
 
+def get_campaign_by_id_or_slug(val):
+    if not val:
+        return None
+    if str(val).isdigit():
+        return Campaign.objects.filter(Q(id=val) | Q(slug=val)).first()
+    return Campaign.objects.filter(slug=val).first()
+
 class CampaignDetailView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, slug_or_id):
-        campaign = Campaign.objects.filter(Q(id=slug_or_id) | Q(slug=slug_or_id)).first()
+        campaign = get_campaign_by_id_or_slug(slug_or_id)
         if not campaign:
             return Response({'detail': 'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -125,7 +132,7 @@ class CampaignPledgeView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        campaign = Campaign.objects.filter(Q(id=pk) | Q(slug=pk)).first()
+        campaign = get_campaign_by_id_or_slug(pk)
         if not campaign:
             return Response({'detail': 'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -165,7 +172,7 @@ class CampaignSettleView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        campaign = Campaign.objects.filter(Q(id=pk) | Q(slug=pk)).first()
+        campaign = get_campaign_by_id_or_slug(pk)
         if not campaign:
             return Response({'detail': 'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -182,7 +189,7 @@ class ProofSubmissionView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        campaign = Campaign.objects.filter(Q(id=pk) | Q(slug=pk)).first()
+        campaign = get_campaign_by_id_or_slug(pk)
         if not campaign:
             return Response({'detail': 'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -232,7 +239,7 @@ class AdminApproveCampaignView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        campaign = Campaign.objects.filter(Q(id=pk) | Q(slug=pk)).first()
+        campaign = get_campaign_by_id_or_slug(pk)
         if not campaign:
             return Response({'detail': 'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -252,7 +259,7 @@ class AdminRejectCampaignView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        campaign = Campaign.objects.filter(Q(id=pk) | Q(slug=pk)).first()
+        campaign = get_campaign_by_id_or_slug(pk)
         if not campaign:
             return Response({'detail': 'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
 

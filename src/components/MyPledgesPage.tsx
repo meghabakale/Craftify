@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ActiveView, BuyerPledge, Campaign, User, UserPledgeRecord } from '../types';
-import { ShieldCheck, Calendar, Package, ArrowRight, ExternalLink, RefreshCw, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ActiveView, BuyerPledge, Campaign, User, UserPledgeRecord, CustomerOrder } from '../types';
+import { ShieldCheck, Calendar, Package, ArrowRight, ExternalLink, RefreshCw, AlertCircle, Sparkles, CheckCircle2, Truck } from 'lucide-react';
 import { formatINR } from '../utils/format';
 import { formatDeadlineDate } from '../utils/settleCampaign';
 
@@ -8,20 +8,24 @@ interface MyPledgesPageProps {
   currentUser: User | null;
   campaigns: Campaign[];
   localPledges: UserPledgeRecord[];
+  orders?: CustomerOrder[];
   onNavigate: (view: ActiveView) => void;
   onOpenCampaignDetail: (campaign: Campaign) => void;
   onOpenAuth: () => void;
   onSimulateSettlement?: (campaignId: string, forceOutcome?: 'funded' | 'unsuccessful' | 'reset') => void;
+  onTrackOrder?: (order: CustomerOrder) => void;
 }
 
 export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
   currentUser,
   campaigns,
   localPledges,
+  orders = [],
   onNavigate,
   onOpenCampaignDetail,
   onOpenAuth,
   onSimulateSettlement,
+  onTrackOrder,
 }) => {
   const [pledges, setPledges] = useState<BuyerPledge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -477,13 +481,39 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                       )}
                     </div>
 
-                    <button
-                      onClick={() => handleCampaignClick(pledge)}
-                      className="px-4 py-2 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5BC2] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                    >
-                      <span>View Campaign</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {pledge.status === 'captured' && (
+                        <button
+                          id={`btn-track-reward-${pledge.id}`}
+                          onClick={() => {
+                            const matchingRewardOrder = orders.find(
+                              (o) =>
+                                o.isBackerReward &&
+                                (String(o.originatingPledgeId) === String(pledge.id) ||
+                                  String(o.originatingCampaignId) === String(pledge.campaignId))
+                            );
+                            if (matchingRewardOrder && onTrackOrder) {
+                              onTrackOrder(matchingRewardOrder);
+                            } else {
+                              onNavigate('my-orders');
+                            }
+                          }}
+                          className="px-4 py-2 rounded-[2px] bg-[#388E3C] hover:bg-[#2E7D32] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          title="Track your reward fulfillment delivery"
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>Track your reward</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleCampaignClick(pledge)}
+                        className="px-4 py-2 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5BC2] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                      >
+                        <span>View Campaign</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

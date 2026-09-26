@@ -184,7 +184,7 @@ function CraftifyApp() {
     campaigns.forEach((camp) => {
       if (camp.status === 'in_progress' && isDeadlinePassed(camp.deadline)) {
         const campPledges = campaignBackers[camp.id] || [];
-        const result = settleCampaign(camp, campPledges);
+        const result = settleCampaign(camp, campPledges, products, userPledges);
 
         setCampaigns((prev) => prev.map((c) => (c.id === camp.id ? result.campaign : c)));
 
@@ -192,6 +192,14 @@ function CraftifyApp() {
           ...prev,
           [camp.id]: result.pledges,
         }));
+
+        if (result.isFunded && result.rewardOrders && result.rewardOrders.length > 0) {
+          setOrders((prevOrders) => {
+            const existingIds = new Set(prevOrders.map((o) => o.id));
+            const newOrders = result.rewardOrders.filter((ro) => !existingIds.has(ro.id));
+            return [...newOrders, ...prevOrders];
+          });
+        }
 
         setUserPledges((prev) =>
           prev.map((p) => {
@@ -1140,6 +1148,11 @@ function CraftifyApp() {
         }
       } catch { }
 
+      // Clean up reward orders created during simulation
+      setOrders((prevOrders) =>
+        prevOrders.filter((o) => o.originatingCampaignId !== String(targetCamp.id))
+      );
+
       fetch(`/api/campaigns/${targetCamp.id}/settle/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1193,7 +1206,7 @@ function CraftifyApp() {
       campToSettle.amountRaised = below;
     }
 
-    const result = settleCampaign(campToSettle, currentBackers);
+    const result = settleCampaign(campToSettle, currentBackers, products, userPledges);
     const campaignWithPrev: Campaign = {
       ...result.campaign,
       previousState: targetCamp.previousState || previousState,
@@ -1210,6 +1223,19 @@ function CraftifyApp() {
       ...prev,
       [targetCamp.id]: result.pledges,
     }));
+
+    // Update reward orders in orders state
+    if (result.isFunded && result.rewardOrders && result.rewardOrders.length > 0) {
+      setOrders((prevOrders) => {
+        const existingIds = new Set(prevOrders.map((o) => o.id));
+        const newOrders = result.rewardOrders.filter((ro) => !existingIds.has(ro.id));
+        return [...newOrders, ...prevOrders];
+      });
+    } else if (forceOutcome === 'unsuccessful' || !result.isFunded) {
+      setOrders((prevOrders) =>
+        prevOrders.filter((o) => o.originatingCampaignId !== String(targetCamp.id))
+      );
+    }
 
     // Update user pledges
     setUserPledges((prev) =>
@@ -1738,6 +1764,7 @@ function CraftifyApp() {
               campaigns={localizedCampaigns}
               products={localizedProducts}
               backersMap={campaignBackers}
+              orders={localizedOrders}
               onNavigate={handleNavigate}
               onOpenCampaignDetail={handleOpenCampaignDetail}
               onOpenProductDetail={handleOpenProductDetail}
@@ -1745,6 +1772,7 @@ function CraftifyApp() {
               onSimulateSettlement={handleSimulateSettlement}
               onPublishToShop={handlePublishToShop}
               onProductCreated={handleProductCreated}
+              onAdvanceStatus={handleAdvanceOrderStatus}
             />
           )
         )}
@@ -1755,10 +1783,12 @@ function CraftifyApp() {
             currentUser={currentUser}
             campaigns={localizedCampaigns}
             localPledges={userPledges}
+            orders={localizedOrders}
             onNavigate={handleNavigate}
             onOpenCampaignDetail={handleOpenCampaignDetail}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onSimulateSettlement={handleSimulateSettlement}
+            onTrackOrder={handleTrackOrder}
           />
         )}
 

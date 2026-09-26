@@ -358,4 +358,11 @@ export interface CustomerOrder {
   };
   paymentMethod: string;
   history: OrderTrackingHistoryEvent[];
+  // Backer Reward Fulfillment Fields
+  isBackerReward?: boolean;
+  originatingCampaignId?: string;
+  originatingCampaignTitle?: string;
+  originatingPledgeId?: string;
+  buyerId?: string;
+  backerName?: string;
 }

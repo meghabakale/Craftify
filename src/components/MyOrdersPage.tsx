@@ -246,12 +246,21 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
 
                       <div>
                         <span className="text-[10px] text-[#878787] uppercase font-bold block">
-                          Total Paid
+                          {order.isBackerReward ? 'Pledge Status' : 'Total Paid'}
                         </span>
-                        <span className="font-bold text-[#388E3C]">
-                          {formatINR(order.total)}
+                        <span className={`font-bold ${order.isBackerReward ? 'text-[#673AB7]' : 'text-[#388E3C]'}`}>
+                          {order.isBackerReward ? 'Included with pledge' : formatINR(order.total)}
                         </span>
                       </div>
+
+                      {order.isBackerReward && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-[2px] bg-[#EDE7F6] text-[#673AB7] border border-[#673AB7]/20">
+                            <Sparkles className="w-3 h-3 text-[#673AB7]" />
+                            Backer Reward
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Status Short Label */}
@@ -292,6 +301,16 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                     </div>
                   </div>
 
+                  {/* Campaign Name Banner for Backer Rewards */}
+                  {order.isBackerReward && (
+                    <div className="px-4 py-1.5 bg-[#F3E5F5]/60 border-b border-[#E1BEE7]/40 text-xs text-[#4A148C] font-medium flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#673AB7] shrink-0" />
+                      <span>
+                        <strong>Reward from:</strong> {order.originatingCampaignTitle || 'Artisan Crowdfunding Campaign'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Card Content: Products & Action Button */}
                   <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     {/* Products summary */}
@@ -312,7 +331,7 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                               {item.title}
                             </h3>
                             <div className="text-[#878787] text-[11px] mt-0.5">
-                              Qty: <strong className="text-[#212121]">{item.quantity}</strong> • Price: <strong className="text-[#212121]">{formatINR(item.price)}</strong>
+                              Qty: <strong className="text-[#212121]">{item.quantity}</strong> • Price: <strong className={order.isBackerReward || item.price === 0 ? "text-[#673AB7] font-semibold" : "text-[#212121]"}>{order.isBackerReward || item.price === 0 ? "Included with pledge" : formatINR(item.price)}</strong>
                             </div>
 
                             {(item.isFundedOnCraftify ?? item.isFundedOnLaunchMart) && (
@@ -324,8 +343,8 @@ export const MyOrdersPage: React.FC<MyOrdersPageProps> = ({
                           </div>
 
                           <div className="text-right shrink-0">
-                            <span className="text-xs sm:text-sm font-bold text-[#212121]">
-                              {formatINR(item.price * item.quantity)}
+                            <span className={`text-xs sm:text-sm font-bold ${order.isBackerReward || item.price === 0 ? "text-[#673AB7]" : "text-[#212121]"}`}>
+                              {order.isBackerReward || item.price === 0 ? "Included with pledge" : formatINR(item.price * item.quantity)}
                             </span>
                           </div>
                         </div>

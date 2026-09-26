@@ -22,6 +22,9 @@ class Order(models.Model):
     estimated_delivery_start = models.DateTimeField(blank=True, null=True)
     estimated_delivery_end = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_backer_reward = models.BooleanField(default=False)
+    originating_campaign = models.ForeignKey('campaigns.Campaign', on_delete=models.SET_NULL, null=True, blank=True, related_name='reward_orders')
+    originating_pledge = models.ForeignKey('campaigns.Pledge', on_delete=models.SET_NULL, null=True, blank=True, related_name='reward_orders')
 
     def save(self, *args, **kwargs):
         if not self.order_number:

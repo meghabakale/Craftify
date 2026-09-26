@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Campaign, Product, RewardTier, BackerRecord, User, ActiveView } from '../types';
+import { Campaign, Product, RewardTier, BackerRecord, User, ActiveView, CustomerOrder } from '../types';
 import { formatINR } from '../utils/format';
 import {
   Sparkles,
@@ -24,6 +24,9 @@ import {
   Eye,
   Calendar,
   Compass,
+  Package,
+  Truck,
+  PlayCircle,
 } from 'lucide-react';
 import { SmartInput } from './common/SmartInput';
 import { SmartTextarea } from './common/SmartTextarea';
@@ -38,6 +41,7 @@ interface CreatorDashboardProps {
   campaigns: Campaign[];
   products: Product[];
   backersMap: Record<string, BackerRecord[]>;
+  orders?: CustomerOrder[];
   onNavigate: (view: ActiveView) => void;
   onOpenCampaignDetail: (campaign: Campaign) => void;
   onOpenProductDetail: (product: Product) => void;
@@ -45,6 +49,7 @@ interface CreatorDashboardProps {
   onSimulateSettlement: (campaignId: string, forceOutcome?: 'funded' | 'unsuccessful' | 'reset') => void;
   onPublishToShop: (campaign: Campaign) => void;
   onProductCreated?: (product: Product) => void;
+  onAdvanceStatus?: (orderId: string) => void;
   initialTab?: 'my-campaigns' | 'start-campaign' | 'list-product';
 }
 
@@ -55,6 +60,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
   campaigns,
   products,
   backersMap,
+  orders = [],
   onNavigate,
   onOpenCampaignDetail,
   onOpenProductDetail,
@@ -62,6 +68,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
   onSimulateSettlement,
   onPublishToShop,
   onProductCreated,
+  onAdvanceStatus,
   initialTab = 'my-campaigns',
 }) => {
   const [activeTab, setActiveTab] = useState<'my-campaigns' | 'start-campaign' | 'list-product'>(initialTab);
@@ -879,6 +886,113 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                 <span>Publish to Shop</span>
                               </button>
                             )}
+                          </div>
+
+                          {/* REWARD FULFILLMENT SECTION FOR ARTISAN */}
+                          <div id={`reward-fulfillment-section-${camp.id}`} className="mt-4 pt-4 border-t border-[#388E3C]/30 space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Package className="w-5 h-5 text-[#2874F0]" />
+                                  <h5 className="text-sm sm:text-base font-bold text-[#212121]">
+                                    Reward Fulfillment
+                                  </h5>
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-[2px] bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/20">
+                                    {backers.length} Backers to Fulfill
+                                  </span>
+                                </div>
+                                <p className="text-xs text-[#878787] mt-0.5">
+                                  Track backer reward orders, shipping status, and dispatch progress for this funded campaign.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] overflow-hidden shadow-xs">
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs text-[#212121]">
+                                  <thead className="bg-[#FAFAFA] border-b border-[#EAEAEA] uppercase tracking-wider text-[10px] text-[#878787] font-bold">
+                                    <tr>
+                                      <th className="px-3.5 py-2.5">Backer</th>
+                                      <th className="px-3.5 py-2.5">Pledge Reward Tier</th>
+                                      <th className="px-3.5 py-2.5">Order ID & Tracking</th>
+                                      <th className="px-3.5 py-2.5">Shipping Status</th>
+                                      <th className="px-3.5 py-2.5 text-right">Fulfillment Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-[#F0F0F0]">
+                                    {backers.length === 0 ? (
+                                      <tr>
+                                        <td colSpan={5} className="px-4 py-6 text-center text-[#878787] text-xs">
+                                          No backer pledges registered yet for this campaign.
+                                        </td>
+                                      </tr>
+                                    ) : (
+                                      backers.map((bkr) => {
+                                        // Find matching order in orders state or fallback to constructed order
+                                        const matchingOrder = orders?.find(
+                                          (o) =>
+                                            o.isBackerReward &&
+                                            (String(o.originatingPledgeId) === String(bkr.id) ||
+                                              (String(o.originatingCampaignId) === String(camp.id) &&
+                                                (o.buyerId?.toLowerCase() === bkr.name.toLowerCase() ||
+                                                  o.backerName?.toLowerCase() === bkr.name.toLowerCase())))
+                                        );
+
+                                        const currentStatus = matchingOrder?.status || 'confirmed';
+                                        const orderId = matchingOrder?.id || `CRF-RWD-${camp.id}-${bkr.id}`;
+                                        const trackingNo = matchingOrder?.trackingNumber || `IN${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
+                                        const isDelivered = currentStatus === 'delivered';
+                                        const isShipped = currentStatus === 'shipped' || currentStatus === 'out_for_delivery' || currentStatus === 'delivered';
+
+                                        return (
+                                          <tr key={bkr.id} id={`backer-fulfillment-row-${bkr.id}`} className="hover:bg-[#F9FBFD] transition-colors">
+                                            <td className="px-3.5 py-3">
+                                              <div className="font-bold text-[#212121]">{bkr.name}</div>
+                                              <div className="text-[10px] text-[#878787]">Pledged {formatINR(bkr.amount)}</div>
+                                            </td>
+                                            <td className="px-3.5 py-3">
+                                              <div className="font-medium text-[#212121]">{bkr.tierTitle}</div>
+                                            </td>
+                                            <td className="px-3.5 py-3 font-mono text-[11px]">
+                                              <div className="font-bold text-[#212121]">{orderId}</div>
+                                              <div className="text-[10px] text-[#878787]">Trk: #{trackingNo}</div>
+                                            </td>
+                                            <td className="px-3.5 py-3">
+                                              <span
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-[11px] font-bold uppercase tracking-wider ${
+                                                  isDelivered
+                                                    ? 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/30'
+                                                    : isShipped
+                                                    ? 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/30'
+                                                    : 'bg-[#FFF8E1] text-[#B78103] border border-[#B78103]/30'
+                                                }`}
+                                              >
+                                                <span className={`w-1.5 h-1.5 rounded-full ${isDelivered ? 'bg-[#388E3C]' : isShipped ? 'bg-[#2874F0]' : 'bg-[#B78103]'}`} />
+                                                <span>{currentStatus.replace(/_/g, ' ')}</span>
+                                              </span>
+                                            </td>
+                                            <td className="px-3.5 py-3 text-right">
+                                              {onAdvanceStatus && (
+                                                <button
+                                                  id={`btn-advance-backer-reward-${bkr.id}`}
+                                                  onClick={() => onAdvanceStatus(orderId)}
+                                                  className="px-2.5 py-1 bg-[#2874F0] hover:bg-[#1C5FD0] text-white text-[11px] font-bold rounded-[2px] transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                                  title="Advance fulfillment stage for this backer reward"
+                                                >
+                                                  <PlayCircle className="w-3 h-3" />
+                                                  <span>Advance Stage</span>
+                                                </button>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ) : (
