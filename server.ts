@@ -41,35 +41,57 @@ Your responsibilities and domains of expertise:
 
 Format your responses with clean typography, clear bulleted points, bold highlights, and markdown tables or code blocks where appropriate. Maintain an encouraging, sophisticated, and authentic tone.`;
 
-const DESCRIPTION_SYSTEM_INSTRUCTION = `You are Kaarigar's Master Artisan Storyteller, Cultural Historian, and Expert Copy Editor. Your mission is to help Indian craftspeople and patrons celebrate indigenous artisanal traditions by crafting evocative, culturally authentic, and grammatically flawless product and campaign descriptions.
+const DESCRIPTION_SYSTEM_INSTRUCTION = `You are Kaarigar's Master Artisan Storyteller, Cultural Historian, and Expert Copy Editor. Your mission is to help Indian craftspeople celebrate indigenous traditions by writing evocative, culturally authentic, and grammatically flawless product and campaign descriptions.
 
 CORE DIRECTIVES:
-1. Storytelling Tone: Write with warmth, cultural reverence, and sensory richness. Highlight generational techniques, indigenous materials, tactile nuances, and geographical provenance. Strictly avoid corporate jargon or cheap hype words.
-2. Grammatical Completeness: Every sentence and line must be 100% syntactically complete with correct subject-verb agreement and proper tense consistency. Every thought must finish with a terminal punctuation mark ('.' or '!'). Never produce trailing fragments, dangling phrases, or ellipses.
+1. Storytelling Tone: Write with warmth, cultural reverence, and sensory richness. Highlight generational techniques, indigenous materials, tactile nuances, and regional provenance. Avoid corporate jargon or hype.
+2. Plain Prose Only: Do NOT use markdown formatting (no bold **, asterisks, bullet points, titles, or headers). Output plain text prose only, ready to paste directly into a description field.
+3. Sentence Completeness & Length: Write exactly 2-3 complete lines (composed of 2-3 full sentences). Every sentence must have flawless grammar and subject-verb structure. Every response MUST end cleanly with terminal punctuation (a period '.'). Do NOT cut off mid-sentence or mid-thought.`;
 
-FEW-SHOT PROMPT EXAMPLES:
+function isTerminalPunctuated(text: string): boolean {
+  if (!text) return false;
+  const t = text.trim();
+  return ['.', '!', '?', '"', '”', "'"].some((char) => t.endsWith(char));
+}
 
---- EXAMPLE 1: Full Storytelling Narrative ---
-User Request:
-Craft Tradition: Terracotta Pottery
-Materials Used: Gangetic alluvial clay, natural ochre slip
-Artisan Region: Khurja, Uttar Pradesh
-Keywords: traditional potter's wheel, wood-fired kiln, porous cooling texture
+function cleanAndFormatProse(text: string): string {
+  if (!text) return '';
+  let cleaned = text.trim();
+  if (cleaned.startsWith("```") && cleaned.endsWith("```")) {
+    cleaned = cleaned.split("\n").slice(1, -1).join("\n").trim();
+  }
+  // Strip markdown headers, bolding, italics, and bullet points
+  cleaned = cleaned
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^[\s*-]+\s+/gm, '')
+    .replace(/\n\s*\n/g, '\n\n')
+    .trim();
+  return cleaned;
+}
 
-Ideal Response:
-Born from the alluvial soil of the Gangetic plains, this handcrafted terracotta vessel carries the sun-drenched spirit and ancestral rhythms of Khurja, Uttar Pradesh. Each curve is coaxed into existence on a traditional kick wheel by master artisans whose families have tended the earth and flame across five generations. The surface is brushed with a delicate, mineral-rich ochre slip before undergoing a slow firing in an earthen wood kiln, bestowing a warm, tactile patina that breathes with the natural porosity of raw clay.
+function enforceSentenceCompleteness(text: string): string {
+  let cleaned = cleanAndFormatProse(text);
+  if (!cleaned) return '';
 
-Far more than a simple functional object, this piece embodies a quiet reverence for the soil and the slow alchemy of traditional craft. Subtle variations in flame-kissed hues ensure that no two vessels are ever identical, offering your living space a timeless artifact steeped in authentic northern Indian heritage.
-
---- EXAMPLE 2: Sentence Completion & Artisan Notes Polish ---
-User Request:
-Artisan Draft Text / Incomplete Lines: "spinning fine wool charkha on loom very warm butter touch"
-Craft Tradition: Pashmina Weaving
-Materials Used: Changthangi Cashmere Wool
-Artisan Region: Srinagar, Jammu & Kashmir
-
-Ideal Response:
-Hand-spun from the delicate fleece of Changthangi goats on a traditional charkha and meticulously woven on a wooden handloom in Srinagar, this authentic Pashmina textile offers an exceptionally warm and butter-soft touch against the skin. Every thread carries centuries of Kashmiri heritage, embodying both exquisite artisanship and timeless elegance.`;
+  if (!isTerminalPunctuated(cleaned)) {
+    // Truncated response: find last complete sentence ending in terminal punctuation
+    const lastTermIdx = Math.max(
+      cleaned.lastIndexOf('. '),
+      cleaned.lastIndexOf('.\n'),
+      cleaned.lastIndexOf('! '),
+      cleaned.lastIndexOf('? ')
+    );
+    if (lastTermIdx > Math.min(60, cleaned.length * 0.4)) {
+      cleaned = cleaned.substring(0, lastTermIdx + 1).trim();
+    } else {
+      // Append terminal period cleanly if no preceding period
+      cleaned = cleaned.replace(/[,;:-]\s*$/, '') + '.';
+    }
+  }
+  return cleaned;
+}
 
 // Robust content generation with graceful fallback for transient model demand spikes (e.g. 503 Service Unavailable)
 async function getStreamWithFallback(
@@ -117,7 +139,8 @@ async function getContentWithFallback(
   ai: GoogleGenAI,
   primaryModel: string,
   contents: any[],
-  systemInstruction: string
+  systemInstruction: string,
+  configOptions: Record<string, any> = {}
 ) {
   const officialModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
   const initialModel = officialModels.includes(primaryModel) ? primaryModel : "gemini-2.5-flash";
@@ -139,6 +162,8 @@ async function getContentWithFallback(
         contents,
         config: {
           systemInstruction,
+          maxOutputTokens: 1000,
+          ...configOptions,
         },
       });
       return { response, modelUsed: modelCandidate };
@@ -341,42 +366,59 @@ async function startServer() {
       const isCompletion = mode === "complete_sentences" || (draft_text && draft_text.trim().length > 0 && mode !== "full_story");
       
       const prompt = isCompletion
-        ? `You are an expert copy editor, linguist, and traditional Indian art historian.\n` +
-          `An artisan has written draft notes or incomplete lines describing their handcrafted piece. ` +
-          `Your task is to write and complete every sentence or line grammatically correctly, ` +
-          `fleshing out partial thoughts while preserving the artisan's genuine voice.\n\n` +
-          `Artisan's Draft Text / Incomplete Lines:\n"""\n${(draft_text || "").trim()}\n"""\n\n` +
-          `Craft Details for Context:\n- Craft Tradition: ${craft_type}\n- Materials: ${material}\n- Region: ${region}\n- Key Elements: ${keywords}\n\n` +
-          `STRICT GRAMMATICAL & SENTENCE COMPLETION RULES:\n` +
-          `1. Write and complete every single sentence or line grammatically correctly with proper subject-verb agreement and tenses.\n` +
-          `2. Complete all unfinished sentences, dangling clauses, or fragmented thoughts into full, articulate, polished sentences.\n` +
-          `3. Ensure every single sentence ends with valid terminal punctuation (a period '.' or exclamation mark '!'). Never leave any sentence or line trailing.\n` +
-          `4. Return ONLY the polished, grammatically complete paragraphs of text without markdown headings or greetings.`
-        : `You are a master storyteller and traditional Indian art historian. Write an evocative, authentic, ` +
-          `and grammatically impeccable 2-3 paragraph description for a handcrafted artisan piece:\n\n` +
-          `- Craft: ${craft_type}\n- Materials: ${material}\n- Region: ${region}\n- Keywords: ${keywords}\n` +
-          (draft_text ? `- Existing notes: ${draft_text}\n` : "") +
-          `\nSTRICT GRAMMATICAL & SENTENCE COMPLETION RULES:\n` +
-          `1. Write every single sentence and line with complete, flawless English grammar.\n` +
-          `2. Every sentence MUST be completely finished — never truncate or leave any sentence or line incomplete. Every paragraph must conclude with a complete, fully formed sentence ending with a period ('.').\n` +
-          `3. Return ONLY the 2-3 paragraphs of text without headings or markdown formatting.`;
+        ? `You are an expert copy editor and master storyteller completing draft notes for an artisan.\n\n` +
+          `Artisan Draft Notes:\n"""\n${(draft_text || "").trim()}\n"""\n\n` +
+          `Craft Details:\n- Craft Tradition: ${craft_type}\n- Materials: ${material}\n- Region: ${region}\n${keywords ? `- Key Elements: ${keywords}\n` : ""}\n` +
+          `STRICT INSTRUCTIONS:\n` +
+          `1. Write exactly 2-3 complete lines, each with complete sentences (no trailing fragments).\n` +
+          `2. End the response cleanly — do not cut off mid-sentence or mid-thought. Every line and sentence MUST end with terminal punctuation (such as a period '.').\n` +
+          `3. Do NOT include markdown formatting, bullet points, or headers — plain prose only, ready to paste directly into a description field.`
+        : `You are a master storyteller and traditional Indian art historian.\n\n` +
+          `Write an evocative, authentic, and grammatically impeccable product description for a handcrafted artisan piece:\n` +
+          `- Craft: ${craft_type}\n- Materials: ${material}\n- Region: ${region}\n${keywords ? `- Keywords: ${keywords}\n` : ""}\n` +
+          `STRICT INSTRUCTIONS:\n` +
+          `1. Write exactly 2-3 complete lines, each with complete sentences (no trailing fragments).\n` +
+          `2. End the response cleanly — do not cut off mid-sentence or mid-thought. Every sentence MUST end with terminal punctuation (such as a period '.').\n` +
+          `3. Do NOT include markdown formatting, bullet points, or headers — plain prose only, ready to paste directly into a description field.`;
 
-      const { response } = await getContentWithFallback(
+      // Initial generation call with maxOutputTokens: 1000
+      let { response } = await getContentWithFallback(
         ai,
-        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash",
         [{ role: "user", parts: [{ text: prompt }] }],
-        DESCRIPTION_SYSTEM_INSTRUCTION
+        DESCRIPTION_SYSTEM_INSTRUCTION,
+        { maxOutputTokens: 1000, temperature: 0.7 }
       );
 
-      if (response.text) {
-        let cleaned = response.text.trim();
-        if (cleaned.startsWith("```") && cleaned.endsWith("```")) {
-          cleaned = cleaned.split("\n").slice(1, -1).join("\n").trim();
+      let cleaned = cleanAndFormatProse(response.text || "");
+
+      // Completeness Check: verify the text ends with proper terminal punctuation (. ! ? ")
+      if (cleaned && !isTerminalPunctuated(cleaned)) {
+        console.warn("[AI Description] Response missing terminal punctuation. Retrying generation once...");
+        try {
+          const { response: retryResponse } = await getContentWithFallback(
+            ai,
+            "gemini-2.5-flash",
+            [{ role: "user", parts: [{ text: prompt + "\n\nRETRY REMINDER: Ensure the response is exactly 2-3 complete lines ending cleanly in a period '.' with zero trailing fragments." }] }],
+            DESCRIPTION_SYSTEM_INSTRUCTION,
+            { maxOutputTokens: 1000, temperature: 0.3 }
+          );
+          const retryCleaned = cleanAndFormatProse(retryResponse.text || "");
+          if (retryCleaned && isTerminalPunctuated(retryCleaned)) {
+            cleaned = retryCleaned;
+          } else if (retryCleaned) {
+            cleaned = retryCleaned;
+          }
+        } catch (retryErr: any) {
+          console.warn("[AI Description] Completeness retry failed:", retryErr?.message || retryErr);
         }
-        if (!cleaned.endsWith(".") && !cleaned.endsWith("!") && !cleaned.endsWith("?")) {
-          cleaned += ".";
-        }
-        return res.json({ description: cleaned });
+      }
+
+      // Final sentence completeness enforcement
+      const finalDescription = enforceSentenceCompleteness(cleaned);
+
+      if (finalDescription) {
+        return res.json({ description: finalDescription });
       }
 
       throw new Error("Gemini returned empty text.");

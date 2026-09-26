@@ -30,9 +30,10 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
   onNavigateToMyPledges,
   onConfirmPledge,
 }) => {
-  const { t } = useLanguage();
-  const tiers = campaign?.rewardTiers && campaign.rewardTiers.length > 0
-    ? campaign.rewardTiers
+  const { t, localizeCampaign } = useLanguage();
+  const displayCampaign = campaign ? localizeCampaign(campaign) : campaign;
+  const tiers = displayCampaign?.rewardTiers && displayCampaign.rewardTiers.length > 0
+    ? displayCampaign.rewardTiers
     : DEFAULT_REWARD_TIERS;
 
   const initialIndex = initialTierId ? tiers.findIndex((t) => t.id === initialTierId) : 0;
@@ -103,7 +104,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                 id="btn-close-authorized-modal"
                 onClick={onClose}
                 className="p-1 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#212121] transition-colors cursor-pointer"
-                aria-label="Close dialog"
+                aria-label={t('closeDialog', 'Close dialog')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -119,11 +120,10 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
               {/* EXACT PROMPT MANDATED COPY */}
               <div className="p-4 bg-[#EAF8EB] border border-[#388E3C]/30 rounded-[4px] my-3 text-left">
                 <p className="font-bold text-sm text-[#212121] leading-snug">
-                  Your pledge is authorized for {formatINR(confirmedAmount)}. You'll only be charged if this campaign reaches its goal by {formatDeadlineDate(campaign.deadline, campaign.daysLeft)}.
+                  {t('yourPledgeIsAuthorizedFor', 'Your pledge is authorized for')}{formatINR(confirmedAmount)}{t('youLlOnlyBeChargedIfThisCampaignRea', '. You\'ll only be charged if this campaign reaches its goal by')}{formatDeadlineDate(campaign.deadline, campaign.daysLeft)}.
                 </p>
                 <p className="text-xs text-[#666666] mt-2">
-                  This is the Craftify all-or-nothing crowdfunding escrow model. No payment was charged today — you have authorized an escrow pledge hold.
-                </p>
+                  {t('thisIsTheCraftifyAllOrNothingCrowdf', 'This is the Craftify all-or-nothing crowdfunding escrow model. No payment was charged today — you have authorized an escrow pledge hold.')}</p>
               </div>
             </div>
 
@@ -142,12 +142,12 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                 <span className="font-bold text-[#212121]">{confirmedTierTitle}</span>
               </div>
               <div className="flex justify-between items-baseline border-b border-[#EAEAEA] pb-2">
-                <span className="text-[#878787] uppercase font-bold">Campaign Progress</span>
-                <span className="font-bold text-[#388E3C]">Updated Live (+{formatINR(confirmedAmount)})</span>
+                <span className="text-[#878787] uppercase font-bold">{t('campaignProgress', 'Campaign Progress')}</span>
+                <span className="font-bold text-[#388E3C]">{t('updatedLive', 'Updated Live (+')}{formatINR(confirmedAmount)})</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[#878787] uppercase font-bold">Immediate Charge</span>
-                <span className="font-bold text-[#388E3C]">₹0 (Conditional Escrow Hold)</span>
+                <span className="text-[#878787] uppercase font-bold">{t('immediateCharge', 'Immediate Charge')}</span>
+                <span className="font-bold text-[#388E3C]">{t('key_0ConditionalEscrowHold', '₹0 (Conditional Escrow Hold)')}</span>
               </div>
             </div>
 
@@ -170,7 +170,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                 }}
                 className="w-full py-2.5 rounded-[2px] border border-[#2874F0] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#2874F0] text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
               >
-                <span>View in My Pledges</span>
+                <span>{t('viewInMyPledges', 'View in My Pledges')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -185,12 +185,12 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                   <span className="text-[10px] uppercase tracking-wider text-[#2874F0] font-bold bg-[#F1F3F6] px-1.5 py-0.5 rounded-[2px]">
                     {t('escrowProtected', 'Authorization Escrow')}
                   </span>
-                  <span className="text-[11px] text-[#878787]">• {campaign.code}</span>
+                  <span className="text-[11px] text-[#878787]">• {displayCampaign.code}</span>
                 </div>
                 <h2 className="text-xl font-bold text-[#212121]">
-                  {t('backThisProject', 'Back')} {campaign.title}
+                  {t('backThisProject', 'Back')} {displayCampaign.title}
                 </h2>
-                <p className="text-xs text-[#878787] mt-0.5">by {campaign.creator}</p>
+                <p className="text-xs text-[#878787] mt-0.5">{t('by', 'by')}{displayCampaign.creator}</p>
               </div>
 
               <button
@@ -198,7 +198,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                 id="btn-close-pledge-modal"
                 onClick={onClose}
                 className="p-1 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#212121] transition-colors cursor-pointer"
-                aria-label="Close modal"
+                aria-label={t('closeModal', 'Close modal')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -234,7 +234,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                     setBackerName(val);
                     if (val.trim()) setNameError(null);
                   }}
-                  placeholder="e.g. Aarav Sharma"
+                  placeholder={t('eGAaravSharma', 'e.g. Aarav Sharma')}
                   className="w-full pl-9 pr-3 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   required
                 />
@@ -250,7 +250,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold">
                   {t('selectRewardTier', 'Choose a Reward Tier')}
                 </label>
-                <span className="text-[11px] text-[#878787]">3 tiers available</span>
+                <span className="text-[11px] text-[#878787]">{t('key_3TiersAvailable', '3 tiers available')}</span>
               </div>
 
               {tiers.map((tier, idx) => {
@@ -269,10 +269,10 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                     }}
                     className={`p-3 rounded-[4px] border transition-colors ${
                       isSoldOut
-                        ? 'opacity-60 bg-[#F1F3F6] border-[#EAEAEA] cursor-not-allowed'
+                        ? t('opacity60BgF1f3f6BorderEaeaeaCursor', 'opacity-60 bg-[#F1F3F6] border-[#EAEAEA] cursor-not-allowed')
                         : isSelected
-                        ? 'border-[#2874F0] bg-[#F1F3F6] ring-1 ring-[#2874F0] cursor-pointer'
-                        : 'border-[#EAEAEA] bg-[#FFFFFF] hover:border-[#2874F0]/40 cursor-pointer'
+                        ? t('border2874f0BgF1f3f6Ring1Ring2874f0', 'border-[#2874F0] bg-[#F1F3F6] ring-1 ring-[#2874F0] cursor-pointer')
+                        : t('borderEaeaeaBgFfffffHoverBorder2874', 'border-[#EAEAEA] bg-[#FFFFFF] hover:border-[#2874F0]/40 cursor-pointer')
                     }`}
                   >
                     <div className="flex justify-between items-baseline mb-0.5">
@@ -302,7 +302,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                     <div className="text-[11px] text-[#878787] pl-5 flex flex-wrap justify-between gap-1">
                       <span>{t('estimatedDelivery', 'Est. Delivery')}: <strong className="text-[#212121]">{tier.estimatedDelivery}</strong></span>
                       {isCapped && (
-                        <span className={isSoldOut ? 'text-[#FB641B] font-bold' : ''}>
+                        <span className={isSoldOut ? t('textFb641bFontBold', 'text-[#FB641B] font-bold') : ''}>
                           {isSoldOut ? t('tierSoldOut', 'Sold out') : `${tier.backersCount} ${t('leftOf', 'of')} ${tier.maxBackers} ${t('claimed', 'claimed')}`}
                         </span>
                       )}
@@ -330,8 +330,7 @@ export const PledgeModal: React.FC<PledgeModalProps> = ({
                 />
               </div>
               <p className="text-[11px] text-[#878787] mt-0.5">
-                Custom pledges still qualify for the selected reward tier.
-              </p>
+                {t('customPledgesStillQualifyForTheSele', 'Custom pledges still qualify for the selected reward tier.')}</p>
             </div>
 
             {/* Modal Actions */}

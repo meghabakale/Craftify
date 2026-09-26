@@ -1663,35 +1663,187 @@ export function localizeCategoryName(categoryName: string, lang: SupportedLangua
   return categoryName;
 }
 
+// Persistent Dynamic Translations Store in localStorage for newly launched products and campaigns
+const DYNAMIC_TRANSLATIONS_KEY = 'craftify_dynamic_translations';
+
+function getDynamicTranslationsStore(): Record<string, Partial<Record<SupportedLanguageCode, any>>> {
+  try {
+    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem(DYNAMIC_TRANSLATIONS_KEY) : null;
+    if (saved) return JSON.parse(saved);
+  } catch {
+    // fallback
+  }
+  return {};
+}
+
+function saveDynamicTranslationsStore(store: Record<string, Partial<Record<SupportedLanguageCode, any>>>) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(DYNAMIC_TRANSLATIONS_KEY, JSON.stringify(store));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+// Craft & Locale Word Dictionary for Automatic Fallback Translation of Custom / Newly Launched Products & Campaigns
+const WORD_TRANSLATIONS: Record<string, Partial<Record<SupportedLanguageCode, string>>> = {
+  'handloom': { hi: 'हथकरघा', bn: 'তাঁত', ta: 'கைத்தறி', te: 'చేనేత', mr: 'हातमाग', kn: 'ಕೈಮಗ್ಗ', gu: 'હાથશાળ' },
+  'pottery': { hi: 'मिट्टी के बर्तन', bn: 'মৃৎশিল্প', ta: 'மண்பாண்டம்', te: 'మట్టిపాత్రలు', mr: 'मातीची भांडी', kn: 'ಮಣ್ಣಿನ ಪಾತ್ರೆ', gu: 'માટીકામ' },
+  'terracotta': { hi: 'टेराकोटा', bn: 'পোড়ামাটি', ta: 'சுடுமண்', te: 'టెర్రకోటా', mr: 'टेराकोटा', kn: 'ಟೆರಾಕೋಟಾ', gu: 'ટેરાકોટા' },
+  'silk': { hi: 'रेशम', bn: 'রেশম', ta: 'பட்டு', te: 'పట్టు', mr: 'रेशीम', kn: 'ರೇಷ್ಮೆ', gu: 'રેશમ' },
+  'cotton': { hi: 'सूती', bn: 'সূতি', ta: 'பருத்தி', te: 'పత్తి', mr: 'सुती', kn: 'ಹತ್ತಿ', gu: 'સૂતરાઉ' },
+  'pashmina': { hi: 'पश्मीना', bn: 'পশমিনা', ta: 'பஷ்மினா', te: 'పష్మీనా', mr: 'पश्मिना', kn: 'ಪಶ್ಮೀನಾ', gu: 'પશ્મિના' },
+  'cashmere': { hi: 'कैशमीयर', bn: 'কাশ্মীরি', ta: 'காஷ்மீரி', te: 'కాశ్మీరీ', mr: 'काश्मिरी', kn: 'ಕಾಶ್ಮೀರಿ', gu: 'કાશ્મીરી' },
+  'wood': { hi: 'काष्ठ', bn: 'কাঠ', ta: 'மரம்', te: 'చెక్క', mr: 'लाकूड', kn: 'ಮರ', gu: 'લાકડું' },
+  'carving': { hi: 'नक्काशी', bn: 'খোদাই', ta: 'செதுக்கல்', te: 'చెక్కడాలు', mr: 'कोरीव काम', kn: 'ಕೆತ್ತನೆ', gu: 'કોતરણી' },
+  'brass': { hi: 'पीतल', bn: 'পিতল', ta: 'பித்தளை', te: 'ఇత్తడి', mr: 'पितळ', kn: 'ಹಿತ್ತಾಳೆ', gu: 'પિત્તળ' },
+  'bronze': { hi: 'कांस्य', bn: 'ব্রোঞ্জ', ta: 'வெண்கலம்', te: 'కంచు', mr: 'कांस्य', kn: 'ಕಂಚು', gu: 'કાંસ્ય' },
+  'metal': { hi: 'धातु', bn: 'ধাতু', ta: 'உலோகம்', te: 'లోహం', mr: 'धातू', kn: 'ಲೋಹ', gu: 'ધાતુ' },
+  'jewellery': { hi: 'आभूषण', bn: 'গয়না', ta: 'நகைகள்', te: 'ఆభరణాలు', mr: 'दागिने', kn: 'ಆಭರಣಗಳು', gu: 'ઘરેણાં' },
+  'bamboo': { hi: 'बांस', bn: 'বাঁশ', ta: 'மூங்கில்', te: 'వెదురు', mr: 'बांबू', kn: 'ಬಿದಿರು', gu: 'વાંસ' },
+  'saree': { hi: 'साड़ी', bn: 'শাড়ি', ta: 'புடவை', te: 'చీర', mr: 'साडी', kn: 'ಸೀರೆ', gu: 'સાડી' },
+  'shawl': { hi: 'शॉल', bn: 'শাল', ta: 'சால்வை', te: 'శాలువా', mr: 'शाल', kn: 'ಶಾಲು', gu: 'શાલ' },
+  'vase': { hi: 'फूलदान', bn: 'ফুলদানি', ta: 'பூச்சாடி', te: 'பூலதண்ட', mr: 'फुलदाणी', kn: 'ಹೂದಾನಿ', gu: 'ફૂલદાની' },
+  'lamp': { hi: 'दीप', bn: 'প্রদীপ', ta: 'விளக்கு', te: 'దీపం', mr: 'दिवा', kn: 'ದೀಪ', gu: 'દીવો' },
+  'mug': { hi: 'कप', bn: 'কাপ', ta: 'கோப்பை', te: 'కప్', mr: 'कप', kn: 'ಕಪ್', gu: 'કપ' },
+  'box': { hi: 'डिब्बा', bn: 'বাক্স', ta: 'பெட்டி', te: 'పెట్టె', mr: 'पेटे', kn: 'ಪೆಟ್ಟಿಗೆ', gu: 'પેટી' },
+  'bag': { hi: 'झोला', bn: 'ব্যাগ', ta: 'பை', te: 'సంచి', mr: 'पिशवी', kn: 'ಚೀಲ', gu: 'બેગ' },
+  'handcrafted': { hi: 'हस्तनिर्मित', bn: 'হস্তশিল্প', ta: 'கைவினை', te: 'హస్తకళ', mr: 'हस्तनिर्मित', kn: 'ಕರಕುಶಲ', gu: 'હસ્તનિર્મિત' },
+  'handmade': { hi: 'हस्तनिर्मित', bn: 'হাতে গড়া', ta: 'கைவினை', te: 'చేతిపని', mr: 'हाताने बनवलेले', kn: 'ಕೈಯಿಂದ ಮಾಡಿದ', gu: 'હાથબનાવટ' },
+  'traditional': { hi: 'पारंपरिक', bn: 'ঐতিহ্যবাহী', ta: 'பாரம்பரிய', te: 'సాంప్రదాయ', mr: 'पारंपरिक', kn: 'ಪಾರಂಪರಿಕ', gu: 'પારંપરિક' },
+  'authentic': { hi: 'प्रमाणित', bn: 'খাঁটি', ta: 'உண்மையான', te: 'ప్రామాణిక', mr: 'अस्सल', kn: 'ಅಸಲಿ', gu: 'અસલી' },
+  'heritage': { hi: 'विरासत', bn: 'ঐতিহ্য', ta: 'பாரம்பரியம்', te: 'వారసత్వం', mr: 'वारसा', kn: 'ಪರಂಪರೆ', gu: 'વારસો' },
+  'glazed': { hi: 'ग्लेज्ड', bn: 'গ্লেজড', ta: 'பளபளப்பான', te: 'గ్లేజ్డ్', mr: 'ग्लेज्ड', kn: 'ಗ್ಲೇಜ್ಡ್', gu: 'ગ્લેઝ્ડ' },
+  'weaving': { hi: 'बुनाई', bn: 'বয়ন', ta: 'நெசவு', te: 'నేత', mr: 'विणकाम', kn: 'ನೇಕಾರಿಕೆ', gu: 'વણાટકામ' },
+  'chanderi': { hi: 'चंदेरी', bn: 'চান্দেরি', ta: 'சந்தேரி', te: 'చందేరీ', mr: 'चंदेरी', kn: 'ಚಂದೇರಿ', gu: 'ચંદેરી' },
+  'banarasi': { hi: 'बनारसी', bn: 'বেনারসি', ta: 'பனாரசி', te: 'బెనారసి', mr: 'बनारसी', kn: 'ಬನಾರಸಿ', gu: 'બનારસ' },
+  'khurja': { hi: 'खुर्जा', bn: 'খুরজা', ta: 'குர்ஜா', te: 'ఖుర్జా', mr: 'खुर्जा', kn: 'ಖುರ್ಜಾ', gu: 'ખુરજા' },
+  'jaipur': { hi: 'जयपुर', bn: 'জয়পুর', ta: 'ஜெய்ப்பூர்', te: 'జైపూర్', mr: 'जयपूर', kn: 'ಜೈಪುರ', gu: 'જયપુર' },
+  'srinagar': { hi: 'श्रीनगर', bn: 'শ্রীনগর', ta: 'ஸ்ரீநகர்', te: 'శ్రీనగర్', mr: 'श्रीनगर', kn: 'ಶ್ರೀನಗರ', gu: 'શ્રીનગર' },
+  'series': { hi: 'श्रृंखला', bn: 'সিরিজ', ta: 'வரிசை', te: 'సిరీస్', mr: 'मालिका', kn: 'ಸರಣಿ', gu: 'શ્રેણી' },
+  'collection': { hi: 'संग्रह', bn: 'সংগ্রহ', ta: 'சேகரிப்பு', te: 'సేకరణ', mr: 'संग्रह', kn: 'ಸಂಗ್ರಹ', gu: 'સંગ્રહ' },
+  'set': { hi: 'सेट', bn: 'সেট', ta: 'செட்', te: 'సెట్', mr: 'संच', kn: 'ಸೆಟ್', gu: 'સેટ' },
+  'product': { hi: 'उत्पाद', bn: 'পণ্য', ta: 'பொருள்', te: 'ఉత్పత్తి', mr: 'उत्पादन', kn: 'ಉತ್ಪನ್ನ', gu: 'ઉત્પાદન' },
+  'campaign': { hi: 'अभियान', bn: 'অভিযান', ta: 'பிரச்சாரம்', te: 'ప్రచారం', mr: 'मोहीम', kn: 'ಪ್ರಚಾರ', gu: 'ઝુંબેશ' },
+};
+
+export function autoTranslateTitleAndDesc(text: string, lang: SupportedLanguageCode): string {
+  if (!text || lang === 'en') return text;
+  let translated = text;
+  for (const [word, map] of Object.entries(WORD_TRANSLATIONS)) {
+    const targetWord = map[lang];
+    if (targetWord) {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      translated = translated.replace(regex, targetWord);
+    }
+  }
+  return translated;
+}
+
+export function registerDynamicProductTranslation(product: Product) {
+  if (!product || !product.id) return;
+  const store = getDynamicTranslationsStore();
+  const languages: SupportedLanguageCode[] = ['hi', 'bn', 'ta', 'te', 'mr', 'kn', 'gu'];
+  const prodEntry: Partial<Record<SupportedLanguageCode, LocalizedContent>> = {};
+
+  for (const lang of languages) {
+    prodEntry[lang] = {
+      title: autoTranslateTitleAndDesc(product.title, lang),
+      shortDescription: autoTranslateTitleAndDesc(product.shortDescription || product.longDescription || '', lang),
+      longDescription: autoTranslateTitleAndDesc(product.longDescription || product.shortDescription || '', lang),
+      category: localizeCategoryName(product.category, lang),
+      craftHeritage: autoTranslateTitleAndDesc(product.craftHeritage || product.category || '', lang),
+      artisanRegion: autoTranslateTitleAndDesc(product.artisanRegion || product.creatorLocation || '', lang),
+      creator: autoTranslateTitleAndDesc(product.creator || '', lang),
+      creatorLocation: autoTranslateTitleAndDesc(product.creatorLocation || '', lang),
+    };
+  }
+
+  store[String(product.id)] = prodEntry;
+  if (product.sku) store[String(product.sku)] = prodEntry;
+  saveDynamicTranslationsStore(store);
+}
+
+export function registerDynamicCampaignTranslation(campaign: Campaign) {
+  if (!campaign || !campaign.id) return;
+  const store = getDynamicTranslationsStore();
+  const languages: SupportedLanguageCode[] = ['hi', 'bn', 'ta', 'te', 'mr', 'kn', 'gu'];
+  const campEntry: Partial<Record<SupportedLanguageCode, LocalizedCampaignContent>> = {};
+
+  for (const lang of languages) {
+    campEntry[lang] = {
+      title: autoTranslateTitleAndDesc(campaign.title, lang),
+      shortDescription: autoTranslateTitleAndDesc(campaign.shortDescription || campaign.fullStory || '', lang),
+      fullStory: autoTranslateTitleAndDesc(campaign.fullStory || campaign.shortDescription || '', lang),
+      category: localizeCategoryName(campaign.category, lang),
+      craftHeritage: autoTranslateTitleAndDesc(campaign.craftHeritage || campaign.category || '', lang),
+      artisanRegion: autoTranslateTitleAndDesc(campaign.artisanRegion || campaign.creatorLocation || '', lang),
+      creator: autoTranslateTitleAndDesc(campaign.creator || '', lang),
+      creatorLocation: autoTranslateTitleAndDesc(campaign.creatorLocation || '', lang),
+    };
+  }
+
+  store[String(campaign.id)] = campEntry;
+  if (campaign.slug) store[String(campaign.slug)] = campEntry;
+  saveDynamicTranslationsStore(store);
+}
+
 /**
  * Localizes a product object based on selected language
  */
 export function localizeProduct(product: Product, lang: SupportedLanguageCode): Product {
+  if (!product) return product;
   if (lang === 'en') return product;
-  const translation = PRODUCT_TRANSLATIONS[product.id]?.[lang];
-  const localizedCategory = localizeCategoryName(translation?.category || product.category, lang);
 
-  if (!translation) {
-    return {
-      ...product,
-      category: localizedCategory,
-      badgeLabel: product.inStock ? TRANSLATIONS[lang].inStock : TRANSLATIONS[lang].outOfStock,
-    };
+  const normId = String(product.id || '').trim();
+  let keyToUse = normId;
+  if (!PRODUCT_TRANSLATIONS[keyToUse]) {
+    if (normId === '1') keyToUse = 'prd-01';
+    else if (normId === '2') keyToUse = 'prd-02';
+    else if (normId === '3') keyToUse = 'prd-03';
+    else if (normId === '4') keyToUse = 'prd-04';
+    else if (normId === '5') keyToUse = 'prd-05';
+    else if (normId === '6') keyToUse = 'prd-06';
+    else if (normId === '7') keyToUse = 'prd-07';
+    else if (normId === '8') keyToUse = 'prd-08';
   }
+
+  let translation = PRODUCT_TRANSLATIONS[keyToUse]?.[lang];
+  if (!translation) {
+    const foundEntry = Object.values(PRODUCT_TRANSLATIONS).find(
+      (entry) => entry.en?.title?.toLowerCase().trim() === product.title?.toLowerCase().trim()
+    );
+    if (foundEntry) {
+      translation = foundEntry[lang];
+    }
+  }
+
+  const dynamicStore = getDynamicTranslationsStore();
+  const dynamicTranslation = dynamicStore[normId]?.[lang] || (product.sku ? dynamicStore[product.sku]?.[lang] : undefined);
+
+  const localizedCategory = localizeCategoryName(translation?.category || dynamicTranslation?.category || product.category, lang);
+
+  const titleToUse = translation?.title || dynamicTranslation?.title || autoTranslateTitleAndDesc(product.title, lang);
+  const shortDescToUse = translation?.shortDescription || dynamicTranslation?.shortDescription || autoTranslateTitleAndDesc(product.shortDescription || product.longDescription || '', lang);
+  const longDescToUse = translation?.longDescription || dynamicTranslation?.longDescription || autoTranslateTitleAndDesc(product.longDescription || product.shortDescription || '', lang);
+  const craftHeritageToUse = translation?.craftHeritage || dynamicTranslation?.craftHeritage || autoTranslateTitleAndDesc(product.craftHeritage || product.category || '', lang);
+  const regionToUse = translation?.artisanRegion || dynamicTranslation?.artisanRegion || autoTranslateTitleAndDesc(product.artisanRegion || product.creatorLocation || '', lang);
+  const creatorToUse = translation?.creator || dynamicTranslation?.creator || autoTranslateTitleAndDesc(product.creator || '', lang);
 
   return {
     ...product,
-    title: translation.title || product.title,
-    shortDescription: translation.shortDescription || product.shortDescription,
-    longDescription: translation.longDescription || product.longDescription,
+    title: titleToUse,
+    shortDescription: shortDescToUse,
+    longDescription: longDescToUse,
     category: localizedCategory,
-    craftHeritage: translation.craftHeritage || product.craftHeritage,
-    artisanRegion: translation.artisanRegion || product.artisanRegion,
-    creator: translation.creator || product.creator,
-    creatorLocation: translation.creatorLocation || product.creatorLocation,
-    features: translation.features || product.features,
-    specs: translation.specs || product.specs,
-    badgeLabel: translation.badgeLabel || (product.inStock ? TRANSLATIONS[lang].inStock : TRANSLATIONS[lang].outOfStock),
+    craftHeritage: craftHeritageToUse,
+    artisanRegion: regionToUse,
+    creator: creatorToUse,
+    creatorLocation: regionToUse,
+    features: translation?.features || dynamicTranslation?.features || product.features,
+    specs: translation?.specs || dynamicTranslation?.specs || product.specs,
+    badgeLabel: translation?.badgeLabel || dynamicTranslation?.badgeLabel || (product.inStock ? TRANSLATIONS[lang]?.inStock || 'In Stock' : TRANSLATIONS[lang]?.outOfStock || 'Out of Stock'),
   };
 }
 
@@ -1699,39 +1851,65 @@ export function localizeProduct(product: Product, lang: SupportedLanguageCode): 
  * Localizes a campaign object based on selected language
  */
 export function localizeCampaign(campaign: Campaign, lang: SupportedLanguageCode): Campaign {
+  if (!campaign) return campaign;
   if (lang === 'en') return campaign;
-  const translation = CAMPAIGN_TRANSLATIONS[campaign.id]?.[lang];
-  const localizedCategory = localizeCategoryName(translation?.category || campaign.category, lang);
 
-  if (!translation) {
-    return {
-      ...campaign,
-      category: localizedCategory,
-    };
+  const normId = String(campaign.id || '').trim();
+  let keyToUse = normId;
+  if (!CAMPAIGN_TRANSLATIONS[keyToUse]) {
+    if (normId === '1') keyToUse = 'cmp-01';
+    else if (normId === '2') keyToUse = 'cmp-02';
+    else if (normId === '3') keyToUse = 'cmp-03';
+    else if (normId === '4') keyToUse = 'cmp-04';
+    else if (normId === '5') keyToUse = 'cmp-05';
+    else if (normId === '6') keyToUse = 'cmp-06';
+    else if (normId === '7') keyToUse = 'cmp-07';
+    else if (normId === '8') keyToUse = 'cmp-08';
   }
+
+  let translation = CAMPAIGN_TRANSLATIONS[keyToUse]?.[lang];
+  if (!translation) {
+    const foundEntry = Object.values(CAMPAIGN_TRANSLATIONS).find(
+      (entry) => entry.en?.title?.toLowerCase().trim() === campaign.title?.toLowerCase().trim()
+    );
+    if (foundEntry) {
+      translation = foundEntry[lang];
+    }
+  }
+
+  const dynamicStore = getDynamicTranslationsStore();
+  const dynamicTranslation = dynamicStore[normId]?.[lang] || (campaign.slug ? dynamicStore[campaign.slug]?.[lang] : undefined);
+
+  const localizedCategory = localizeCategoryName(translation?.category || dynamicTranslation?.category || campaign.category, lang);
+
+  const titleToUse = translation?.title || dynamicTranslation?.title || autoTranslateTitleAndDesc(campaign.title, lang);
+  const shortDescToUse = translation?.shortDescription || dynamicTranslation?.shortDescription || autoTranslateTitleAndDesc(campaign.shortDescription || campaign.fullStory || '', lang);
+  const fullStoryToUse = translation?.fullStory || dynamicTranslation?.fullStory || autoTranslateTitleAndDesc(campaign.fullStory || campaign.shortDescription || '', lang);
+  const craftHeritageToUse = translation?.craftHeritage || dynamicTranslation?.craftHeritage || autoTranslateTitleAndDesc(campaign.craftHeritage || campaign.category || '', lang);
+  const regionToUse = translation?.artisanRegion || dynamicTranslation?.artisanRegion || autoTranslateTitleAndDesc(campaign.artisanRegion || campaign.creatorLocation || '', lang);
+  const creatorToUse = translation?.creator || dynamicTranslation?.creator || autoTranslateTitleAndDesc(campaign.creator || '', lang);
 
   return {
     ...campaign,
-    title: translation.title || campaign.title,
-    shortDescription: translation.shortDescription || campaign.shortDescription,
-    fullStory: translation.fullStory || campaign.fullStory,
+    title: titleToUse,
+    shortDescription: shortDescToUse,
+    fullStory: fullStoryToUse,
     category: localizedCategory,
-    craftHeritage: translation.craftHeritage || campaign.craftHeritage,
-    artisanRegion: translation.artisanRegion || campaign.artisanRegion,
-    creator: translation.creator || campaign.creator,
-    creatorBio: translation.creatorBio || campaign.creatorBio,
-    creatorLocation: translation.creatorLocation || campaign.creatorLocation,
-    specs: translation.specs || campaign.specs,
-    timeline: translation.timeline
-      ? translation.timeline.map((item, idx) => ({
+    craftHeritage: craftHeritageToUse,
+    artisanRegion: regionToUse,
+    creator: creatorToUse,
+    creatorLocation: regionToUse,
+    specs: translation?.specs || dynamicTranslation?.specs || campaign.specs,
+    timeline: translation?.timeline
+      ? campaign.timeline?.map((item, idx) => ({
           phase: item.phase,
           date: item.date || campaign.timeline?.[idx]?.date || '',
-          description: item.description,
+          description: translation?.timeline?.[idx]?.description || item.description,
         }))
       : campaign.timeline,
-    rewardTiers: translation.rewardTiers
-      ? campaign.rewardTiers.map((tier) => {
-          const transTier = translation.rewardTiers?.find((t) => t.id === tier.id);
+    rewardTiers: translation?.rewardTiers
+      ? campaign.rewardTiers?.map((tier) => {
+          const transTier = translation?.rewardTiers?.find((t) => t.id === tier.id);
           return transTier
             ? {
                 ...tier,
@@ -1749,13 +1927,15 @@ export function localizeCampaign(campaign: Campaign, lang: SupportedLanguageCode
  * Localizes a customer order object based on selected language
  */
 export function localizeOrder(order: CustomerOrder, lang: SupportedLanguageCode): CustomerOrder {
+  if (!order) return order;
   if (lang === 'en') return order;
   const localizedItems = order.items.map((item) => {
     const prodKey = item.productId || item.id;
     const prodTranslation = PRODUCT_TRANSLATIONS[prodKey]?.[lang];
+    const titleToUse = prodTranslation?.title || autoTranslateTitleAndDesc(item.title, lang);
     return {
       ...item,
-      title: prodTranslation?.title || item.title,
+      title: titleToUse,
       artisanName: prodTranslation?.creator || item.artisanName,
     };
   });
@@ -1769,15 +1949,23 @@ export function localizeOrder(order: CustomerOrder, lang: SupportedLanguageCode)
 /**
  * Localizes a user pledge record based on selected language
  */
-export function localizePledge(pledge: UserPledgeRecord, lang: SupportedLanguageCode): UserPledgeRecord {
+export function localizePledge<T extends { id?: string | number; campaignId?: string | number; campaignTitle: string; tierTitle: string }>(
+  pledge: T,
+  lang: SupportedLanguageCode
+): T {
+  if (!pledge) return pledge;
   if (lang === 'en') return pledge;
-  const translation = PLEDGE_TRANSLATIONS[pledge.id]?.[lang] || PLEDGE_TRANSLATIONS[pledge.campaignId]?.[lang];
-  const campTrans = CAMPAIGN_TRANSLATIONS[pledge.campaignId]?.[lang];
+  const pledgeIdStr = String(pledge.id || '');
+  const campIdStr = String(pledge.campaignId || '');
+  const translation = PLEDGE_TRANSLATIONS[pledgeIdStr]?.[lang] || PLEDGE_TRANSLATIONS[campIdStr]?.[lang];
+  const campTrans = CAMPAIGN_TRANSLATIONS[campIdStr]?.[lang];
+
+  const titleToUse = translation?.campaignTitle || campTrans?.title || autoTranslateTitleAndDesc(pledge.campaignTitle, lang);
 
   return {
     ...pledge,
-    campaignTitle: translation?.campaignTitle || campTrans?.title || pledge.campaignTitle,
-    tierTitle: translation?.tierTitle || pledge.tierTitle,
+    campaignTitle: titleToUse,
+    tierTitle: translation?.tierTitle || autoTranslateTitleAndDesc(pledge.tierTitle, lang),
   };
 }
 
@@ -1785,23 +1973,22 @@ export function localizePledge(pledge: UserPledgeRecord, lang: SupportedLanguage
  * Localizes a cart item based on selected language
  */
 export function localizeCartItem(item: CartItem, lang: SupportedLanguageCode): CartItem {
+  if (!item) return item;
   if (lang === 'en') return item;
   if (item.type === 'product') {
     const prodTranslation = PRODUCT_TRANSLATIONS[item.id]?.[lang];
-    if (prodTranslation?.title) {
-      return {
-        ...item,
-        title: prodTranslation.title,
-      };
-    }
+    const titleToUse = prodTranslation?.title || autoTranslateTitleAndDesc(item.title, lang);
+    return {
+      ...item,
+      title: titleToUse,
+    };
   } else if (item.type === 'pledge' && item.campaignId) {
     const campTranslation = CAMPAIGN_TRANSLATIONS[item.campaignId]?.[lang];
-    if (campTranslation?.title) {
-      return {
-        ...item,
-        title: campTranslation.title,
-      };
-    }
+    const titleToUse = campTranslation?.title || autoTranslateTitleAndDesc(item.title, lang);
+    return {
+      ...item,
+      title: titleToUse,
+    };
   }
   return item;
 }

@@ -12,6 +12,7 @@ def api_root(request):
 
 urlpatterns = [
     path('', api_root, name='api_root'),
+    path('api/', api_root, name='api_index'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/campaigns/', include('campaigns.urls')),

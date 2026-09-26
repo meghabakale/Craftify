@@ -48,7 +48,7 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
     },
     ref
   ) => {
-    const { language, setLanguage } = useLanguage();
+    const { language, setLanguage, t } = useLanguage();
     const [detectedLang, setDetectedLang] = useState<DetectedLanguage | null>(null);
     const [showLangMenu, setShowLangMenu] = useState(false);
     const [selectedVoiceLang, setSelectedVoiceLang] = useState<string>(
@@ -140,12 +140,12 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
             disabled={disabled}
             placeholder={
               isListening
-                ? interimTranscript || '🎙️ Listening... speak in any Indian language or English'
+                ? interimTranscript || t('listeningSpeakInAnyIndianLanguageOr', '🎙️ Listening... speak in any Indian language or English')
                 : placeholder
             }
             onChange={onChange}
             className={`${className} ${
-              isListening ? 'ring-2 ring-[#2874F0] border-[#2874F0] bg-[#F4F8FF]' : ''
+              isListening ? t('ring2Ring2874f0Border2874f0BgF4f8ff', 'ring-2 ring-[#2874F0] border-[#2874F0] bg-[#F4F8FF]') : ''
             } transition-all duration-150`}
           />
 
@@ -165,7 +165,7 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
               ) : (
                 <span className="text-[10px] text-[#878787] flex items-center gap-1">
                   <Globe className="w-2.5 h-2.5 text-[#878787]" />
-                  <span>Auto-detect language</span>
+                  <span>{t('autoDetectLanguage', 'Auto-detect language')}</span>
                 </span>
               )}
 
@@ -179,7 +179,7 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
                     onClick={() => setLanguage(detectedLang.code)}
                     className="text-[10px] text-[#2874F0] font-bold hover:underline truncate cursor-pointer"
                   >
-                    Switch app to {detectedLang.nativeName}?
+                    {t('switchAppTo', 'Switch app to')}{detectedLang.nativeName}?
                   </button>
                 )}
             </div>
@@ -194,24 +194,24 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
                   disabled={disabled}
                   title={
                     isListening
-                      ? 'Listening now... Click to stop voice typing'
+                      ? t('listeningNowClickToStopVoiceTyping', 'Listening now... Click to stop voice typing')
                       : `Voice Dictate in ${selectedVoiceLang}`
                   }
                   className={`px-2 py-1 rounded-[2px] text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     isListening
-                      ? 'bg-[#D32F2F] text-white shadow-xs animate-pulse ring-2 ring-[#D32F2F]/30'
-                      : 'bg-white border border-[#E0E0E0] text-[#555555] hover:text-[#2874F0] hover:border-[#2874F0]'
+                      ? t('bgD32f2fTextWhiteShadowXsAnimatePul', 'bg-[#D32F2F] text-white shadow-xs animate-pulse ring-2 ring-[#D32F2F]/30')
+                      : t('bgWhiteBorderBorderE0e0e0Text555555', 'bg-white border border-[#E0E0E0] text-[#555555] hover:text-[#2874F0] hover:border-[#2874F0]')
                   }`}
                 >
                   <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce' : 'text-[#2874F0]'}`} />
-                  <span>{isListening ? 'Stop' : 'Voice Type'}</span>
+                  <span>{isListening ? t('stop', 'Stop') : t('voiceType', 'Voice Type')}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowLangMenu(!showLangMenu)}
                   className="p-1 rounded text-[#878787] hover:text-[#212121] hover:bg-[#EFEFEF] cursor-pointer text-[10px] font-bold uppercase"
-                  title="Change voice dictation language"
+                  title={t('changeVoiceDictationLanguage', 'Change voice dictation language')}
                 >
                   {selectedVoiceLang.split('-')[0]}
                 </button>
@@ -220,7 +220,7 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
                 {showLangMenu && (
                   <div className="absolute right-0 bottom-full mb-1 z-30 bg-white border border-[#E0E0E0] rounded-[4px] shadow-lg p-2 w-56 text-xs animate-fadeIn">
                     <div className="text-[11px] font-bold text-[#878787] uppercase tracking-wider mb-1.5 px-1 flex items-center justify-between">
-                      <span>Dictation Language</span>
+                      <span>{t('dictationLanguage', 'Dictation Language')}</span>
                       <button
                         type="button"
                         onClick={() => setShowLangMenu(false)}
@@ -237,8 +237,8 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
                           onClick={() => handleSelectSpeechLang(item.speech)}
                           className={`text-left px-2 py-1 rounded text-xs transition-colors flex items-center justify-between cursor-pointer ${
                             selectedVoiceLang === item.speech
-                              ? 'bg-[#EBF2FE] text-[#2874F0] font-bold'
-                              : 'hover:bg-[#F1F3F6] text-[#212121]'
+                              ? t('bgEbf2feText2874f0FontBold', 'bg-[#EBF2FE] text-[#2874F0] font-bold')
+                              : t('hoverBgF1f3f6Text212121', 'hover:bg-[#F1F3F6] text-[#212121]')
                           }`}
                         >
                           <span>{item.label}</span>
@@ -260,9 +260,9 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
           <div className="mt-1 flex items-center justify-between gap-2 px-2 py-1 bg-[#EBF2FE] border border-[#2874F0]/30 rounded-[2px] text-[11px] text-[#2874F0] animate-fadeIn">
             <div className="flex items-center gap-1.5 overflow-hidden">
               <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-ping shrink-0" />
-              <span className="font-semibold shrink-0">Dictating ({selectedVoiceLang}):</span>
+              <span className="font-semibold shrink-0">{t('dictating', 'Dictating (')}{selectedVoiceLang}):</span>
               <span className="italic truncate text-[#212121]">
-                {interimTranscript || 'Listening to your voice...'}
+                {interimTranscript || t('listeningToYourVoice', 'Listening to your voice...')}
               </span>
             </div>
             <button
@@ -270,8 +270,7 @@ export const SmartTextarea = React.forwardRef<HTMLTextAreaElement, SmartTextarea
               onClick={stopListening}
               className="px-1.5 py-0.5 bg-[#D32F2F] text-white text-[10px] font-bold rounded cursor-pointer hover:bg-[#B71C1C]"
             >
-              Done
-            </button>
+              {t('done', 'Done')}</button>
           </div>
         )}
 

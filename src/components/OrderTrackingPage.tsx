@@ -121,17 +121,16 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
           >
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#878787] flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2874F0] animate-pulse"></span>
-              Demo Simulation:
-            </span>
+              {t('demoSimulation', 'Demo Simulation:')}</span>
 
             <button
               id="btn-simulate-advance-stage"
               onClick={() => onAdvanceStatus(order.id)}
               className="px-2 py-0.5 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5FD0] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-              title="Advance order to the next tracking stage"
+              title={t('advanceOrderToTheNextTrackingStage', 'Advance order to the next tracking stage')}
             >
               <PlayCircle className="w-3 h-3" />
-              <span>Advance Stage</span>
+              <span>{t('advanceStage', 'Advance Stage')}</span>
             </button>
 
             {onResetStatus && (
@@ -139,10 +138,10 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                 id="btn-simulate-reset-stage"
                 onClick={() => onResetStatus(order.id)}
                 className="px-1.5 py-0.5 rounded-[2px] border border-[#E0E0E0] hover:bg-[#F1F3F6] text-[#666666] text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                title="Reset order back to Confirmed"
+                title={t('resetOrderBackToConfirmed', 'Reset order back to Confirmed')}
               >
                 <RotateCcw className="w-3 h-3" />
-                <span>Reset</span>
+                <span>{t('reset', 'Reset')}</span>
               </button>
             )}
           </div>
@@ -154,12 +153,11 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             <div className="mb-3.5 p-3 rounded-[4px] bg-[#F3E5F5]/70 border border-[#E1BEE7] flex flex-wrap items-center justify-between gap-2 text-xs text-[#4A148C]">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#673AB7] shrink-0" />
-                <span className="font-bold">Backer Reward Fulfillment Order:</span>
-                <span>{order.originatingCampaignTitle || 'Artisan Crowdfunding Campaign'}</span>
+                <span className="font-bold">{t('backerRewardFulfillmentOrder', 'Backer Reward Fulfillment Order:')}</span>
+                <span>{order.originatingCampaignTitle || t('artisanCrowdfundingCampaign', 'Artisan Crowdfunding Campaign')}</span>
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-[#673AB7] text-white">
-                Included with pledge
-              </span>
+                {t('includedWithPledge', 'Included with pledge')}</span>
             </div>
           )}
 
@@ -167,14 +165,13 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs text-[#878787] uppercase tracking-wider font-semibold">
-                  Order ID:
-                </span>
+                  {t('orderId', 'Order ID:')}</span>
                 <span className="text-sm font-bold font-mono text-[#212121]">
                   {order.id}
                 </span>
                 <span className="text-xs text-[#878787]">•</span>
                 <span className="text-xs text-[#878787]">
-                  Placed on {order.orderDate}
+                  {t('placedOn', 'Placed on')}{order.orderDate}
                 </span>
               </div>
 
@@ -183,16 +180,16 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   {isCancelled
                     ? t('orderCancelled')
                     : order.status === 'delivered'
-                    ? 'Order Delivered'
+                    ? t('orderDelivered', 'Order Delivered')
                     : order.estimatedDeliveryRange}
                 </h1>
                 <span
                   className={`text-xs px-2.5 py-0.5 rounded-[2px] font-bold uppercase tracking-wider ${
                     isCancelled
-                      ? 'bg-[#FDECEA] text-[#D32F2F] border border-[#D32F2F]/20'
+                      ? t('bgFdeceaTextD32f2fBorderBorderD32f2', 'bg-[#FDECEA] text-[#D32F2F] border border-[#D32F2F]/20')
                       : order.status === 'delivered'
-                      ? 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/20'
-                      : 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/20'
+                      ? t('bgEaf8ebText388e3cBorderBorder388e3', 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/20')
+                      : t('bgEbf2feText2874f0BorderBorder2874f', 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/20')
                   }`}
                 >
                   {getStageLabel(order.status)}
@@ -206,18 +203,18 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                 <div className="bg-[#F9FBFD] border border-[#D8E6FA] rounded-[4px] p-3 text-xs flex flex-col gap-1">
                   <div className="text-[11px] text-[#666666] uppercase font-bold flex items-center gap-1.5">
                     <Truck className="w-3.5 h-3.5 text-[#2874F0]" />
-                    <span>Logistics Partner: {order.carrierName}</span>
+                    <span>{t('logisticsPartner', 'Logistics Partner:')}{order.carrierName}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[#878787]">Tracking ID:</span>
+                    <span className="text-[#878787]">{t('trackingId', 'Tracking ID:')}</span>
                     <span className="font-mono font-bold text-[#212121]">{order.trackingNumber}</span>
                     <button
                       onClick={handleCopyTracking}
                       className="p-1 text-[#2874F0] hover:bg-[#EBF2FE] rounded cursor-pointer transition-colors"
-                      title="Copy tracking number"
+                      title={t('copyTrackingNumber', 'Copy tracking number')}
                     >
                       {copiedTracking ? (
-                        <span className="text-[10px] text-[#388E3C] font-bold">Copied!</span>
+                        <span className="text-[10px] text-[#388E3C] font-bold">{t('copied', 'Copied!')}</span>
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
@@ -232,7 +229,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   id="btn-cancel-order"
                   onClick={() => setIsCancelModalOpen(true)}
                   className="px-3.5 py-2 rounded-[2px] border border-[#D32F2F] text-[#D32F2F] bg-[#FFFFFF] hover:bg-[#FDECEA] hover:border-[#B71C1C] text-xs uppercase tracking-wider font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs self-start sm:self-center"
-                  title="Cancel order and restore product inventory"
+                  title={t('cancelOrderAndRestoreProductInvento', 'Cancel order and restore product inventory')}
                 >
                   <XCircle className="w-4 h-4 text-[#D32F2F]" />
                   <span>{t('cancelOrder')}</span>
@@ -253,14 +250,13 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   {t('orderCancelled')}
                 </h3>
                 <p className="text-[#771D1D] leading-relaxed mb-2">
-                  This order was cancelled prior to dispatch. A 100% refund of{' '}
-                  <span className="font-bold text-[#212121]">{formatINR(order.total)}</span> has been credited back from patron escrow to your original payment method ({order.paymentMethod}).
+                  {t('thisOrderWasCancelledPriorToDispatc', 'This order was cancelled prior to dispatch. A 100% refund of')}{' '}
+                  <span className="font-bold text-[#212121]">{formatINR(order.total)}</span> {t('hasBeenCreditedBackFromPatronEscrow', 'has been credited back from patron escrow to your original payment method (')}{order.paymentMethod}).
                 </p>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-[#FFFFFF] border border-[#FEB2B2] text-[#991B1B] font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#388E3C]" />
                   <span>
-                    Artisan stock replenished: {order.items.reduce((s, i) => s + i.quantity, 0)} item(s) restored to inventory.
-                  </span>
+                    {t('artisanStockReplenished', 'Artisan stock replenished:')}{order.items.reduce((s, i) => s + i.quantity, 0)} {t('itemSRestoredToInventory', 'item(s) restored to inventory.')}</span>
                 </div>
               </div>
             </div>
@@ -269,8 +265,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
           {/* Craftify Horizontal Step Tracker */}
           <div className="py-6 sm:py-8 px-2 sm:px-6">
             <h2 className="text-xs uppercase tracking-wider font-bold text-[#878787] mb-6">
-              Delivery Progress
-            </h2>
+              {t('deliveryProgress', 'Delivery Progress')}</h2>
 
             {isCancelled ? (
               <div
@@ -281,11 +276,9 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   <XCircle className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-bold text-[#212121]">
-                  Order Terminated Prior to Dispatch
-                </h3>
+                  {t('orderTerminatedPriorToDispatch', 'Order Terminated Prior to Dispatch')}</h3>
                 <p className="text-xs text-[#666666] max-w-md mx-auto mt-1 leading-relaxed">
-                  This order was cancelled. 100% of the funds held in escrow have been refunded to your original payment method, and product inventory has been restored to the artisan workshop.
-                </p>
+                  {t('thisOrderWasCancelled100OfTheFundsH', 'This order was cancelled. 100% of the funds held in escrow have been refunded to your original payment method, and product inventory has been restored to the artisan workshop.')}</p>
               </div>
             ) : (
               <>
@@ -319,10 +312,10 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-xs transition-all duration-300 ${
                               isCompleted
-                                ? 'bg-[#388E3C] text-white shadow-xs'
+                                ? t('bg388e3cTextWhiteShadowXs', 'bg-[#388E3C] text-white shadow-xs')
                                 : isCurrent
-                                ? 'bg-[#2874F0] text-white ring-4 ring-[#2874F0]/20 shadow-xs'
-                                : 'bg-[#F1F3F6] border border-[#D5D5D5] text-[#878787]'
+                                ? t('bg2874f0TextWhiteRing4Ring2874f020S', 'bg-[#2874F0] text-white ring-4 ring-[#2874F0]/20 shadow-xs')
+                                : t('bgF1f3f6BorderBorderD5d5d5Text87878', 'bg-[#F1F3F6] border border-[#D5D5D5] text-[#878787]')
                             }`}
                           >
                             {isCompleted ? (
@@ -350,14 +343,13 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
 
                             {/* Timestamp under stage */}
                             <div className="text-[11px] text-[#878787] mt-0.5 leading-tight">
-                              {historyEvent ? historyEvent.timestamp : isPending ? 'Upcoming' : ''}
+                              {historyEvent ? historyEvent.timestamp : isPending ? t('upcoming', 'Upcoming') : ''}
                             </div>
 
                             {/* Current stage badge on mobile */}
                             {isCurrent && (
                               <span className="sm:hidden inline-block text-[10px] font-bold text-[#2874F0] bg-[#EBF2FE] px-1.5 py-0.5 rounded-[2px] mt-0.5">
-                                Current Stage
-                              </span>
+                                {t('currentStage', 'Current Stage')}</span>
                             )}
                           </div>
                         </div>
@@ -372,7 +364,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                     <Info className="w-4 h-4 text-[#2874F0] shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold text-[#212121]">
-                        Latest Status Update ({order.history[currentStageIndex].location || 'In Transit'}):
+                        {t('latestStatusUpdate', 'Latest Status Update (')}{order.history[currentStageIndex].location || t('inTransit', 'In Transit')}):
                       </span>{' '}
                       <span className="text-[#666666]">
                         {order.history[currentStageIndex].description}
@@ -397,15 +389,13 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-[#B78103] bg-[#FFF3D1] px-2 py-0.5 rounded-[2px] border border-[#FFE8A3]">
-                  Funded on Craftify Handcraft
-                </span>
+                  {t('fundedOnCraftifyHandcraft', 'Funded on Craftify Handcraft')}</span>
               </div>
               <p className="text-xs sm:text-sm font-semibold text-[#664D03] mt-1">
-                "This item was handcrafted after your campaign backing — thank you for supporting {fundedCraftItem.artisanName || 'our master artisan'}."
+                {t('thisItemWasHandcraftedAfterYourCamp', '"This item was handcrafted after your campaign backing — thank you for supporting')}{fundedCraftItem.artisanName || t('ourMasterArtisan', 'our master artisan')}."
               </p>
               <p className="text-[11px] text-[#856404] mt-0.5">
-                Your support directly funded the raw material purchase, kiln firing, and fair-wage labor at the local artisan cooperative.
-              </p>
+                {t('yourSupportDirectlyFundedTheRawMate', 'Your support directly funded the raw material purchase, kiln firing, and fair-wage labor at the local artisan cooperative.')}</p>
             </div>
           </div>
         )}
@@ -415,7 +405,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
           {/* Items in this Order (2 columns) */}
           <div className="lg:col-span-2 bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-5 shadow-xs">
             <h2 className="text-xs uppercase tracking-wider font-bold text-[#878787] pb-3 border-b border-[#F0F0F0] mb-3">
-              Items in this shipment ({order.items.reduce((acc, i) => acc + i.quantity, 0)})
+              {t('itemsInThisShipment', 'Items in this shipment (')}{order.items.reduce((acc, i) => acc + i.quantity, 0)})
             </h2>
 
             <div className="space-y-3">
@@ -442,13 +432,12 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                         </div>
                       )}
                       <div className="text-xs text-[#666666] mt-1">
-                        Qty: <strong className="text-[#212121]">{item.quantity}</strong> × {formatINR(item.price)}
+                        {t('qty', 'Qty:')}<strong className="text-[#212121]">{item.quantity}</strong> × {formatINR(item.price)}
                       </div>
                       {(item.isFundedOnCraftify ?? item.isFundedOnLaunchMart) && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#388E3C] bg-[#EAF8EB] px-1.5 py-0.2 rounded-[2px] border border-[#388E3C]/20 mt-1">
                           <CheckCircle2 className="w-2.5 h-2.5" />
-                          Funded on Craftify
-                        </span>
+                          {t('fundedOnCraftify', 'Funded on Craftify')}</span>
                       )}
                     </div>
                   </div>
@@ -465,25 +454,25 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             {/* Price Breakdown */}
             <div className="mt-4 pt-3 border-t border-[#F0F0F0] space-y-1.5 text-xs">
               <div className="flex justify-between text-[#666666]">
-                <span>Items Subtotal</span>
+                <span>{t('itemsSubtotal', 'Items Subtotal')}</span>
                 <span>{formatINR(order.subtotal)}</span>
               </div>
               <div className="flex justify-between text-[#666666]">
-                <span>Logistics & Freight</span>
+                <span>{t('logisticsFreight', 'Logistics & Freight')}</span>
                 <span className="text-[#388E3C] font-semibold">
-                  {order.shipping === 0 ? 'FREE' : formatINR(order.shipping)}
+                  {order.shipping === 0 ? t('free', 'FREE') : formatINR(order.shipping)}
                 </span>
               </div>
               <div className="flex justify-between text-[#666666]">
-                <span>GST & Artisan Welfare Cess (5%)</span>
+                <span>{t('gstArtisanWelfareCess5', 'GST & Artisan Welfare Cess (5%)')}</span>
                 <span>{formatINR(order.tax)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-[#212121] pt-2 border-t border-[#F0F0F0]">
-                <span>Total Amount Paid</span>
+                <span>{t('totalAmountPaid', 'Total Amount Paid')}</span>
                 <span className="text-[#388E3C]">{formatINR(order.total)}</span>
               </div>
               <div className="text-[11px] text-[#878787] pt-1">
-                Payment Method: <strong className="text-[#212121]">{order.paymentMethod}</strong>
+                {t('paymentMethod', 'Payment Method:')}<strong className="text-[#212121]">{order.paymentMethod}</strong>
               </div>
             </div>
           </div>
@@ -493,7 +482,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-5 shadow-xs text-xs space-y-3">
               <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-[#878787] pb-2 border-b border-[#F0F0F0]">
                 <MapPin className="w-4 h-4 text-[#2874F0]" />
-                <span>Delivery Address</span>
+                <span>{t('deliveryAddress', 'Delivery Address')}</span>
               </div>
 
               <div>
@@ -508,7 +497,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                 {order.shippingAddress.phone && (
                   <div className="text-[#878787] mt-2 flex items-center gap-1.5 text-[11px]">
                     <Phone className="w-3 h-3" />
-                    <span>Phone: {order.shippingAddress.phone}</span>
+                    <span>{t('phone', 'Phone:')}{order.shippingAddress.phone}</span>
                   </div>
                 )}
               </div>
@@ -518,11 +507,10 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-4 shadow-xs text-xs space-y-2">
               <div className="flex items-center gap-1.5 text-[#388E3C] font-bold">
                 <ShieldCheck className="w-4 h-4 text-[#388E3C]" />
-                <span>Craftify Patron Protection</span>
+                <span>{t('craftifyPatronProtection', 'Craftify Patron Protection')}</span>
               </div>
               <p className="text-[11px] text-[#666666] leading-relaxed">
-                Your payment remains in protected escrow until the package is safely delivered to your doorstep and inspected.
-              </p>
+                {t('yourPaymentRemainsInProtectedEscrow', 'Your payment remains in protected escrow until the package is safely delivered to your doorstep and inspected.')}</p>
             </div>
           </div>
         </div>
@@ -530,8 +518,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
         {/* Detailed Timeline Audit Log */}
         <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-5 sm:p-6 mb-5 shadow-xs">
           <h2 className="text-xs uppercase tracking-wider font-bold text-[#878787] mb-4 pb-2 border-b border-[#F0F0F0]">
-            Activity Tracking Log
-          </h2>
+            {t('activityTrackingLog', 'Activity Tracking Log')}</h2>
 
           <div className="space-y-4">
             {order.history.map((evt, i) => (
@@ -539,8 +526,8 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
                     evt.completed
-                      ? 'bg-[#EAF8EB] text-[#388E3C]'
-                      : 'bg-[#F1F3F6] text-[#878787]'
+                      ? t('bgEaf8ebText388e3c', 'bg-[#EAF8EB] text-[#388E3C]')
+                      : t('bgF1f3f6Text878787', 'bg-[#F1F3F6] text-[#878787]')
                   }`}
                 >
                   {evt.completed ? (
@@ -561,7 +548,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   </div>
                   {evt.location && (
                     <div className="text-[11px] text-[#666666] mt-0.5">
-                      Location: {evt.location}
+                      {t('location', 'Location:')}{evt.location}
                     </div>
                   )}
                   {evt.description && (
@@ -583,11 +570,9 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#212121]">
-                Need help with this order?
-              </h3>
+                {t('needHelpWithThisOrder', 'Need help with this order?')}</h3>
               <p className="text-xs text-[#878787]">
-                Issues with delivery, replacement guarantee, or artisan workshop questions.
-              </p>
+                {t('issuesWithDeliveryReplacementGuaran', 'Issues with delivery, replacement guarantee, or artisan workshop questions.')}</p>
             </div>
           </div>
 
@@ -597,7 +582,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                 id="btn-cancel-order-bottom"
                 onClick={() => setIsCancelModalOpen(true)}
                 className="w-full sm:w-auto px-4 py-2 rounded-[2px] border border-[#D32F2F] bg-[#FFFFFF] hover:bg-[#FDECEA] text-[#D32F2F] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
-                title="Cancel order and restore product inventory"
+                title={t('cancelOrderAndRestoreProductInvento', 'Cancel order and restore product inventory')}
               >
                 <XCircle className="w-3.5 h-3.5" />
                 <span>{t('cancelOrder')}</span>
@@ -609,8 +594,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
               onClick={() => setIsHelpModalOpen(true)}
               className="w-full sm:w-auto px-5 py-2 rounded-[2px] border border-[#2874F0] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#2874F0] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer shrink-0"
             >
-              Get Help & FAQs
-            </button>
+              {t('getHelpFaqs', 'Get Help & FAQs')}</button>
           </div>
         </div>
       </div>
@@ -637,10 +621,9 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
               </div>
               <div>
                 <h3 className="text-base font-bold text-[#212121]">
-                  Cancel Order?
-                </h3>
+                  {t('cancelOrder', 'Cancel Order?')}</h3>
                 <span className="text-[11px] font-mono text-[#878787]">
-                  {order.id} • Status: {getStageLabel(order.status)}
+                  {order.id} {t('status', '• Status:')}{getStageLabel(order.status)}
                 </span>
               </div>
             </div>
@@ -648,40 +631,37 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             {/* Content */}
             <div className="space-y-4 text-xs">
               <p className="text-[#555555] leading-relaxed">
-                Are you sure you want to cancel this order? Since this order has not yet been dispatched for shipping, cancellation is instantaneous with zero cancellation charges.
-              </p>
+                {t('areYouSureYouWantToCancelThisOrderS', 'Are you sure you want to cancel this order? Since this order has not yet been dispatched for shipping, cancellation is instantaneous with zero cancellation charges.')}</p>
 
               {/* Escrow & Stock Restoration Info */}
               <div className="p-3 bg-[#F9FBFD] border border-[#D8E6FA] rounded-[4px] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#666666]">Refund Amount:</span>
+                  <span className="text-[#666666]">{t('refundAmount', 'Refund Amount:')}</span>
                   <span className="text-sm font-bold text-[#388E3C]">{formatINR(order.total)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#666666]">Refund Destination:</span>
+                  <span className="text-[#666666]">{t('refundDestination', 'Refund Destination:')}</span>
                   <span className="font-semibold text-[#212121]">{order.paymentMethod}</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-[#E8EFF8] pt-1.5">
-                  <span className="text-[#666666]">Inventory Restoration:</span>
+                  <span className="text-[#666666]">{t('inventoryRestoration', 'Inventory Restoration:')}</span>
                   <span className="font-semibold text-[#2874F0]">
-                    +{order.items.reduce((sum, item) => sum + item.quantity, 0)} item(s) restored to artisan stock
-                  </span>
+                    +{order.items.reduce((sum, item) => sum + item.quantity, 0)} {t('itemSRestoredToArtisanStock', 'item(s) restored to artisan stock')}</span>
                 </div>
               </div>
 
               {/* Reason Selector */}
               <div>
                 <label className="block font-bold text-[#212121] mb-2">
-                  Please select a reason for cancellation:
-                </label>
+                  {t('pleaseSelectAReasonForCancellation', 'Please select a reason for cancellation:')}</label>
                 <div className="space-y-1.5">
                   {CANCELLATION_REASONS.map((reason) => (
                     <label
                       key={reason}
                       className={`flex items-center gap-2.5 p-2 rounded-[2px] border cursor-pointer transition-colors ${
                         cancelReason === reason
-                          ? 'border-[#2874F0] bg-[#EBF2FE]/50 font-semibold text-[#212121]'
-                          : 'border-[#EAEAEA] hover:bg-[#FAFAFA] text-[#555555]'
+                          ? t('border2874f0BgEbf2fe50FontSemiboldT', 'border-[#2874F0] bg-[#EBF2FE]/50 font-semibold text-[#212121]')
+                          : t('borderEaeaeaHoverBgFafafaText555555', 'border-[#EAEAEA] hover:bg-[#FAFAFA] text-[#555555]')
                       }`}
                     >
                       <input
@@ -697,12 +677,12 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   ))}
                 </div>
 
-                {cancelReason === 'Other reason' && (
+                {cancelReason === t('otherReason', 'Other reason') && (
                   <SmartTextarea
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
                     onValueChange={(val) => setCustomReason(val)}
-                    placeholder="Tell us more about why you are cancelling (optional)..."
+                    placeholder={t('tellUsMoreAboutWhyYouAreCancellingO', 'Tell us more about why you are cancelling (optional)...')}
                     className="w-full mt-2 p-2.5 text-xs border border-[#CCCCCC] rounded-[2px] focus:outline-none focus:border-[#2874F0]"
                     rows={2}
                   />
@@ -727,7 +707,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   className="px-4 py-2 bg-[#D32F2F] hover:bg-[#B71C1C] text-white font-bold text-xs uppercase tracking-wider rounded-[2px] cursor-pointer transition-colors flex items-center gap-1.5 shadow-xs"
                 >
                   <XCircle className="w-4 h-4" />
-                  <span>{isCancelling ? 'Cancelling...' : t('confirmCancelOrder')}</span>
+                  <span>{isCancelling ? t('cancelling', 'Cancelling...') : t('confirmCancelOrder')}</span>
                 </button>
               </div>
             </div>
@@ -753,14 +733,13 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
             <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[#F0F0F0]">
               <HelpCircle className="w-5 h-5 text-[#2874F0]" />
               <h3 className="text-lg font-bold text-[#212121]">
-                Order Support: {order.id}
+                {t('orderSupport', 'Order Support:')}{order.id}
               </h3>
             </div>
 
             <div className="space-y-4 text-xs">
               <p className="text-[#666666]">
-                Every Craftify item is dispatched under direct patron escrow protection with verified logistics tracking.
-              </p>
+                {t('everyCraftifyItemIsDispatchedUnderD', 'Every Craftify item is dispatched under direct patron escrow protection with verified logistics tracking.')}</p>
 
               {/* Quick FAQs */}
               <div className="space-y-2">
@@ -780,7 +759,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                     </button>
                     {expandedFaq === i && (
                       <div className="p-2.5 bg-[#FFFFFF] text-[#666666] border-t border-[#EAEAEA] leading-relaxed">
-                        {faq.q === 'Where is my parcel right now?'
+                        {faq.q === t('whereIsMyParcelRightNow', 'Where is my parcel right now?')
                           ? `Your parcel is handled by ${order.carrierName} under Tracking ID ${order.trackingNumber}. You can expect delivery ${order.estimatedDeliveryRange}.`
                           : faq.a}
                       </div>
@@ -791,11 +770,10 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
 
               {/* Direct Guild Contact */}
               <div className="p-3 bg-[#F9FBFD] border border-[#D8E6FA] rounded-[4px] space-y-1">
-                <strong className="text-[#212121] block">Direct Artisan Helpline</strong>
+                <strong className="text-[#212121] block">{t('directArtisanHelpline', 'Direct Artisan Helpline')}</strong>
                 <p className="text-[#666666] text-[11px]">
-                  Hours: Mon–Sat, 9:00 AM – 7:00 PM IST<br />
-                  Email: support@craftify.in • Call: 1800-419-CRAFT
-                </p>
+                  {t('hoursMonSat900Am700PmIst', 'Hours: Mon–Sat, 9:00 AM – 7:00 PM IST')}<br />
+                  {t('emailSupportCraftifyInCall1800419Cr', 'Email: support@craftify.in • Call: 1800-419-CRAFT')}</p>
               </div>
 
               <div className="pt-3 border-t border-[#F0F0F0] flex justify-end">
@@ -803,8 +781,7 @@ export const OrderTrackingPage: React.FC<OrderTrackingPageProps> = ({
                   onClick={() => setIsHelpModalOpen(false)}
                   className="px-4 py-2 bg-[#2874F0] text-white text-xs uppercase font-bold rounded-[2px] cursor-pointer"
                 >
-                  Close Help Panel
-                </button>
+                  {t('closeHelpPanel', 'Close Help Panel')}</button>
               </div>
             </div>
           </div>

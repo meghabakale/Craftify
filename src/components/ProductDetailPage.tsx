@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Product, ProductReview, Campaign } from '../types';
+import { Product, ProductReview, Campaign, User } from '../types';
 import { formatINR } from '../utils/format';
 import { useLanguage } from '../context/LanguageContext';
 import { SmartInput } from './common/SmartInput';
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 interface ProductDetailPageProps {
+  currentUser?: User | null;
   product: Product;
   onAddToCart: (product: Product, quantity: number) => void;
   onBuyNow: (product: Product, quantity: number) => void;
@@ -43,6 +44,7 @@ interface ProductDetailPageProps {
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
+  currentUser,
   product,
   onAddToCart,
   onBuyNow,
@@ -55,15 +57,35 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onCampaignClick,
   onPledgeClick,
 }) => {
-  const { t, localizeCategory } = useLanguage();
+  const { t, localizeCategory, localizeProduct } = useLanguage();
+  const displayProduct = localizeProduct(product);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<ProductReview[]>(product.reviews || []);
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Check if current user is the artisan owner of this product
+  const isOwnProduct = Boolean(
+    currentUser &&
+      ((product.artisanId && String(product.artisanId) === String(currentUser.id)) ||
+        (product.creator && currentUser.name && product.creator.toLowerCase().trim().includes(currentUser.name.toLowerCase().trim())) ||
+        (product.creatorBusinessName && currentUser.businessName && product.creatorBusinessName.toLowerCase().trim().includes(currentUser.businessName.toLowerCase().trim())))
+  );
+
+  // Check if current user already submitted a review for this product
+  const existingUserReviewIndex = currentUser
+    ? reviews.findIndex(
+        (r) =>
+          (r.userId && String(r.userId) === String(currentUser.id)) ||
+          (r.author && (r.author.toLowerCase().trim() === currentUser.name?.toLowerCase().trim() || r.author.toLowerCase().trim() === currentUser.email?.toLowerCase().trim()))
+      )
+    : -1;
+
+  const hasExistingReview = existingUserReviewIndex >= 0;
+
   // New review form state
-  const [newReviewAuthor, setNewReviewAuthor] = useState('');
+  const [newReviewAuthor, setNewReviewAuthor] = useState(currentUser?.name || '');
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewTitle, setNewReviewTitle] = useState('');
   const [newReviewComment, setNewReviewComment] = useState('');
@@ -91,26 +113,47 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     }
   };
 
+  const handleToggleReviewForm = () => {
+    if (isOwnProduct) return;
+    const nextState = !isWriteReviewOpen;
+    setIsWriteReviewOpen(nextState);
+    if (nextState) {
+      if (hasExistingReview && reviews[existingUserReviewIndex]) {
+        const existing = reviews[existingUserReviewIndex];
+        setNewReviewAuthor(existing.author || currentUser?.name || '');
+        setNewReviewRating(existing.rating || 5);
+        setNewReviewTitle(existing.title || '');
+        setNewReviewComment(existing.comment || '');
+      } else {
+        setNewReviewAuthor(currentUser?.name || '');
+      }
+    }
+  };
+
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isOwnProduct) return;
     if (!newReviewAuthor.trim() || !newReviewComment.trim() || !newReviewTitle.trim()) return;
 
-    const newReview: ProductReview = {
-      id: `rev-${Date.now()}`,
+    const reviewObj: ProductReview = {
+      id: hasExistingReview ? reviews[existingUserReviewIndex].id : `rev-${Date.now()}`,
       productId: product.id,
+      userId: currentUser?.id,
       author: newReviewAuthor.trim(),
       rating: newReviewRating,
-      date: 'Just now',
+      date: hasExistingReview ? 'Just now (Edited)' : 'Just now',
       title: newReviewTitle.trim(),
       comment: newReviewComment.trim(),
       verifiedBuyer: true,
     };
 
-    setReviews([newReview, ...reviews]);
+    if (hasExistingReview) {
+      setReviews(reviews.map((r, idx) => (idx === existingUserReviewIndex ? reviewObj : r)));
+    } else {
+      setReviews([reviewObj, ...reviews]);
+    }
+
     setReviewSubmitSuccess(true);
-    setNewReviewAuthor('');
-    setNewReviewTitle('');
-    setNewReviewComment('');
     setTimeout(() => {
       setReviewSubmitSuccess(false);
       setIsWriteReviewOpen(false);
@@ -137,7 +180,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="text-xs text-[#878787] hidden sm:inline">
-              SKU: <strong className="text-[#212121]">{product.sku}</strong>
+              {t('sku', 'SKU:')}<strong className="text-[#212121]">{product.sku}</strong>
             </span>
 
             {onToggleWishlist && (
@@ -146,12 +189,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 onClick={() => onToggleWishlist(product)}
                 className={`px-3 py-1.5 rounded-[2px] border text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                   isWishlisted
-                    ? 'bg-[#FFF3EE] border-[#FB641B] text-[#FB641B]'
-                    : 'bg-[#FFFFFF] border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#212121]'
+                    ? t('bgFff3eeBorderFb641bTextFb641b', 'bg-[#FFF3EE] border-[#FB641B] text-[#FB641B]')
+                    : t('bgFfffffBorderD5d5d5HoverBgF1f3f6Te', 'bg-[#FFFFFF] border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#212121]')
                 }`}
                 title={isWishlisted ? t('wishlisted', 'Saved in your Wishlist') : t('saveWishlist', 'Save to Wishlist')}
               >
-                <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-[#FB641B] text-[#FB641B]' : 'text-current'}`} />
+                <Heart className={`w-3.5 h-3.5 ${isWishlisted ? t('fillFb641bTextFb641b', 'fill-[#FB641B] text-[#FB641B]') : 'text-current'}`} />
                 <span className="font-bold">{isWishlisted ? t('wishlisted', 'Wishlisted') : t('save', 'Save')}</span>
               </button>
             )}
@@ -203,8 +246,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       onClick={() => setSelectedImageIndex(idx)}
                       className={`relative w-16 h-16 shrink-0 rounded-[2px] border overflow-hidden transition-all cursor-pointer ${
                         selectedImageIndex === idx
-                          ? 'border-[#2874F0] ring-2 ring-[#2874F0]/30'
-                          : 'border-[#EAEAEA] opacity-80 hover:opacity-100'
+                          ? t('border2874f0Ring2Ring2874f030', 'border-[#2874F0] ring-2 ring-[#2874F0]/30')
+                          : t('borderEaeaeaOpacity80HoverOpacity10', 'border-[#EAEAEA] opacity-80 hover:opacity-100')
                       }`}
                     >
                       <img src={img} alt="" className="w-full h-full object-cover" />
@@ -264,13 +307,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <div>
                       <span className="text-[10px] text-[#878787] uppercase tracking-wider block">{t('backers', 'Backers')}</span>
                       <strong className="text-xs text-[#212121]">
-                        {product.campaignBackersCount ? `${product.campaignBackersCount} patrons` : 'Patrons'}
+                        {product.campaignBackersCount ? `${product.campaignBackersCount} patrons` : t('patrons', 'Patrons')}
                       </strong>
                     </div>
                     <div>
                       <span className="text-[10px] text-[#878787] uppercase tracking-wider block">{t('batchLabel', 'Batch')}</span>
                       <strong className="text-xs text-[#212121]">
-                        {product.batchGraduated ? product.batchGraduated.split('•')[0].trim() : 'Phase 02'}
+                        {product.batchGraduated ? product.batchGraduated.split('•')[0].trim() : t('phase02', 'Phase 02')}
                       </strong>
                     </div>
                   </div>
@@ -283,33 +326,33 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <div>
                 {/* Category & Maker */}
                 <div className="flex items-center justify-between text-xs text-[#878787] uppercase tracking-wider mb-1.5">
-                  <span>{localizeCategory(product.category)}</span>
-                  <span>{product.creatorLocation || 'Artisan Workshop'}</span>
+                  <span>{localizeCategory(displayProduct.category)}</span>
+                  <span>{displayProduct.creatorLocation || t('artisanWorkshop', 'Artisan Workshop')}</span>
                 </div>
 
                 {/* Provenance Badge */}
                 <div className="flex items-center gap-1.5 text-xs text-[#388E3C] bg-[#EAF8EB] px-2.5 py-0.5 rounded-[2px] border border-[#388E3C]/20 w-fit mb-2">
                   <MapPin className="w-3.5 h-3.5 text-[#388E3C]" />
-                  <span className="font-bold">Handmade in {product.artisanRegion || product.creatorLocation || 'India'}</span>
+                  <span className="font-bold">{t('handmadeIn', 'Handmade in')}{displayProduct.artisanRegion || displayProduct.creatorLocation || t('india', 'India')}</span>
                 </div>
 
                 {/* Title */}
                 <h1 className="text-xl sm:text-2xl font-semibold text-[#212121] leading-tight mb-2">
-                  {product.title}
+                  {displayProduct.title}
                 </h1>
 
                 {/* Creator credit */}
                 <div className="text-xs text-[#878787] mb-3 pb-2.5 border-b border-[#F0F0F0] flex items-center justify-between">
                   <span className="flex items-center gap-1.5 truncate">
-                    <span>Artisan:</span>
+                    <span>{t('artisan', 'Artisan:')}</span>
                     <strong className="text-[#2874F0] underline underline-offset-2">
-                      {product.creatorBusinessName || product.creator}
+                      {displayProduct.creatorBusinessName || displayProduct.creator}
                     </strong>
-                    {product.creatorBusinessName && (
-                      <span className="text-[#666666]">({product.creator})</span>
+                    {displayProduct.creatorBusinessName && (
+                      <span className="text-[#666666]">({displayProduct.creator})</span>
                     )}
                   </span>
-                  <span className="text-[#878787] shrink-0 ml-2">SKU: {product.sku}</span>
+                  <span className="text-[#878787] shrink-0 ml-2">{t('sku', 'SKU:')}{displayProduct.sku}</span>
                 </div>
 
                 {/* Rating Badge & In-Stock Status */}
@@ -322,7 +365,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <span className="text-xs text-[#878787] font-medium">
                       {reviews.length} {t('ratingsAndReviews', 'Ratings & Reviews')}
                     </span>
-                    {(product.isFundedOnCraftify ?? product.isFundedOnLaunchMart) && (
+                    {(displayProduct.isFundedOnCraftify ?? displayProduct.isFundedOnLaunchMart) && (
                       <span className="text-xs font-bold text-[#2874F0] flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-[#FF9F00]" />
                         {t('craftAssuredBadge', 'Craft-Assured')}
@@ -332,14 +375,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
                   <div className="flex items-center gap-1.5 text-[#388E3C] text-xs font-bold">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{t('inStock', 'In Stock')} ({product.stockCount} {t('leftInStock', 'available')})</span>
+                    <span>{t('inStock', 'In Stock')} ({displayProduct.stockCount} {t('leftInStock', 'available')})</span>
                   </div>
                 </div>
 
                 {/* Price Display */}
                 {(() => {
-                  const mrp = Math.round(product.price * 1.35);
-                  const discount = Math.round(((mrp - product.price) / mrp) * 100);
+                  const mrp = Math.round(displayProduct.price * 1.35);
+                  const discount = Math.round(((mrp - displayProduct.price) / mrp) * 100);
                   return (
                     <div className="p-3.5 rounded-[2px] bg-[#F1F3F6] border border-[#EAEAEA] mb-4">
                       <div className="text-xs font-bold text-[#388E3C] mb-0.5">
@@ -347,14 +390,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       </div>
                       <div className="flex items-baseline gap-3 flex-wrap">
                         <span className="text-2xl sm:text-3xl font-bold text-[#212121]">
-                          {formatINR(product.price)}
+                          {formatINR(displayProduct.price)}
                         </span>
                         <span className="text-sm text-[#878787] line-through">
                           {formatINR(mrp)}
                         </span>
                         <span className="text-sm font-bold text-[#388E3C]">
-                          {discount}% off
-                        </span>
+                          {discount}{t('off', '% off')}</span>
                       </div>
                       <div className="text-[11px] text-[#878787] mt-1">
                         {t('inclusiveTaxes', 'Inclusive of all taxes • Direct artisan price guarantee')}
@@ -387,22 +429,22 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
                 {/* Description */}
                 <div className="text-xs sm:text-sm text-[#505050] leading-relaxed mb-4 space-y-2">
-                  <p className="font-semibold text-[#212121]">{product.shortDescription}</p>
-                  {product.longDescription && (
+                  <p className="font-semibold text-[#212121]">{displayProduct.shortDescription}</p>
+                  {displayProduct.longDescription && (
                     <div className="text-xs text-[#666666] whitespace-pre-line leading-relaxed">
-                      {product.longDescription}
+                      {displayProduct.longDescription}
                     </div>
                   )}
                 </div>
 
                 {/* Features List */}
-                {product.features && product.features.length > 0 && (
+                {displayProduct.features && displayProduct.features.length > 0 && (
                   <div className="mb-4 p-3.5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA]">
                     <span className="text-xs uppercase tracking-wider font-bold text-[#212121] block mb-1.5">
                       {t('craftTechniqueDetails', 'Craft & Technique Details')}
                     </span>
                     <ul className="space-y-1 text-xs text-[#666666]">
-                      {product.features.map((feat, idx) => (
+                      {displayProduct.features.map((feat, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <span className="text-[#2874F0] font-bold">•</span>
                           <span>{feat}</span>
@@ -424,7 +466,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         onClick={handleDecreaseQuantity}
                         disabled={quantity <= 1}
                         className="p-1.5 text-[#212121] hover:bg-[#F1F3F6] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                        aria-label="Decrease quantity"
+                        aria-label={t('decreaseQuantity', 'Decrease quantity')}
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -436,7 +478,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         onClick={handleIncreaseQuantity}
                         disabled={quantity >= (product.stockCount || 99)}
                         className="p-1.5 text-[#212121] hover:bg-[#F1F3F6] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                        aria-label="Increase quantity"
+                        aria-label={t('increaseQuantity', 'Increase quantity')}
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -476,12 +518,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#F0F0F0]">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2874F0]"></span>
-              <h3 className="text-lg font-bold text-[#212121]">About the Artisan & Workshop</h3>
+              <h3 className="text-lg font-bold text-[#212121]">{t('aboutTheArtisanWorkshop', 'About the Artisan & Workshop')}</h3>
             </div>
             <span className="text-xs font-semibold text-[#388E3C] bg-[#EAF8EB] px-2.5 py-0.5 rounded-[2px] border border-[#388E3C]/20 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Verified Craftify Artisan
-            </span>
+              {t('verifiedCraftifyArtisan', 'Verified Craftify Artisan')}</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -511,13 +552,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <span>
                   {product.creatorCity && product.creatorState
                     ? `${product.creatorCity}, ${product.creatorState}`
-                    : product.artisanRegion || product.creatorLocation || 'India'}
+                    : product.artisanRegion || product.creatorLocation || t('india', 'India')}
                 </span>
               </div>
               {product.creatorYearsOfExperience && (
                 <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-[#FB641B] bg-[#FFF3E0] px-2 py-0.5 rounded-[2px]">
                   <Award className="w-3 h-3" />
-                  <span>{product.creatorYearsOfExperience} Years Experience</span>
+                  <span>{product.creatorYearsOfExperience} {t('yearsExperience', 'Years Experience')}</span>
                 </div>
               )}
             </div>
@@ -525,28 +566,27 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             <div className="md:col-span-9 space-y-4">
               <div>
                 <h4 className="text-base font-bold text-[#212121] mb-1">
-                  Artisan Heritage & Craft Story
-                </h4>
+                  {t('artisanHeritageCraftStory', 'Artisan Heritage & Craft Story')}</h4>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed whitespace-pre-line">
-                  {product.creatorBio ?? product.shortDescription ?? 'Generational artisan committed to reviving authentic handmade craft traditions and creating heirloom pieces on Craftify.'}
+                  {product.creatorBio ?? product.shortDescription ?? t('generationalArtisanCommittedToReviv', 'Generational artisan committed to reviving authentic handmade craft traditions and creating heirloom pieces on Craftify.')}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#F0F0F0] text-xs">
                 <div className="p-3 bg-[#F1F3F6] rounded-[2px] border border-[#EAEAEA]">
-                  <span className="text-[10px] uppercase font-bold text-[#878787] block">Craft Tradition</span>
-                  <span className="font-bold text-[#212121] mt-0.5 block">{product.craftHeritage || product.category || 'Handmade Craft'}</span>
+                  <span className="text-[10px] uppercase font-bold text-[#878787] block">{t('craftTradition', 'Craft Tradition')}</span>
+                  <span className="font-bold text-[#212121] mt-0.5 block">{product.craftHeritage || product.category || t('handmadeCraft', 'Handmade Craft')}</span>
                 </div>
                 <div className="p-3 bg-[#F1F3F6] rounded-[2px] border border-[#EAEAEA]">
-                  <span className="text-[10px] uppercase font-bold text-[#878787] block">Workshop / Studio</span>
+                  <span className="text-[10px] uppercase font-bold text-[#878787] block">{t('workshopStudio', 'Workshop / Studio')}</span>
                   <span className="font-bold text-[#212121] mt-0.5 block">{product.creatorBusinessName || product.creator}</span>
                 </div>
                 <div className="p-3 bg-[#F1F3F6] rounded-[2px] border border-[#EAEAEA]">
-                  <span className="text-[10px] uppercase font-bold text-[#878787] block">Regional Guild</span>
+                  <span className="text-[10px] uppercase font-bold text-[#878787] block">{t('regionalGuild', 'Regional Guild')}</span>
                   <span className="font-bold text-[#212121] mt-0.5 block">
                     {product.creatorCity && product.creatorState
                       ? `${product.creatorCity}, ${product.creatorState}`
-                      : product.artisanRegion || product.creatorLocation || 'India'}
+                      : product.artisanRegion || product.creatorLocation || t('india', 'India')}
                   </span>
                 </div>
               </div>
@@ -586,14 +626,27 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               </h2>
             </div>
 
-            <button
-              id="btn-open-write-review"
-              onClick={() => setIsWriteReviewOpen(!isWriteReviewOpen)}
-              className="px-4 py-2 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold hover:bg-[#1C5FD0] transition-colors flex items-center gap-1.5 self-start cursor-pointer shadow-xs"
-            >
-              <MessageSquarePlus className="w-4 h-4" />
-              <span>{isWriteReviewOpen ? t('closeFormBtn', 'Close Form') : t('rateProductBtn', 'Rate Product')}</span>
-            </button>
+            {isOwnProduct ? (
+              <div className="text-xs font-semibold text-[#878787] bg-[#F1F3F6] px-3 py-1.5 rounded-[2px] border border-[#EAEAEA] flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#2874F0]" />
+                <span>{t('artisansCannotReviewTheirOwnProduct', 'Artisans cannot review their own products')}</span>
+              </div>
+            ) : (
+              <button
+                id="btn-open-write-review"
+                onClick={handleToggleReviewForm}
+                className="px-4 py-2 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold hover:bg-[#1C5FD0] transition-colors flex items-center gap-1.5 self-start cursor-pointer shadow-xs"
+              >
+                <MessageSquarePlus className="w-4 h-4" />
+                <span>
+                  {isWriteReviewOpen
+                    ? t('closeFormBtn', 'Close Form')
+                    : hasExistingReview
+                    ? t('editYourReview', 'Edit Your Review')
+                    : t('rateProductBtn', 'Rate Product')}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Interactive Review Form */}
@@ -612,7 +665,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               {reviewSubmitSuccess && (
                 <div className="p-2.5 rounded-[2px] bg-[#EAF8EB] border border-[#388E3C]/30 text-[#388E3C] text-xs font-bold flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Review recorded! Thank you for rating this artisan.</span>
+                  <span>{t('reviewRecordedThankYouForRatingThis', 'Review recorded! Thank you for rating this artisan.')}</span>
                 </div>
               )}
 
@@ -624,7 +677,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <SmartInput
                     type="text"
                     required
-                    placeholder="e.g. Rahul S."
+                    placeholder={t('eGRahulS', 'e.g. Rahul S.')}
                     value={newReviewAuthor}
                     onChange={(e) => setNewReviewAuthor(e.target.value)}
                     onValueChange={(val) => setNewReviewAuthor(val)}
@@ -641,11 +694,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     onChange={(e) => setNewReviewRating(Number(e.target.value))}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0] cursor-pointer"
                   >
-                    <option value={5}>★★★★★ (5 Stars - Excellent)</option>
-                    <option value={4}>★★★★☆ (4 Stars - Very Good)</option>
-                    <option value={3}>★★★☆☆ (3 Stars - Good)</option>
-                    <option value={2}>★★☆☆☆ (2 Stars - Average)</option>
-                    <option value={1}>★☆☆☆☆ (1 Star - Poor)</option>
+                    <option value={5}>{t('key_5StarsExcellent', '★★★★★ (5 Stars - Excellent)')}</option>
+                    <option value={4}>{t('key_4StarsVeryGood', '★★★★☆ (4 Stars - Very Good)')}</option>
+                    <option value={3}>{t('key_3StarsGood', '★★★☆☆ (3 Stars - Good)')}</option>
+                    <option value={2}>{t('key_2StarsAverage', '★★☆☆☆ (2 Stars - Average)')}</option>
+                    <option value={1}>{t('key_1StarPoor', '★☆☆☆☆ (1 Star - Poor)')}</option>
                   </select>
                 </div>
               </div>
@@ -657,7 +710,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <SmartInput
                   type="text"
                   required
-                  placeholder="e.g. Stunning brass detailing and finish"
+                  placeholder={t('eGStunningBrassDetailingAndFinish', 'e.g. Stunning brass detailing and finish')}
                   value={newReviewTitle}
                   onChange={(e) => setNewReviewTitle(e.target.value)}
                   onValueChange={(val) => setNewReviewTitle(val)}
@@ -672,7 +725,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <SmartTextarea
                   required
                   rows={3}
-                  placeholder="Describe what you liked or how the craft met your expectations..."
+                  placeholder={t('describeWhatYouLikedOrHowTheCraftMe', 'Describe what you liked or how the craft met your expectations...')}
                   value={newReviewComment}
                   onChange={(e) => setNewReviewComment(e.target.value)}
                   onValueChange={(val) => setNewReviewComment(val)}

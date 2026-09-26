@@ -1,4 +1,6 @@
 import { Campaign, Product, RewardTier, BackerRecord, CampaignUpdate, CampaignComment } from '../types';
+import { CAMPAIGN_IMAGES, PRODUCT_IMAGES } from '../mockData/imageAssets';
+import { MOCK_CAMPAIGNS, MOCK_PRODUCTS } from '../data/mockData';
 
 export function mapCraftToCategory(craft: string = ''): string {
   const c = craft.toLowerCase();
@@ -48,6 +50,55 @@ export function mapCraftToCategory(craft: string = ''): string {
 }
 
 export function transformBackendCampaign(item: any): Campaign {
+  const rawId = String(item.id || '');
+  const formattedCode = `CMP-${rawId.padStart(3, '0')}`;
+
+  // Find matching mock campaign if exists to preserve curated data and images
+  const mockMatch = MOCK_CAMPAIGNS.find((m) => {
+    const mId = String(m.id).toLowerCase();
+    const rId = rawId.toLowerCase();
+    return (
+      mId === rId ||
+      mId === `cmp-${rId.padStart(2, '0')}` ||
+      (m.code && String(m.code).toLowerCase() === formattedCode.toLowerCase()) ||
+      (m.slug && item.slug && m.slug === item.slug)
+    );
+  });
+
+  const campaignKey = mockMatch ? mockMatch.id : (rawId.startsWith('cmp-') ? rawId : `cmp-${rawId.padStart(2, '0')}`);
+  const explicitImageUrl =
+    CAMPAIGN_IMAGES[campaignKey] ||
+    (item.slug ? CAMPAIGN_IMAGES[item.slug] : undefined) ||
+    (mockMatch ? mockMatch.imageUrl : undefined);
+
+  const imageUrl =
+    explicitImageUrl ||
+    (item.image && item.image.startsWith('http') ? item.image : (mockMatch ? mockMatch.imageUrl : CAMPAIGN_IMAGES['cmp-01']));
+
+  const daysLeft = item.days_left !== undefined ? item.days_left : (mockMatch ? mockMatch.daysLeft : 30);
+  const pledged = parseFloat(item.amount_raised) || (mockMatch ? mockMatch.pledgedAmount : 0);
+  const goal = parseFloat(item.funding_goal) || (mockMatch ? mockMatch.goalAmount : 250000);
+
+  let status: 'in_progress' | 'funded' | 'failed' = 'in_progress';
+  if (item.status === 'funded' || pledged >= goal) {
+    status = 'funded';
+  } else if (item.status === 'failed' || daysLeft <= 0) {
+    status = 'failed';
+  }
+
+  if (mockMatch) {
+    return {
+      ...mockMatch,
+      pledgedAmount: pledged > 0 ? pledged : mockMatch.pledgedAmount,
+      amountRaised: pledged > 0 ? pledged : mockMatch.pledgedAmount,
+      backersCount: item.backers_count !== undefined ? item.backers_count : mockMatch.backersCount,
+      daysLeft: Math.max(0, daysLeft),
+      status,
+      imageUrl: mockMatch.imageUrl || imageUrl,
+      galleryImages: mockMatch.galleryImages || [mockMatch.imageUrl || imageUrl],
+    };
+  }
+
   const tiers: RewardTier[] = (item.reward_tiers || item.tiers || []).map((t: any, idx: number) => ({
     id: String(t.id || `tier-${idx + 1}`),
     title: t.title || `Heritage Patron Tier ${idx + 1}`,
@@ -65,9 +116,7 @@ export function transformBackendCampaign(item: any): Campaign {
     maxBackers: t.max_backers || undefined,
   }));
 
-  // Ensure at least 2 reward tiers if empty
   if (tiers.length === 0) {
-    const goal = parseFloat(item.funding_goal) || 100000;
     tiers.push(
       {
         id: `tier-1-${item.id}`,
@@ -90,42 +139,31 @@ export function transformBackendCampaign(item: any): Campaign {
     );
   }
 
-  const daysLeft = item.days_left !== undefined ? item.days_left : 30;
-  const pledged = parseFloat(item.amount_raised) || 0;
-  const goal = parseFloat(item.funding_goal) || 100000;
-  let status: 'in_progress' | 'funded' | 'failed' = 'in_progress';
-  if (item.status === 'funded' || pledged >= goal) {
-    status = 'funded';
-  } else if (item.status === 'failed' || daysLeft <= 0) {
-    status = 'failed';
-  }
-
   return {
-    id: String(item.id),
-    title: item.title,
-    slug: item.slug,
+    id: campaignKey,
+    artisanId: item.artisan?.id ? String(item.artisan.id) : (item.artisan_id ? String(item.artisan_id) : undefined),
+    title: item.title || 'Handcrafted Heritage Campaign',
+    slug: item.slug || campaignKey,
     creator: item.artisan?.full_name || item.artisan?.username || 'Master Artisan',
-    creatorBio: `National Heritage Awardee specializing in ${item.craft_type} from ${item.region_state}.`,
+    creatorBio: `National Heritage Awardee specializing in ${item.craft_type || 'traditional crafts'} from ${item.region_state || 'India'}.`,
     creatorLocation: item.region_state || 'India',
     artisanRegion: item.region_state || 'India',
     craftHeritage: item.craft_type || 'Traditional Indian Craft',
     category: mapCraftToCategory(item.craft_type),
     shortDescription:
       item.description ||
-      `Revitalizing the endangered technique of ${item.craft_type} in ${item.region_state}. Backed by genuine GI heritage preservation.`,
+      `Revitalizing the endangered technique of ${item.craft_type || 'traditional craft'} in ${item.region_state || 'India'}. Backed by genuine GI heritage preservation.`,
     fullStory:
       item.description ||
-      `This milestone initiative supports a cluster of traditional artisans in ${item.region_state}. By funding this campaign, conscious patrons directly safeguard endangered generational looms, natural dyeing pots, and traditional tool forging. All funds are secured in transparent milestone escrow.`,
+      `This milestone initiative supports a cluster of traditional artisans in ${item.region_state || 'India'}. By funding this campaign, conscious patrons directly safeguard endangered generational looms, natural dyeing pots, and traditional tool forging. All funds are secured in transparent milestone escrow.`,
     goalAmount: goal,
     pledgedAmount: pledged,
     backersCount: item.backers_count || 0,
     daysLeft: Math.max(0, daysLeft),
     status,
-    imageUrl: item.image || '/images/products/jaipur-blue-pottery-tea-set.jpg',
-    galleryImages: item.gallery_images && item.gallery_images.length > 0
-      ? item.gallery_images
-      : (item.image ? [item.image] : ['/images/products/jaipur-blue-pottery-tea-set.jpg']),
-    code: `CMP-${String(item.id).padStart(3, '0')}`,
+    imageUrl,
+    galleryImages: item.gallery_images && item.gallery_images.length > 0 ? item.gallery_images : [imageUrl],
+    code: formattedCode,
     isApproved: item.is_approved !== false,
     rewardTiers: tiers,
     specs: [
@@ -144,9 +182,34 @@ export function transformBackendCampaign(item: any): Campaign {
 }
 
 export function transformBackendProduct(item: any): Product {
-  const price = parseFloat(item.price) || 2400;
+  const rawId = String(item.id || '');
+  const formattedSku = `CF-JPR-${rawId.padStart(2, '0')}`;
+
+  // Find matching mock product if exists to preserve curated data and images
+  const mockMatch = MOCK_PRODUCTS.find((m) => {
+    const mId = String(m.id).toLowerCase();
+    const rId = rawId.toLowerCase();
+    return (
+      mId === rId ||
+      mId === `prd-${rId.padStart(2, '0')}` ||
+      (m.sku && String(m.sku).toLowerCase() === formattedSku.toLowerCase()) ||
+      ((m as any).slug && item.slug && (m as any).slug === item.slug)
+    );
+  });
+
+  const productKey = mockMatch ? mockMatch.id : (rawId.startsWith('prd-') ? rawId : `prd-${rawId.padStart(2, '0')}`);
+  const explicitImageUrl =
+    PRODUCT_IMAGES[productKey] ||
+    (item.slug ? PRODUCT_IMAGES[item.slug] : undefined) ||
+    (mockMatch ? mockMatch.imageUrl : undefined);
+
+  const imageUrl =
+    explicitImageUrl ||
+    (item.image && item.image.startsWith('http') ? item.image : (mockMatch ? mockMatch.imageUrl : PRODUCT_IMAGES['prd-01']));
+
+  const price = parseFloat(item.price) || (mockMatch ? mockMatch.price : 2400);
   const inStock = item.in_stock !== false && (item.stock_quantity === undefined || item.stock_quantity > 0);
-  const stockCount = item.stock_quantity !== undefined ? item.stock_quantity : 12;
+  const stockCount = item.stock_quantity !== undefined ? item.stock_quantity : (mockMatch ? mockMatch.stockCount : 12);
 
   let badgeType: 'in_stock' | 'pre_order' | 'limited_stock' = 'in_stock';
   let badgeLabel = 'Ready to Ship';
@@ -158,10 +221,26 @@ export function transformBackendProduct(item: any): Product {
     badgeLabel = `Only ${stockCount} Left`;
   }
 
+  if (mockMatch) {
+    return {
+      ...mockMatch,
+      price,
+      rating: parseFloat(item.average_rating) || mockMatch.rating,
+      reviewsCount: item.reviews_count || mockMatch.reviewsCount,
+      inStock,
+      stockCount,
+      badgeLabel,
+      badgeType,
+      imageUrl: mockMatch.imageUrl || imageUrl,
+      galleryImages: mockMatch.galleryImages || [mockMatch.imageUrl || imageUrl],
+    };
+  }
+
   return {
-    id: String(item.id),
-    title: item.name,
-    sku: `LM-${String(item.id).padStart(3, '0')}`,
+    id: productKey,
+    artisanId: item.artisan?.id ? String(item.artisan.id) : (item.artisan_id ? String(item.artisan_id) : undefined),
+    title: item.name || 'Handcrafted Artisan Creation',
+    sku: formattedSku,
     creator: item.artisan?.full_name || item.artisan?.username || 'Master Artisan',
     creatorLocation: item.region_state || 'India',
     artisanRegion: item.region_state || 'India',
@@ -169,12 +248,12 @@ export function transformBackendProduct(item: any): Product {
     category: mapCraftToCategory(item.category || item.name),
     shortDescription:
       item.description ||
-      `Authentic handcrafted ${item.name} made with generational precision and 100% sustainable materials.`,
+      `Authentic handcrafted ${item.name || 'item'} made with generational precision and 100% sustainable materials.`,
     longDescription:
       item.description ||
       `Each piece is individually handcrafted by skilled artisans using traditional ancestral tools. Slight variations in tone, weave, and texture celebrate the unique human touch of authentic handicraft.`,
     price,
-    graduatedFromCampaignId: item.campaign ? `CMP-${String(item.campaign).padStart(3, '0')}` : 'CMP-001',
+    graduatedFromCampaignId: item.campaign ? `cmp-${String(item.campaign).padStart(2, '0')}` : 'cmp-01',
     originalPledgedAmount: Math.round(price * 45),
     isFundedOnCraftify: item.is_funded_on_platform !== false,
     isFundedOnLaunchMart: item.is_funded_on_platform !== false,
@@ -184,10 +263,8 @@ export function transformBackendProduct(item: any): Product {
     stockCount,
     badgeLabel,
     badgeType,
-    imageUrl: item.image || '/images/products/jaipur-blue-pottery-tea-set.jpg',
-    galleryImages: item.gallery_images && item.gallery_images.length > 0
-      ? item.gallery_images
-      : (item.image ? [item.image] : ['/images/products/jaipur-blue-pottery-tea-set.jpg']),
+    imageUrl,
+    galleryImages: item.gallery_images && item.gallery_images.length > 0 ? item.gallery_images : [imageUrl],
     features: [
       '100% Handcrafted by Master Artisans',
       'Authentic Geographical Indication (GI) Verified',
@@ -246,43 +323,39 @@ export function transformBackendOrder(item: any): import('../types').CustomerOrd
   const trackingEvents: import('../types').OrderTrackingHistoryEvent[] = (item.status_history || []).map((h: any) => ({
     stage: h.status,
     label: h.status.replace(/_/g, ' ').toUpperCase(),
-    timestamp: h.timestamp ? new Date(h.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent',
-    location: 'Central Fulfillment Hub, India',
-    description: h.note || 'Milestone verified in escrow.',
+    timestamp: h.created_at
+      ? new Date(h.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+      : 'Updated',
+    location: h.location || 'Hub',
+    description: h.note || `Order status updated to ${h.status}`,
     completed: true,
   }));
 
   return {
-    id: item.order_id || `KGR-${item.id}`,
+    id: item.order_number || `CRF-2026-${String(item.id).padStart(5, '0')}`,
     orderDate: item.created_at
       ? new Date(item.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
       : 'Recent',
-    estimatedDeliveryRange: item.estimated_delivery_start && item.estimated_delivery_end
-      ? `Arriving between ${new Date(item.estimated_delivery_start).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} – ${new Date(item.estimated_delivery_end).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}`
-      : 'Arriving in 3-5 business days',
+    estimatedDeliveryRange: 'Arriving between 18–22 Sept',
     status: item.status || 'confirmed',
-    carrierName: 'Blue Dart Express',
-    trackingNumber: item.tracking_reference || `BLUEDART-${item.id}`,
+    carrierName: item.carrier_name || 'Blue Dart Express',
+    trackingNumber: item.tracking_number || 'IN0098234561',
     items,
     subtotal,
     shipping,
     tax,
-    total: subtotal + shipping + tax,
+    total: item.total_amount ? parseFloat(item.total_amount) : subtotal + shipping + tax,
     shippingAddress: {
-      fullName: 'Conscious Buyer',
-      email: 'buyer@example.com',
-      street: (item.shipping_address_text || 'Heritage Enclave').split('\n')[1] || 'Heritage Enclave',
-      city: 'Delhi',
-      state: 'Delhi',
-      zip: '110017',
+      fullName: item.shipping_name || 'Valued Patron',
+      email: item.shipping_email || 'patron@craftify.in',
+      street: item.shipping_address || '42, Heritage Enclave',
+      city: item.shipping_city || 'Bengaluru',
+      state: item.shipping_state || 'Karnataka',
+      zip: item.shipping_zip || '560038',
       country: 'India',
-      phone: '+91 98100 88990',
+      phone: item.shipping_phone || '+91 98765 43210',
     },
-    paymentMethod: item.is_backer_reward ? 'Escrow Pledge Authorization' : 'UPI / Escrow Direct',
+    paymentMethod: item.payment_method || 'Prepaid Razorpay / UPI',
     history: trackingEvents,
-    isBackerReward: item.is_backer_reward || item.isBackerReward || false,
-    originatingCampaignId: item.originatingCampaignId ? String(item.originatingCampaignId) : (item.originating_campaign_id ? String(item.originating_campaign_id) : undefined),
-    originatingCampaignTitle: item.originatingCampaignTitle || item.originating_campaign_title,
-    originatingPledgeId: item.originatingPledgeId ? String(item.originatingPledgeId) : (item.originating_pledge_id ? String(item.originating_pledge_id) : undefined),
   };
 }

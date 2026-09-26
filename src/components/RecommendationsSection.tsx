@@ -3,6 +3,7 @@ import { Product, Campaign } from '../types';
 import { ProductCard } from './ProductCard';
 import { CampaignCard } from './CampaignCard';
 import { fetchRecommendations, RecommendationItem } from '../api/aiTools';
+import { MOCK_PRODUCTS, MOCK_CAMPAIGNS } from '../data/mockData';
 import { Compass, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -49,9 +50,12 @@ export const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
   // Default static trending fallback list from available products & campaigns
   const staticTrendingFallback = useMemo<ResolvedRecommendation[]>(() => {
     const list: ResolvedRecommendation[] = [];
-    const availableProducts = products.filter((p) => p.inStock !== false);
-    const topProducts = availableProducts.length > 0 ? availableProducts.slice(0, 2) : products.slice(0, 2);
-    const topCampaigns = campaigns.slice(0, 2);
+    const effectiveProducts = products && products.length > 0 ? products : MOCK_PRODUCTS;
+    const effectiveCampaigns = campaigns && campaigns.length > 0 ? campaigns : MOCK_CAMPAIGNS;
+
+    const availableProducts = effectiveProducts.filter((p) => p.inStock !== false);
+    const topProducts = availableProducts.length > 0 ? availableProducts.slice(0, 2) : effectiveProducts.slice(0, 2);
+    const topCampaigns = effectiveCampaigns.slice(0, 2);
 
     topProducts.forEach((p) => {
       list.push({

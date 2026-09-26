@@ -15,22 +15,23 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
   onPledgeClick,
   onCardClick,
 }) => {
-  const { t, localizeCategory } = useLanguage();
-  const percentFunded = Math.round((campaign.pledgedAmount / campaign.goalAmount) * 100);
-  const isFunded = campaign.status === 'funded' || percentFunded >= 100;
-  const provenance = campaign.artisanRegion || campaign.creatorLocation || 'India';
+  const { t, localizeCampaign, localizeCategory } = useLanguage();
+  const displayCampaign = localizeCampaign(campaign);
+  const percentFunded = Math.round((displayCampaign.pledgedAmount / displayCampaign.goalAmount) * 100);
+  const isFunded = displayCampaign.status === 'funded' || percentFunded >= 100;
+  const provenance = displayCampaign.artisanRegion || displayCampaign.creatorLocation || 'India';
 
   const handleCardSelect = () => {
     if (onCardClick) {
-      onCardClick(campaign);
+      onCardClick(displayCampaign);
     } else {
-      onPledgeClick(campaign);
+      onPledgeClick(displayCampaign);
     }
   };
 
   return (
     <article
-      id={`campaign-card-${campaign.id}`}
+      id={`campaign-card-${displayCampaign.id}`}
       className="group bg-[#FFFFFF] rounded-[4px] border border-[#EAEAEA] hover:shadow-[0_3px_16px_0_rgba(0,0,0,0.11)] transition-all duration-200 flex flex-col justify-between cursor-pointer overflow-hidden relative"
       onClick={handleCardSelect}
     >
@@ -38,8 +39,8 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
         {/* Card Media Header */}
         <div className="relative aspect-[4/3] overflow-hidden bg-[#FAFAFA] flex items-center justify-center p-3 border-b border-[#F0F0F0]">
           <img
-            src={campaign.imageUrl}
-            alt={campaign.title}
+            src={displayCampaign.imageUrl}
+            alt={displayCampaign.title}
             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
@@ -71,7 +72,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
           <div>
             {/* Provenance and Category */}
             <div className="flex items-center justify-between text-[11px] text-[#878787] font-medium mb-1">
-              <span>{localizeCategory(campaign.category)}</span>
+              <span>{localizeCategory(displayCampaign.category)}</span>
               <span className="flex items-center gap-0.5 text-[#388E3C] font-semibold">
                 <MapPin className="w-3 h-3" />
                 <span>{provenance}</span>
@@ -79,11 +80,11 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
             </div>
 
             <h3 className="text-sm font-semibold text-[#212121] leading-tight line-clamp-2 group-hover:text-[#2874F0] transition-colors mb-1.5">
-              {campaign.title}
+              {displayCampaign.title}
             </h3>
 
             <p className="text-xs text-[#878787] leading-relaxed line-clamp-2 mb-3">
-              {campaign.shortDescription}
+              {displayCampaign.shortDescription}
             </p>
 
             {/* Campaign Metrics & Progress Bar */}
@@ -91,10 +92,10 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
               <div className="flex justify-between items-baseline">
                 <div>
                   <span className="text-base font-bold text-[#212121]">
-                    {formatINR(campaign.pledgedAmount)}
+                    {formatINR(displayCampaign.pledgedAmount)}
                   </span>
                   <span className="text-xs text-[#878787] ml-1">
-                    {t('pledgedOf')} {formatINR(campaign.goalAmount)}
+                    {t('pledgedOf')} {formatINR(displayCampaign.goalAmount)}
                   </span>
                 </div>
                 <div
@@ -120,11 +121,11 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
               <div className="flex justify-between items-center text-[11px] text-[#878787] pt-0.5">
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3 text-[#878787]" />
-                  <span>{campaign.backersCount} {t('backers')}</span>
+                  <span>{displayCampaign.backersCount} {t('backers')}</span>
                 </div>
                 <div className="flex items-center gap-1 font-medium text-[#212121]">
                   <Clock className="w-3 h-3 text-[#FB641B]" />
-                  <span>{campaign.daysLeft} {t('daysLeft')}</span>
+                  <span>{displayCampaign.daysLeft} {t('daysLeft')}</span>
                 </div>
               </div>
             </div>
@@ -135,10 +136,10 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({
       {/* Footer Craftify Orange Action Button */}
       <div className="p-3 border-t border-[#F0F0F0] bg-[#FFFFFF]">
         <button
-          id={`btn-pledge-${campaign.id}`}
+          id={`btn-pledge-${displayCampaign.id}`}
           onClick={(e) => {
             e.stopPropagation();
-            onPledgeClick(campaign);
+            onPledgeClick(displayCampaign);
           }}
           className="w-full py-2 px-3 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
         >

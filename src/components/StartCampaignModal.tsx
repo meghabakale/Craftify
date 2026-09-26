@@ -9,11 +9,14 @@ interface StartCampaignModalProps {
   onSubmitMock: (title: string, goal: number, category: string) => void;
 }
 
+import { useLanguage } from '../context/LanguageContext';
+
 export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
   isOpen,
   onClose,
   onSubmitMock,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   const [title, setTitle] = useState('');
@@ -46,22 +49,22 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#2874F0] bg-[#EBF3FE] px-2 py-0.5 rounded-[2px] flex items-center gap-1">
                 <Award className="w-3 h-3 text-[#2874F0]" />
-                <span>Craftify Creator Hub</span>
+                <span>{t('craftifyCreatorHub', 'Craftify Creator Hub')}</span>
               </span>
-              <span className="text-xs text-[#878787]">• Quick Launch</span>
+              <span className="text-xs text-[#878787]">{t('quickLaunch', '• Quick Launch')}</span>
             </div>
             <h2 className="text-xl font-bold text-[#212121]">
-              Launch a New Artisan Campaign
+              {t('launchNewArtisanCampaignTitle', 'Launch a New Artisan Campaign')}
             </h2>
             <p className="text-xs text-[#878787] mt-1">
-              Gather backer pre-orders via authorized conditional escrow. Graduate to the Craftify store once funded.
+              {t('startCampaignModalSubtitle', 'Gather backer pre-orders via authorized conditional escrow. Graduate to the Craftify store once funded.')}
             </p>
           </div>
 
           <button
             onClick={onClose}
             className="p-1 text-[#878787] hover:text-[#212121] rounded-[2px] transition-colors cursor-pointer"
-            aria-label="Close modal"
+            aria-label={t('closeModal', 'Close modal')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -73,17 +76,17 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
               <CheckCircle2 className="w-7 h-7 text-[#2E7D32]" />
             </div>
             <h3 className="text-lg font-bold text-[#212121]">
-              Campaign Draft Initialized
+              {t('campaignDraftInitialized', 'Campaign Draft Initialized')}
             </h3>
             <p className="text-xs text-[#878787] max-w-sm mx-auto">
-              Your campaign specification has been registered under draft status. You can now configure rewards and review timeline milestones.
+              {t('campaignDraftInitializedDesc', 'Your campaign specification has been registered under draft status. You can now configure rewards and review timeline milestones.')}
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                Campaign Title / Product Name *
+                {t('campaignTitleProductNameLabel', 'Campaign Title / Product Name *')}
               </label>
               <SmartInput
                 type="text"
@@ -91,7 +94,7 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 onValueChange={(val) => setTitle(val)}
-                placeholder="e.g. Khurja Imperial Cobalt Blue Fluted Vase"
+                placeholder={t('campaignTitlePlaceholder', 'e.g. Khurja Imperial Cobalt Blue Fluted Vase')}
                 className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] placeholder-[#878787] focus:outline-none focus:border-[#2874F0]"
                 enableVoice={true}
                 enableLanguageDetection={true}
@@ -101,7 +104,7 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Funding Target (₹ INR) *
+                  {t('fundingTargetLabel', 'Funding Target (₹ INR) *')}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-sm font-bold text-[#2874F0]">₹</span>
@@ -116,25 +119,25 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
                   />
                 </div>
                 <span className="text-[10px] text-[#878787] mt-1 block">
-                  Target: {formatINR(parseFloat(goal) || 0)}
+                  {t('targetLabel', 'Target:')} {formatINR(parseFloat(goal) || 0)}
                 </span>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Primary Craft Category *
+                  {t('primaryCraftCategoryLabel', 'Primary Craft Category *')}
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-3 py-2 border border-[#D5D5D5] rounded-[2px] bg-[#FFFFFF] text-sm text-[#212121] focus:outline-none focus:border-[#2874F0]"
                 >
-                  <option value="Pottery & Ceramics">Pottery & Ceramics</option>
-                  <option value="Handloom Textiles">Handloom Textiles</option>
-                  <option value="Metal Craft & Bidri">Metal Craft & Bidri</option>
-                  <option value="Woodcraft">Woodcraft</option>
-                  <option value="Heritage Decor">Heritage Decor</option>
-                  <option value="Design & Tools">Design & Tools</option>
+                  <option value="Pottery & Ceramics">{t('potteryCeramicsCategory', 'Pottery & Ceramics')}</option>
+                  <option value="Handloom Textiles">{t('handloomTextilesCategory', 'Handloom Textiles')}</option>
+                  <option value="Metal Craft & Bidri">{t('metalCraftBidriCategory', 'Metal Craft & Bidri')}</option>
+                  <option value="Woodcraft">{t('woodcraftCategory', 'Woodcraft')}</option>
+                  <option value="Heritage Decor">{t('heritageDecorCategory', 'Heritage Decor')}</option>
+                  <option value="Design & Tools">{t('designToolsCategory', 'Design & Tools')}</option>
                 </select>
               </div>
             </div>
@@ -143,10 +146,10 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
             <div className="p-3.5 bg-[#F8FAFC] border border-[#E0E0E0] rounded-[4px] space-y-1.5 text-xs text-[#535766]">
               <div className="flex items-center gap-1.5 font-bold text-[#212121]">
                 <ShieldCheck className="w-4 h-4 text-[#2E7D32]" />
-                <span>The Craftify Escrow Guarantee</span>
+                <span>{t('craftifyEscrowGuaranteeTitle', 'The Craftify Escrow Guarantee')}</span>
               </div>
               <p className="text-[11px] leading-relaxed">
-                Creators pay 0% upfront. If the target is met, funds are released in verified production milestones. Upon fulfilling backers, your item earns permanent retail listing in the Craftify Store.
+                {t('craftifyEscrowGuaranteeDesc', 'Creators pay 0% upfront. If the target is met, funds are released in verified production milestones. Upon fulfilling backers, your item earns permanent retail listing in the Craftify Store.')}
               </p>
             </div>
 
@@ -156,13 +159,13 @@ export const StartCampaignModal: React.FC<StartCampaignModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 border border-[#D5D5D5] rounded-[2px] text-xs font-bold text-[#212121] hover:bg-[#F9FAFB] transition-colors cursor-pointer"
               >
-                Cancel
+                {t('cancel', 'Cancel')}
               </button>
               <button
                 type="submit"
                 className="px-6 py-2.5 bg-[#2874F0] hover:bg-[#1259C3] text-[#FFFFFF] rounded-[2px] text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
               >
-                <span>Submit Draft for Review</span>
+                <span>{t('submitDraftForReviewBtn', 'Submit Draft for Review')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

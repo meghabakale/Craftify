@@ -56,7 +56,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
   onCampaignClick,
   onSimulateSettlement,
 }) => {
-  const { t, localizeCategory } = useLanguage();
+  const { t, localizeCategory, localizeCampaign } = useLanguage();
+  const displayCampaign = localizeCampaign(campaign);
   const [activeTab, setActiveTab] = useState<'story' | 'backers' | 'updates' | 'comments' | 'specs' | 'timeline'>('story');
   const [copiedLink, setCopiedLink] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -135,8 +136,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
               onClick={() => setIsSaved(!isSaved)}
               className={`px-3 py-1.5 rounded-[2px] border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer ${
                 isSaved
-                  ? 'border-[#2874F0] bg-[#2874F0] text-[#FFFFFF]'
-                  : 'border-[#EAEAEA] bg-[#FFFFFF] text-[#212121] hover:bg-[#F1F3F6]'
+                  ? t('border2874f0Bg2874f0TextFfffff', 'border-[#2874F0] bg-[#2874F0] text-[#FFFFFF]')
+                  : t('borderEaeaeaBgFfffffText212121Hover', 'border-[#EAEAEA] bg-[#FFFFFF] text-[#212121] hover:bg-[#F1F3F6]')
               }`}
               title={isSaved ? t('saved', 'Saved') : t('save', 'Save')}
             >
@@ -160,14 +161,12 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
             <AlertCircle className="w-5 h-5 text-[#B78103] shrink-0 mt-0.5" />
             <div className="text-xs text-[#212121]">
               <div className="font-bold text-sm text-[#B78103] flex items-center gap-2">
-                <span>Pending Administrative Approval</span>
+                <span>{t('pendingAdministrativeApproval', 'Pending Administrative Approval')}</span>
                 <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-[#B78103] text-white font-bold">
-                  Curator Review
-                </span>
+                  {t('curatorReview', 'Curator Review')}</span>
               </div>
               <p className="mt-1 text-[#666666] leading-relaxed">
-                This artisan campaign has been submitted and is currently in review by the Craftify curation desk. It is not yet visible in public explore listings and backer pledge authorizations are temporarily locked until admin approval.
-              </p>
+                {t('thisArtisanCampaignHasBeenSubmitted', 'This artisan campaign has been submitted and is currently in review by the Craftify curation desk. It is not yet visible in public explore listings and backer pledge authorizations are temporarily locked until admin approval.')}</p>
             </div>
           </div>
         )}
@@ -194,23 +193,23 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
             id="campaign-detail-title"
             className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#212121] leading-tight mb-2 max-w-4xl"
           >
-            {campaign.title}
+            {displayCampaign.title}
           </h1>
 
           <p className="text-xs sm:text-sm text-[#878787] max-w-3xl leading-relaxed">
-            {campaign.shortDescription}
+            {displayCampaign.shortDescription}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-[#878787]">
             <span>
-              By <strong className="text-[#212121] font-bold">{campaign.creator}</strong>
+              {t('by', 'By')}<strong className="text-[#212121] font-bold">{displayCampaign.creator}</strong>
             </span>
-            {campaign.creatorLocation && (
+            {displayCampaign.creatorLocation && (
               <>
                 <span>•</span>
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3 h-3 text-[#878787]" />
-                  {campaign.creatorLocation}
+                  {displayCampaign.creatorLocation}
                 </span>
               </>
             )}
@@ -220,12 +219,12 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <div className="flex items-center gap-1.5 text-xs text-[#388E3C] bg-[#EAF8EB] px-2.5 py-1 rounded-[2px] border border-[#388E3C]/20">
               <MapPin className="w-3.5 h-3.5 text-[#388E3C]" />
-              <span className="font-semibold">Handmade in {campaign.artisanRegion || campaign.creatorLocation || 'India'}</span>
+              <span className="font-semibold">{t('handmadeIn', 'Handmade in')}{displayCampaign.artisanRegion || displayCampaign.creatorLocation || t('india', 'India')}</span>
             </div>
-            {campaign.craftHeritage && (
+            {displayCampaign.craftHeritage && (
               <div className="flex items-center gap-1.5 text-xs text-[#2874F0] bg-[#EBF2FC] px-2.5 py-1 rounded-[2px] border border-[#2874F0]/20">
                 <Sparkles className="w-3.5 h-3.5 text-[#2874F0]" />
-                <span className="font-semibold">{campaign.craftHeritage}</span>
+                <span className="font-semibold">{displayCampaign.craftHeritage}</span>
               </div>
             )}
           </div>
@@ -260,8 +259,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                           onClick={() => setSelectedImageIndex(idx)}
                           className={`relative w-16 h-16 shrink-0 rounded-[2px] border overflow-hidden transition-all cursor-pointer ${
                             selectedImageIndex === idx
-                              ? 'border-[#2874F0] ring-2 ring-[#2874F0]/30'
-                              : 'border-[#EAEAEA] opacity-80 hover:opacity-100'
+                              ? t('border2874f0Ring2Ring2874f030', 'border-[#2874F0] ring-2 ring-[#2874F0]/30')
+                              : t('borderEaeaeaOpacity80HoverOpacity10', 'border-[#EAEAEA] opacity-80 hover:opacity-100')
                           }`}
                         >
                           <img src={img} alt="" className="w-full h-full object-cover" />
@@ -293,7 +292,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 </div>
                 {campaign.creatorBusinessName && (
                   <div className="text-[11px] text-[#2874F0] font-medium">
-                    Artisan: {campaign.creator}
+                    {t('artisan', 'Artisan:')}{campaign.creator}
                   </div>
                 )}
                 <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-[#878787] mt-0.5">
@@ -307,13 +306,12 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                   )}
                   {campaign.creatorYearsOfExperience && (
                     <span className="text-[#FB641B] font-semibold">
-                      • {campaign.creatorYearsOfExperience}+ yrs exp.
-                    </span>
+                      • {campaign.creatorYearsOfExperience}{t('yrsExp', '+ yrs exp.')}</span>
                   )}
                 </div>
                 <p className="text-[#555555] mt-1.5 leading-relaxed line-clamp-3">
                   {campaign.creatorBio ??
-                    'Independent maker studio committed to zero-waste craftsmanship, rigorous testing, and heirloom functional goods.'}
+                    t('independentMakerStudioCommittedToZe', 'Independent maker studio committed to zero-waste craftsmanship, rigorous testing, and heirloom functional goods.')}
                 </p>
               </div>
             </div>
@@ -406,14 +404,14 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => !isPendingApproval && onOpenPledgeModal(campaign)}
                 className={`w-full py-3.5 px-6 rounded-[2px] text-sm uppercase tracking-wider font-bold shadow-xs flex items-center justify-center gap-2 transition-all ${
                   isPendingApproval
-                    ? 'bg-[#FFF8E1] text-[#B78103] border border-[#FFB300] cursor-not-allowed'
-                    : 'bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] cursor-pointer active:scale-[0.99]'
+                    ? t('bgFff8e1TextB78103BorderBorderFfb30', 'bg-[#FFF8E1] text-[#B78103] border border-[#FFB300] cursor-not-allowed')
+                    : t('bgFb641bHoverBgE85d19TextFfffffCurs', 'bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] cursor-pointer active:scale-[0.99]')
                 }`}
               >
                 {isPendingApproval ? (
                   <>
                     <AlertCircle className="w-4 h-4 text-[#B78103]" />
-                    <span>Awaiting Admin Approval (Pledges Paused)</span>
+                    <span>{t('awaitingAdminApprovalPledgesPaused', 'Awaiting Admin Approval (Pledges Paused)')}</span>
                   </>
                 ) : (
                   <>
@@ -425,7 +423,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
               </button>
               <p className="text-center text-[11px] text-[#878787]">
                 {isPendingApproval
-                  ? 'This campaign will open for patron pledges once verified by the platform admin'
+                  ? t('thisCampaignWillOpenForPatronPledge', 'This campaign will open for patron pledges once verified by the platform admin')
                   : t('chooseRewardTierOrCustom', 'Choose a reward tier or enter a custom backing amount')}
               </p>
 
@@ -435,17 +433,17 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#666666] flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5 text-[#2874F0]" />
-                      <span>Escrow Simulation Sandbox</span>
+                      <span>{t('escrowSimulationSandbox', 'Escrow Simulation Sandbox')}</span>
                     </span>
                     {campaign.status !== 'in_progress' && (
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-[2px] ${
                           campaign.status === 'funded'
-                            ? 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/20'
-                            : 'bg-[#FFF3EC] text-[#FB641B] border border-[#FB641B]/20'
+                            ? t('bgEaf8ebText388e3cBorderBorder388e3', 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/20')
+                            : t('bgFff3ecTextFb641bBorderBorderFb641', 'bg-[#FFF3EC] text-[#FB641B] border border-[#FB641B]/20')
                         }`}
                       >
-                        {campaign.status === 'funded' ? 'Funded (100%+)' : 'Settled (Unsuccessful)'}
+                        {campaign.status === 'funded' ? t('funded100', 'Funded (100%+)') : t('settledUnsuccessful', 'Settled (Unsuccessful)')}
                       </span>
                     )}
                   </div>
@@ -456,10 +454,10 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                       id="btn-simulate-funded-detail"
                       onClick={() => onSimulateSettlement(campaign.id, 'funded')}
                       className="w-full py-2 px-3 rounded-[2px] bg-[#EAF8EB] hover:bg-[#D4EED6] border border-[#388E3C]/40 text-[#2E7D32] hover:text-[#1B5E20] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
-                      title="Simulate 100%+ goal met: marks campaign funded and captures backer pledges"
+                      title={t('simulate100GoalMetMarksCampaignFund', 'Simulate 100%+ goal met: marks campaign funded and captures backer pledges')}
                     >
                       <CheckCircle2 className="w-4 h-4 text-[#388E3C]" />
-                      <span>Simulate: Fully Funded (Goal Met 100%+)</span>
+                      <span>{t('simulateFullyFundedGoalMet100', 'Simulate: Fully Funded (Goal Met 100%+)')}</span>
                     </button>
 
                     {/* Secondary Simulation Buttons */}
@@ -468,20 +466,20 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                         id="btn-simulate-settlement-detail"
                         onClick={() => onSimulateSettlement(campaign.id)}
                         className="py-1.5 px-2 rounded-[2px] border border-[#D5D5D5] hover:border-[#878787] bg-[#F1F3F6] hover:bg-[#EAEAEA] text-[#666666] hover:text-[#212121] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                        title="Simulate reaching deadline with current pledged amount"
+                        title={t('simulateReachingDeadlineWithCurrent', 'Simulate reaching deadline with current pledged amount')}
                       >
                         <Clock className="w-3.5 h-3.5" />
-                        <span>Deadline (Current %)</span>
+                        <span>{t('deadlineCurrent', 'Deadline (Current %)')}</span>
                       </button>
 
                       <button
                         id="btn-simulate-unsuccessful-detail"
                         onClick={() => onSimulateSettlement(campaign.id, 'unsuccessful')}
                         className="py-1.5 px-2 rounded-[2px] border border-[#FB641B]/30 hover:border-[#FB641B] bg-[#FFF3EC] hover:bg-[#FFE6D9] text-[#FB641B] text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                        title="Simulate deadline ending under goal: releases holds (0 charged)"
+                        title={t('simulateDeadlineEndingUnderGoalRele', 'Simulate deadline ending under goal: releases holds (0 charged)')}
                       >
                         <AlertCircle className="w-3.5 h-3.5" />
-                        <span>Simulate Unsuccessful</span>
+                        <span>{t('simulateUnsuccessful', 'Simulate Unsuccessful')}</span>
                       </button>
                     </div>
 
@@ -491,16 +489,16 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                         id="btn-reset-campaign-detail"
                         onClick={() => onSimulateSettlement(campaign.id, 'reset')}
                         className="w-full py-1.5 px-2 rounded-[2px] border border-dashed border-[#878787] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#666666] hover:text-[#212121] text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        title="Reset campaign back to previous state"
+                        title={t('resetCampaignBackToPreviousState', 'Reset campaign back to previous state')}
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Reset to Previous State</span>
+                        <span>{t('resetToPreviousState', 'Reset to Previous State')}</span>
                       </button>
                     )}
                   </div>
 
                   <p className="text-[10px] text-[#878787] leading-tight text-center">
-                    Use simulation to test pledge transitions in <strong>My Pledges</strong> between <span className="text-[#B78103] font-semibold">Authorized Hold</span> and <span className="text-[#388E3C] font-semibold">Funded & Charged</span>.
+                    {t('useSimulationToTestPledgeTransition', 'Use simulation to test pledge transitions in')}<strong>{t('myPledges', 'My Pledges')}</strong> {t('between', 'between')}<span className="text-[#B78103] font-semibold">{t('authorizedHold', 'Authorized Hold')}</span> {t('and', 'and')}<span className="text-[#388E3C] font-semibold">{t('fundedCharged', 'Funded & Charged')}</span>.
                   </p>
                 </div>
               )}
@@ -519,8 +517,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => setActiveTab('story')}
                 className={`px-4 sm:px-5 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                   activeTab === 'story'
-                    ? 'border-[#2874F0] text-[#2874F0]'
-                    : 'border-transparent text-[#878787] hover:text-[#212121]'
+                    ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                    : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
                 }`}
               >
                 {t('storyTab', 'Story & Heritage')}
@@ -531,8 +529,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => setActiveTab('backers')}
                 className={`px-4 sm:px-5 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'backers'
-                    ? 'border-[#2874F0] text-[#2874F0]'
-                    : 'border-transparent text-[#878787] hover:text-[#212121]'
+                    ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                    : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
                 }`}
               >
                 <span>{t('backersTab', 'Patron Ledger')}</span>
@@ -546,8 +544,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => setActiveTab('updates')}
                 className={`px-4 sm:px-5 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'updates'
-                    ? 'border-[#2874F0] text-[#2874F0]'
-                    : 'border-transparent text-[#878787] hover:text-[#212121]'
+                    ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                    : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
                 }`}
               >
                 <span>{t('updatesTab', 'Workshop Updates')}</span>
@@ -561,8 +559,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => setActiveTab('comments')}
                 className={`px-4 sm:px-5 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'comments'
-                    ? 'border-[#2874F0] text-[#2874F0]'
-                    : 'border-transparent text-[#878787] hover:text-[#212121]'
+                    ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                    : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
                 }`}
               >
                 <span>{t('commentsTab', 'Patron Discussions')}</span>
@@ -576,8 +574,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => setActiveTab('specs')}
                 className={`px-4 sm:px-5 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                   activeTab === 'specs'
-                    ? 'border-[#2874F0] text-[#2874F0]'
-                    : 'border-transparent text-[#878787] hover:text-[#212121]'
+                    ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                    : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
                 }`}
               >
                 {t('specsTab', 'Specifications')}
@@ -588,8 +586,8 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 onClick={() => setActiveTab('timeline')}
                 className={`px-4 sm:px-5 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
                   activeTab === 'timeline'
-                    ? 'border-[#2874F0] text-[#2874F0]'
-                    : 'border-transparent text-[#878787] hover:text-[#212121]'
+                    ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                    : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
                 }`}
               >
                 {t('timelineTab', 'Timeline')}
@@ -600,11 +598,11 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
             {activeTab === 'story' && (
               <div id="tab-content-story" className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-5 sm:p-6 shadow-xs space-y-4">
                 <h2 className="text-xl sm:text-2xl font-bold text-[#212121]">
-                  {t('whyWeCreated', 'Why We Created')} {campaign.title}
+                  {t('whyWeCreated', 'Why We Created')} {displayCampaign.title}
                 </h2>
 
                 <div className="text-[#212121] text-xs sm:text-sm leading-relaxed space-y-3 whitespace-pre-line">
-                  {campaign.fullStory ?? campaign.shortDescription}
+                  {displayCampaign.fullStory ?? displayCampaign.shortDescription}
                 </div>
 
                 {/* Retail Graduation Callout */}
@@ -671,17 +669,17 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                             <span
                               className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-[2px] border ${
                                 backer.status === 'captured'
-                                  ? 'border-[#388E3C]/30 bg-[#EAF8EB] text-[#388E3C]'
+                                  ? t('border388e3c30BgEaf8ebText388e3c', 'border-[#388E3C]/30 bg-[#EAF8EB] text-[#388E3C]')
                                   : backer.status === 'released'
-                                  ? 'border-[#D32F2F]/30 bg-[#FDEAEA] text-[#D32F2F]'
-                                  : 'border-[#B78103]/30 bg-[#FFF8E1] text-[#B78103]'
+                                  ? t('borderD32f2f30BgFdeaeaTextD32f2f', 'border-[#D32F2F]/30 bg-[#FDEAEA] text-[#D32F2F]')
+                                  : t('borderB7810330BgFff8e1TextB78103', 'border-[#B78103]/30 bg-[#FFF8E1] text-[#B78103]')
                               }`}
                             >
                               {backer.status === 'captured'
-                                ? '✓ Captured'
+                                ? t('captured', '✓ Captured')
                                 : backer.status === 'released'
-                                ? '✕ Released'
-                                : '• Authorized'}
+                                ? t('released', '✕ Released')
+                                : t('authorized', '• Authorized')}
                             </span>
                           </div>
                           <span className="text-xs text-[#878787] block mt-0.5">
@@ -711,7 +709,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                       {t('creatorUpdatesTitle', 'Creator Updates & Logs')}
                     </h2>
                     <p className="text-xs text-[#878787] mt-0.5">
-                      Direct crafting dispatches from {campaign.creator}.
+                      {t('directCraftingDispatchesFrom', 'Direct crafting dispatches from')}{campaign.creator}.
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#878787] uppercase">
@@ -728,7 +726,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F0F0F0] pb-2 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] font-bold text-[11px]">
-                            Update #{update.updateNumber}
+                            {t('update', 'Update #')}{update.updateNumber}
                           </span>
                           <span className="text-[#878787]">• {update.date}</span>
                         </div>
@@ -748,16 +746,15 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                           onClick={() => toggleLikeUpdate(update.id)}
                           className={`flex items-center gap-1.5 px-3 py-1 rounded-[2px] border transition-colors cursor-pointer text-xs font-semibold ${
                             likedUpdates[update.id]
-                              ? 'border-[#D32F2F] bg-[#FFEBEE] text-[#D32F2F]'
-                              : 'border-[#EAEAEA] hover:bg-[#F1F3F6] text-[#212121]'
+                              ? t('borderD32f2fBgFfebeeTextD32f2f', 'border-[#D32F2F] bg-[#FFEBEE] text-[#D32F2F]')
+                              : t('borderEaeaeaHoverBgF1f3f6Text212121', 'border-[#EAEAEA] hover:bg-[#F1F3F6] text-[#212121]')
                           }`}
                         >
                           <Heart className="w-3.5 h-3.5" />
                           <span>
-                            {update.likesCount + (likedUpdates[update.id] ? 1 : 0)} Applauded
-                          </span>
+                            {update.likesCount + (likedUpdates[update.id] ? 1 : 0)} {t('applauded', 'Applauded')}</span>
                         </button>
-                        <span className="text-[#878787]">Verified Workshop Dispatch</span>
+                        <span className="text-[#878787]">{t('verifiedWorkshopDispatch', 'Verified Workshop Dispatch')}</span>
                       </div>
                     </article>
                   ))}
@@ -792,7 +789,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                         value={commenterName}
                         onChange={(e) => setCommenterName(e.target.value)}
                         onValueChange={(val) => setCommenterName(val)}
-                        placeholder="Your Name"
+                        placeholder={t('yourName', 'Your Name')}
                         className="w-full px-3 py-1.5 text-xs rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] focus:outline-none focus:border-[#2874F0]"
                       />
                     </div>
@@ -806,7 +803,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                           value={commentText}
                           onChange={(e) => setCommentText(e.target.value)}
                           onValueChange={(val) => setCommentText(val)}
-                          placeholder="Ask the creator or backer community a question..."
+                          placeholder={t('askTheCreatorOrBackerCommunityAQues', 'Ask the creator or backer community a question...')}
                           className="flex-1 px-3 py-1.5 text-xs rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] focus:outline-none focus:border-[#2874F0]"
                           containerClassName="flex-1"
                         />
@@ -837,9 +834,9 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                           {comment.authorBadge && (
                             <span
                               className={`text-[10px] px-2 py-0.5 rounded-[2px] border font-bold ${
-                                comment.authorBadge === 'Creator'
-                                  ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0]'
-                                  : 'bg-[#FFF3EE] text-[#FB641B] border-[#FB641B]/30'
+                                comment.authorBadge === t('creator', 'Creator')
+                                  ? t('bg2874f0TextFfffffBorder2874f0', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0]')
+                                  : t('bgFff3eeTextFb641bBorderFb641b30', 'bg-[#FFF3EE] text-[#FB641B] border-[#FB641B]/30')
                               }`}
                             >
                               {comment.authorBadge}
@@ -869,10 +866,10 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
 
                 <div className="border border-[#EAEAEA] rounded-[4px] bg-[#FFFFFF] overflow-hidden divide-y divide-[#F0F0F0]">
                   {(campaign.specs ?? [
-                    { label: 'Primary Construction', value: 'High-tolerance engineering alloy' },
-                    { label: 'Collet Tolerance', value: '±0.005 mm micro-machined' },
-                    { label: 'Total Weight', value: 'Calibrated laboratory balance' },
-                    { label: 'Origin', value: 'Studio Hand Assembly' },
+                    { label: t('primaryConstruction', 'Primary Construction'), value: t('highToleranceEngineeringAlloy', 'High-tolerance engineering alloy') },
+                    { label: t('colletTolerance', 'Collet Tolerance'), value: t('key_0005MmMicroMachined', '±0.005 mm micro-machined') },
+                    { label: t('totalWeight', 'Total Weight'), value: t('calibratedLaboratoryBalance', 'Calibrated laboratory balance') },
+                    { label: t('origin', 'Origin'), value: t('studioHandAssembly', 'Studio Hand Assembly') },
                   ]).map((item, idx) => (
                     <div
                       key={idx}
@@ -897,10 +894,10 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
 
                 <div className="space-y-3">
                   {(campaign.timeline ?? [
-                    { phase: 'Tooling & Prototypes', date: 'August 2026', description: 'Workshop tooling verification.' },
-                    { phase: 'Pledge Escrow', date: 'Sept 2026', description: 'Craftify funding drive.' },
-                    { phase: 'Machining Run', date: 'Oct-Nov 2026', description: 'Volume workshop production.' },
-                    { phase: 'Backer Dispatch', date: 'Dec 2026', description: 'Direct insured shipping.' },
+                    { phase: t('toolingPrototypes', 'Tooling & Prototypes'), date: t('august2026', 'August 2026'), description: t('workshopToolingVerification', 'Workshop tooling verification.') },
+                    { phase: t('pledgeEscrow', 'Pledge Escrow'), date: t('sept2026', 'Sept 2026'), description: t('craftifyFundingDrive', 'Craftify funding drive.') },
+                    { phase: t('machiningRun', 'Machining Run'), date: t('octNov2026', 'Oct-Nov 2026'), description: t('volumeWorkshopProduction', 'Volume workshop production.') },
+                    { phase: t('backerDispatch', 'Backer Dispatch'), date: t('dec2026', 'Dec 2026'), description: t('directInsuredShipping', 'Direct insured shipping.') },
                   ]).map((item, idx) => (
                     <div
                       key={idx}
@@ -949,7 +946,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
 
               {/* Reward Tiers List */}
               <div className="space-y-3 pt-1">
-                {campaign.rewardTiers.map((tier) => {
+                {displayCampaign.rewardTiers.map((tier) => {
                   const isCapped = tier.maxBackers !== undefined;
                   const isSoldOut = isCapped && tier.backersCount >= (tier.maxBackers ?? 0);
 
@@ -996,7 +993,7 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                         </div>
                         <div>
                           {isCapped ? (
-                            <span className={isSoldOut ? 'text-[#D32F2F] font-bold' : ''}>
+                            <span className={isSoldOut ? t('textD32f2fFontBold', 'text-[#D32F2F] font-bold') : ''}>
                               {tier.backersCount} {t('leftOf', 'of')} {tier.maxBackers} {t('claimed', 'claimed')}
                             </span>
                           ) : (
@@ -1011,15 +1008,15 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                         onClick={() => !isPendingApproval && onOpenPledgeModal(campaign, tier)}
                         className={`w-full py-2.5 px-4 rounded-[2px] text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.99] ${
                           isPendingApproval
-                            ? 'bg-[#FFF8E1] text-[#B78103] border border-[#FFB300] cursor-not-allowed'
+                            ? t('bgFff8e1TextB78103BorderBorderFfb30', 'bg-[#FFF8E1] text-[#B78103] border border-[#FFB300] cursor-not-allowed')
                             : isSoldOut
-                            ? 'bg-[#EAEAEA] text-[#878787] cursor-not-allowed'
-                            : 'bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] shadow-xs cursor-pointer'
+                            ? t('bgEaeaeaText878787CursorNotAllowed', 'bg-[#EAEAEA] text-[#878787] cursor-not-allowed')
+                            : t('bgFb641bHoverBgE85d19TextFfffffShad', 'bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] shadow-xs cursor-pointer')
                         }`}
                       >
                         <span>
                           {isPendingApproval
-                            ? 'Awaiting Approval'
+                            ? t('awaitingApproval', 'Awaiting Approval')
                             : isSoldOut
                             ? t('tierSoldOut', 'Tier Sold Out')
                             : `${t('selectTier', 'Select Tier')} • ${formatINR(tier.pledgeAmount)}`}
@@ -1074,12 +1071,11 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#F0F0F0]">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#2874F0]"></span>
-              <h3 className="text-lg font-bold text-[#212121]">About the Artisan & Workshop</h3>
+              <h3 className="text-lg font-bold text-[#212121]">{t('aboutTheArtisanWorkshop', 'About the Artisan & Workshop')}</h3>
             </div>
             <span className="text-xs font-semibold text-[#388E3C] bg-[#EAF8EB] px-2.5 py-0.5 rounded-[2px] border border-[#388E3C]/20 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
-              Verified Craftify Artisan
-            </span>
+              {t('verifiedCraftifyArtisan', 'Verified Craftify Artisan')}</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -1109,13 +1105,13 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
                 <span>
                   {campaign.creatorCity && campaign.creatorState
                     ? `${campaign.creatorCity}, ${campaign.creatorState}`
-                    : campaign.artisanRegion || campaign.creatorLocation || 'India'}
+                    : campaign.artisanRegion || campaign.creatorLocation || t('india', 'India')}
                 </span>
               </div>
               {campaign.creatorYearsOfExperience && (
                 <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-[#FB641B] bg-[#FFF3E0] px-2 py-0.5 rounded-[2px]">
                   <Award className="w-3 h-3" />
-                  <span>{campaign.creatorYearsOfExperience} Years Experience</span>
+                  <span>{campaign.creatorYearsOfExperience} {t('yearsExperience', 'Years Experience')}</span>
                 </div>
               )}
             </div>
@@ -1123,28 +1119,27 @@ export const CampaignDetailPage: React.FC<CampaignDetailPageProps> = ({
             <div className="md:col-span-9 space-y-4">
               <div>
                 <h4 className="text-base font-bold text-[#212121] mb-1">
-                  Artisan Story & Craft Heritage
-                </h4>
+                  {t('artisanStoryCraftHeritage', 'Artisan Story & Craft Heritage')}</h4>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed whitespace-pre-line">
-                  {campaign.creatorBio ?? campaign.shortDescription ?? 'Generational artisan committed to reviving authentic handmade craft traditions and working directly with patrons on Craftify.'}
+                  {campaign.creatorBio ?? campaign.shortDescription ?? t('generationalArtisanCommittedToReviv', 'Generational artisan committed to reviving authentic handmade craft traditions and working directly with patrons on Craftify.')}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#F0F0F0] text-xs">
                 <div className="p-3 bg-[#F1F3F6] rounded-[2px] border border-[#EAEAEA]">
-                  <span className="text-[10px] uppercase font-bold text-[#878787] block">Craft Specialty</span>
-                  <span className="font-bold text-[#212121] mt-0.5 block">{campaign.craftHeritage || campaign.category || 'Handmade Craft'}</span>
+                  <span className="text-[10px] uppercase font-bold text-[#878787] block">{t('craftSpecialty', 'Craft Specialty')}</span>
+                  <span className="font-bold text-[#212121] mt-0.5 block">{campaign.craftHeritage || campaign.category || t('handmadeCraft', 'Handmade Craft')}</span>
                 </div>
                 <div className="p-3 bg-[#F1F3F6] rounded-[2px] border border-[#EAEAEA]">
-                  <span className="text-[10px] uppercase font-bold text-[#878787] block">Studio / Workshop</span>
+                  <span className="text-[10px] uppercase font-bold text-[#878787] block">{t('studioWorkshop', 'Studio / Workshop')}</span>
                   <span className="font-bold text-[#212121] mt-0.5 block">{campaign.creatorBusinessName || campaign.creator}</span>
                 </div>
                 <div className="p-3 bg-[#F1F3F6] rounded-[2px] border border-[#EAEAEA]">
-                  <span className="text-[10px] uppercase font-bold text-[#878787] block">Location & Guild</span>
+                  <span className="text-[10px] uppercase font-bold text-[#878787] block">{t('locationGuild', 'Location & Guild')}</span>
                   <span className="font-bold text-[#212121] mt-0.5 block">
                     {campaign.creatorCity && campaign.creatorState
                       ? `${campaign.creatorCity}, ${campaign.creatorState}`
-                      : campaign.artisanRegion || campaign.creatorLocation || 'India'}
+                      : campaign.artisanRegion || campaign.creatorLocation || t('india', 'India')}
                   </span>
                 </div>
               </div>

@@ -19,6 +19,8 @@ const COMPLEXITY_DESCRIPTIONS: Record<CraftComplexityLevel, string> = {
   master: 'Master: intricate detail work, years of specialized training.',
 };
 
+import { useLanguage } from '../../context/LanguageContext';
+
 export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
   craftType,
   region,
@@ -28,6 +30,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
   defaultHoursSpent = '',
   defaultComplexity = 'skilled',
 }) => {
+  const { t } = useLanguage();
   const [materialCost, setMaterialCost] = useState<string>(String(defaultMaterialCost || ''));
   const [hoursSpent, setHoursSpent] = useState<string>(String(defaultHoursSpent || ''));
   const [complexityLevel, setComplexityLevel] = useState<CraftComplexityLevel>(defaultComplexity);
@@ -35,6 +38,15 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<SuggestPriceResponse | null>(null);
   const [appliedPrice, setAppliedPrice] = useState<number | null>(null);
+
+  // Sync / reset inputs when defaults or craft info reset
+  React.useEffect(() => {
+    setMaterialCost(String(defaultMaterialCost || ''));
+    setHoursSpent(String(defaultHoursSpent || ''));
+    setSuggestion(null);
+    setAppliedPrice(null);
+    setErrorMessage(null);
+  }, [defaultMaterialCost, defaultHoursSpent, craftType, region]);
 
   const handleSuggest = async () => {
     const costNum = Number(materialCost);
@@ -93,25 +105,23 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
     <div
       id="ai-price-suggester-container"
       data-testid="ai-price-suggester"
-      aria-label="Suggest a fair price"
+      aria-label={t('suggestAFairPrice', 'Suggest a fair price')}
       className={`mt-2 p-3 sm:p-3.5 rounded-[4px] bg-[#F1F3F6] border border-[#388E3C]/20 space-y-2.5 ${className}`}
     >
       <div className="flex items-center justify-between border-b border-[#388E3C]/15 pb-1.5">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#388E3C] uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5 text-[#388E3C]" />
-          <span>Suggest a fair price • Fair Artisan Pricing</span>
+          <span>{t('suggestAFairPriceFairArtisanPricing', 'Suggest a fair price • Fair Artisan Pricing')}</span>
         </div>
         <span className="text-[10px] text-[#878787]">
-          Cost & Margin Calculator
-        </span>
+          {t('costMarginCalculator', 'Cost & Margin Calculator')}</span>
       </div>
 
       {/* Input Group: Material Cost (₹) & Hours Spent */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div>
           <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1">
-            Raw Material Cost (₹) *
-          </label>
+            {t('rawMaterialCost', 'Raw Material Cost (₹) *')}</label>
           <div className="relative">
             <span className="text-xs font-bold text-[#878787] absolute left-2.5 top-1/2 -translate-y-1/2">₹</span>
             <input
@@ -124,7 +134,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
                 setMaterialCost(e.target.value);
                 if (errorMessage) setErrorMessage(null);
               }}
-              placeholder="e.g. 650"
+              placeholder={t('eG650', 'e.g. 650')}
               className="w-full pl-6 pr-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs font-bold text-[#212121] focus:outline-none focus:border-[#388E3C]"
             />
           </div>
@@ -132,8 +142,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
 
         <div>
           <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1">
-            Labor Hours Spent *
-          </label>
+            {t('laborHoursSpent', 'Labor Hours Spent *')}</label>
           <input
             id="ai-hours-spent-input"
             type="number"
@@ -144,7 +153,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
               setHoursSpent(e.target.value);
               if (errorMessage) setErrorMessage(null);
             }}
-            placeholder="e.g. 8"
+            placeholder={t('eG8', 'e.g. 8')}
             className="w-full px-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs font-bold text-[#212121] focus:outline-none focus:border-[#388E3C]"
           />
         </div>
@@ -157,8 +166,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
           id="ai-complexity-label"
           className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1"
         >
-          Craft Complexity Level *
-        </label>
+          {t('craftComplexityLevel', 'Craft Complexity Level *')}</label>
         <select
           id="complexity_level"
           name="complexity_level"
@@ -172,9 +180,9 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
           }}
           className="w-full px-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs font-bold text-[#212121] focus:outline-none focus:border-[#388E3C]"
         >
-          <option value="basic">Basic</option>
-          <option value="skilled">Skilled</option>
-          <option value="master">Master-level</option>
+          <option value="basic">{t('basic', 'Basic')}</option>
+          <option value="skilled">{t('skilled', 'Skilled')}</option>
+          <option value="master">{t('masterLevel', 'Master-level')}</option>
         </select>
         <p
           id="ai-complexity-helper"
@@ -195,27 +203,26 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
           onClick={handleSuggest}
           className={`px-3 py-1.5 rounded-[2px] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs ${
             isLoading
-              ? 'bg-[#388E3C]/70 text-[#FFFFFF] cursor-wait'
-              : 'bg-[#388E3C] hover:bg-[#2E7D32] text-[#FFFFFF]'
+              ? t('bg388e3c70TextFfffffCursorWait', 'bg-[#388E3C]/70 text-[#FFFFFF] cursor-wait')
+              : t('bg388e3cHoverBg2e7d32TextFfffff', 'bg-[#388E3C] hover:bg-[#2E7D32] text-[#FFFFFF]')
           }`}
         >
           {isLoading ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Suggesting a fair price...</span>
+              <span>{t('suggestingAFairPrice', 'Suggesting a fair price...')}</span>
             </>
           ) : (
             <>
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Suggest a fair price</span>
+              <span>{t('suggestAFairPrice', 'Suggest a fair price')}</span>
             </>
           )}
         </button>
 
         {isLoading && (
           <span className="text-xs text-[#388E3C] font-medium animate-pulse">
-            Suggesting a fair price...
-          </span>
+            {t('suggestingAFairPrice', 'Suggesting a fair price...')}</span>
         )}
       </div>
 
@@ -239,8 +246,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F0F0F0] pb-2">
             <div>
               <span className="text-[10px] uppercase tracking-wider text-[#878787] font-bold block">
-                Recommended Fair Retail Range
-              </span>
+                {t('recommendedFairRetailRange', 'Recommended Fair Retail Range')}</span>
               <div className="text-base sm:text-lg font-bold text-[#388E3C]">
                 {formatINR(suggestion.price_range_min)} – {formatINR(suggestion.price_range_max)}
               </div>
@@ -253,12 +259,12 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
               className="px-3.5 py-1.5 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto shadow-xs"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Use this price ({formatINR(Math.round((suggestion.price_range_min + suggestion.price_range_max) / 2))})</span>
+              <span>{t('useThisPrice', 'Use this price (')}{formatINR(Math.round((suggestion.price_range_min + suggestion.price_range_max) / 2))})</span>
             </button>
           </div>
 
           <div className="text-xs text-[#212121] leading-relaxed">
-            <span className="font-bold text-[#388E3C]">Economics Reasoning: </span>
+            <span className="font-bold text-[#388E3C]">{t('economicsReasoning', 'Economics Reasoning:')}</span>
             {suggestion.reasoning}
           </div>
 
@@ -269,7 +275,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
               className="text-[11px] text-[#878787] leading-normal pt-1.5 border-t border-[#F0F0F0]"
             >
               <span>
-                Similar handmade items in this category typically sell for {formatINR(suggestion.market_reference_min)}–{formatINR(suggestion.market_reference_max)}.
+                {t('similarHandmadeItemsInThisCategoryT', 'Similar handmade items in this category typically sell for')}{formatINR(suggestion.market_reference_min)}–{formatINR(suggestion.market_reference_max)}.
               </span>
             </div>
           )}
@@ -277,7 +283,7 @@ export const AIPriceSuggester: React.FC<AIPriceSuggesterProps> = ({
           {appliedPrice && (
             <div className="text-[11px] font-bold text-[#388E3C] flex items-center gap-1 bg-[#EAF8EB] p-1.5 rounded-[2px]">
               <Check className="w-3.5 h-3.5" />
-              <span>Price {formatINR(appliedPrice)} applied to price field.</span>
+              <span>{t('price', 'Price')}{formatINR(appliedPrice)} {t('appliedToPriceField', 'applied to price field.')}</span>
             </div>
           )}
         </div>

@@ -1,0 +1,374 @@
+import fs from 'fs';
+import path from 'path';
+import ts from 'typescript';
+
+const srcDir = path.resolve('src');
+const translationsFilePath = path.resolve('src/i18n/translations.ts');
+
+const IGNORED_ATTRIBUTES = new Set([
+  'id', 'className', 'class', 'src', 'href', 'key', 'type', 'name', 'rel',
+  'referrerPolicy', 'role', 'tabIndex', 'method', 'step', 'min', 'max',
+  'autoComplete', 'htmlFor', 'value', 'color', 'size', 'variant', 'view',
+  'tab', 'initialTab', 'status', 'outcome', 'code', 'category', 'sku',
+  'target', 'width', 'height', 'fill', 'stroke', 'd', 'viewBox', 'align',
+  'valign', 'colSpan', 'rowSpan', 'encType', 'accept', 'autoCapitalize',
+  'autoCorrect', 'spellCheck', 'dir', 'lang', 'style'
+]);
+
+const UI_ATTRIBUTES = new Set([
+  'placeholder', 'title', 'alt', 'aria-label', 'label', 'header', 'subtitle',
+  'heading', 'tooltip', 'errorMessage', 'message', 'warning', 'prompt',
+  'confirmText', 'cancelText', 'description', 'badgeText', 'buttonText',
+  'toast', 'helperText', 'emptyText'
+]);
+
+function toCamelCase(str: string): string {
+  let cleaned = str
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, i) => (i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+    .join('');
+
+  if (!cleaned) return 'key_' + Math.floor(Math.random() * 10000);
+  if (/^[0-9]/.test(cleaned)) cleaned = 'key_' + cleaned;
+  return cleaned.length > 35 ? cleaned.slice(0, 35) : cleaned;
+}
+
+const LANGUAGES = ['en', 'hi', 'bn', 'ta', 'te', 'mr', 'kn', 'gu'] as const;
+
+// Indic phrase dictionary
+const INDIC_MAP: Record<string, Record<string, string>> = {
+  'Artisan Account Required': {
+    hi: 'कारीगर खाता आवश्यक है',
+    bn: 'কারুশিল্পী অ্যাকাউন্ট প্রয়োজন',
+    ta: 'கைவினைஞர் கணக்கு தேவை',
+    te: 'హస్తకళాకారుల ఖాతా అవసరం',
+    mr: 'कारागीर खाते आवश्यक',
+    kn: 'ಕುಶಲಕರ್ಮಿ ಖಾತೆ ಅಗತ್ಯವಿದೆ',
+    gu: 'કારીગર ખાતું જરૂરી છે',
+  },
+  'Return to Store': {
+    hi: 'स्टोर पर वापस जाएं',
+    bn: 'স্টোরে ফিরে যান',
+    ta: 'கடைகளுக்குத் திரும்பு',
+    te: 'స్టోర్‌కు తిరిగి వెళ్ళండి',
+    mr: 'स्टोअरवर परत जा',
+    kn: 'ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ',
+    gu: 'સ્ટોર પર પાછા ફરો',
+  },
+  'Sign In / Register': {
+    hi: 'साइन इन / पंजीकरण',
+    bn: 'সাইন ইন / রেজিস্ট্রেশন',
+    ta: 'உள்நுழை / பதிவு செய்',
+    te: 'సైన్ ఇన్ / రిజిస్టర్',
+    mr: 'साइन इन / नोंदणी',
+    kn: 'ಸೈನ್ ಇನ್ / ನೋಂದಣಿ',
+    gu: 'સાઇન ઇન / નોંધણી',
+  },
+  'Return Home': {
+    hi: 'मुख्य पृष्ठ पर वापस जाएं',
+    bn: 'হোমে ফিরে যান',
+    ta: 'முகப்பிற்குத் திரும்பு',
+    te: 'హోమ్‌కు తిరిగి వెళ్ళండి',
+    mr: 'मुख्य पृष्ठावर जा',
+    kn: 'ಮುಖ್ಯ ಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ',
+    gu: 'મુખ્ય પૃષ્ઠ પર પાછા ફરો',
+  },
+  'Switch Account': {
+    hi: 'खाता बदलें',
+    bn: 'অ্যাাকাউন্ট পরিবর্তন করুন',
+    ta: 'கணக்கை மாற்று',
+    te: 'ఖాతాను మార్చండి',
+    mr: 'खाते बदला',
+    kn: 'ಖಾತೆ ಬದಲಾಯಿಸಿ',
+    gu: 'ખાતું બદલો',
+  },
+  'Authentication Required': {
+    hi: 'प्रमाणीकरण आवश्यक है',
+    bn: 'অনুমোদন প্রয়োজন',
+    ta: 'அடையாளச் சான்று தேவை',
+    te: 'ప్రామాణీకరణ అవసరం',
+    mr: 'प्रमाणीकरण आवश्यक',
+    kn: 'ದೃಢೀಕರಣ ಅಗತ್ಯವಿದೆ',
+    gu: 'પ્રમાણીકરણ જરૂરી છે',
+  },
+  'Sign In / Create Account': {
+    hi: 'साइन इन / नया खाता बनाएं',
+    bn: 'সাইন ইন / নতুন অ্যাকাউন্ট তৈরি করুন',
+    ta: 'உள்நுழை / புதிய கணக்கு உருவாக்கு',
+    te: 'సైన్ ఇన్ / ఖాతా సృష్టించండి',
+    mr: 'साइन इन / नवीन खाते तयार करा',
+    kn: 'ಸೈನ್ ಇನ್ / ಖಾತೆ ರಚಿಸಿ',
+    gu: 'સાઇન ઇન / નવું ખાતું બનાવો',
+  },
+  'Discover Campaigns': {
+    hi: 'अभियान खोजें',
+    bn: 'অভিযান খুঁজুন',
+    ta: 'பிரச்சாரங்களைக் கண்டறியவும்',
+    te: 'ప్రచారాలను కనుగొనండి',
+    mr: 'मोहीम शोधा',
+    kn: 'ಪ್ರಚಾರಗಳನ್ನು ಅನ್ವೇಷಿಸಿ',
+    gu: 'ઝુંબેશો શોધો',
+  },
+  'Browse Shop': {
+    hi: 'दुकान देखें',
+    bn: 'দোকান দেখুন',
+    ta: 'கடையைப் பார்வையிடுக',
+    te: 'షాప్ చూడండి',
+    mr: 'दुकान पहा',
+    kn: 'ಅಂಗಡಿಯನ್ನು ವೀಕ್ಷಿಸಿ',
+    gu: 'દુકાન જુઓ',
+  },
+  'My Wishlist': {
+    hi: 'मेरी इच्छासूची',
+    bn: 'আমার পছন্দের তালিকা',
+    ta: 'எனது விருப்பப் பட்டியல்',
+    te: 'నా విష్‌లిస్ట్',
+    mr: 'माझी इच्छासूची',
+    kn: 'ನನ್ನ ಇಚ್ಛೆಯ ಪಟ್ಟಿ',
+    gu: 'મારી પસંદગીઓ',
+  },
+  'Explore Store': {
+    hi: 'स्टोर देखें',
+    bn: 'স্টোর অন্বেষণ করুন',
+    ta: 'கடையை ஆராயுங்கள்',
+    te: 'స్టోర్‌ను అన్వేషించండి',
+    mr: 'स्टोअर एक्सप्लोर करा',
+    kn: 'ಅಂಗಡಿಯನ್ನು ಪರಿಶೀಲಿಸಿ',
+    gu: 'સ્ટોર જુઓ',
+  },
+  'in stock': {
+    hi: 'स्टॉक में उपलब्ध',
+    bn: 'স্টকে আছে',
+    ta: 'கையிருப்பில் உள்ளது',
+    te: 'స్టాక్‌లో ఉంది',
+    mr: 'स्टॉकमध्ये उपलब्ध',
+    kn: 'ದಾಸ್ತಾನಿನಲ್ಲಿದೆ',
+    gu: 'સ્ટોકમાં ઉપલબ્ધ',
+  },
+  'Add to Cart': {
+    hi: 'कार्ट में जोड़ें',
+    bn: 'কার্টে যোগ করুন',
+    ta: 'வண்டியில் சேர்',
+    te: 'కార్ట్‌కు జోడించండి',
+    mr: 'कार्टमध्ये जोडा',
+    kn: 'ಕಾರ್ಟ್‌ಗೆ ಸೇರಿಸಿ',
+    gu: 'કાર્ટમાં ઉમેરો',
+  },
+  'Delivery Address': {
+    hi: 'डिलिवरी का पता',
+    bn: 'ডেলিভারি ঠিকানা',
+    ta: 'டெலிவரி முகவரி',
+    te: 'డెలివరీ చిరునామా',
+    mr: 'डिलिव्हरी पत्ता',
+    kn: 'ವಿಲೇವಾರಿ ವಿಳಾಸ',
+    gu: 'ડિલિવરી સરનામું',
+  },
+  'Edit': {
+    hi: 'संपादित करें',
+    bn: 'সম্পাদনা করুন',
+    ta: 'திருத்து',
+    te: 'సవరించు',
+    mr: 'संपादित करा',
+    kn: 'ಸಂಪಾದಿಸಿ',
+    gu: 'સંપાદિત કરો',
+  },
+  'Street Address': {
+    hi: 'सड़क का पता',
+    bn: 'রাস্তার ঠিকানা',
+    ta: 'தெரு முகவரி',
+    te: 'వీధి చిరునామా',
+    mr: 'रस्त्याचा पत्ता',
+    kn: 'ರಸ್ತೆ ವಿಳಾಸ',
+    gu: 'શેરીનું સરનામું',
+  },
+  'City': {
+    hi: 'शहर',
+    bn: 'শহর',
+    ta: 'நகரம்',
+    te: 'నగరం',
+    mr: 'शहर',
+    kn: 'ನಗರ',
+    gu: 'શહેર',
+  },
+  'Country': {
+    hi: 'देश',
+    bn: 'দেশ',
+    ta: 'நாடு',
+    te: 'దేశం',
+    mr: 'देश',
+    kn: 'ದೇಶ',
+    gu: 'દેશ',
+  },
+  'Save Address': {
+    hi: 'पता सहेजें',
+    bn: 'ঠিকানা সংরক্ষণ করুন',
+    ta: 'முகவரியைச் சேமி',
+    te: 'చిరునామాను సేవ్ చేయండి',
+    mr: 'पत्ता जतन करा',
+    kn: 'ವಿಳಾಸವನ್ನು ಉಳಿಸಿ',
+    gu: 'સરનામું સાચવો',
+  },
+  'Cancel': {
+    hi: 'रद्द करें',
+    bn: 'বাতিল করুন',
+    ta: 'ரத்து செய்',
+    te: 'రద్దు చేయి',
+    mr: 'रद्द करा',
+    kn: 'ರದ್ದುಗೊಳಿಸಿ',
+    gu: 'રદ કરો',
+  },
+  'Verified': {
+    hi: 'सत्यापित',
+    bn: 'যাচাইকৃত',
+    ta: 'சரிபார்க்கப்பட்டது',
+    te: 'నిరూపించబడింది',
+    mr: 'सत्यापित',
+    kn: 'ದೃಢೀಕರಿಸಲಾಗಿದೆ',
+    gu: 'પ્રમાણિત',
+  },
+  'Launch Campaign': {
+    hi: 'अभियान शुरू करें',
+    bn: 'অভিযান শুরু করুন',
+    ta: 'பிரச்சாரத்தைத் தொடங்கு',
+    te: 'ప్రచారాన్ని ప్రారంభించండి',
+    mr: 'मोहीम सुरू करा',
+    kn: 'ಪ್ರಚಾರ ಪ್ರಾರಂಭಿಸಿ',
+    gu: 'ઝુંબેશ શરૂ કરો',
+  },
+  'Admin Panel': {
+    hi: 'एडमिन पैनल',
+    bn: 'এডমিন প্যানেল',
+    ta: 'நிர்வாகக் குழு',
+    te: 'అడ్మిన్ ప్యానెల్',
+    mr: 'ॲडमिन पॅनेल',
+    kn: 'ಅಡ್ಮಿನ್ ಪ್ಯಾನಲ್',
+    gu: 'એડમિન પેનલ',
+  },
+  'Preview': {
+    hi: 'पूर्वावलोकन',
+    bn: 'পূর্বরূপ',
+    ta: 'முன்னோட்டம்',
+    te: 'ముందస్తు వీక్షణం',
+    mr: 'पूर्वावलोकन',
+    kn: 'ಪೂರ್ವವೀಕ್ಷಣೆ',
+    gu: 'પૂર્વાવલોકન',
+  },
+  'Approve Campaign': {
+    hi: 'अभियान स्वीकृत करें',
+    bn: 'অভিযান অনুমোদন করুন',
+    ta: 'பிரச்சாரத்தை ஒப்புதல் செய்',
+    te: 'ప్రచారాన్ని ఆమోదించండి',
+    mr: 'मोहीम मंजूर करा',
+    kn: 'ಪ್ರಚಾರವನ್ನು ಅನುಮೋದಿಸಿ',
+    gu: 'ઝુંબેશ મંજૂર કરો',
+  },
+  'Admins': {
+    hi: 'व्यवस्थापक',
+    bn: 'প্রশাসকগণ',
+    ta: 'நிர்வாகிகள்',
+    te: 'అడ్మిన్లు',
+    mr: 'ॲडमिन्स',
+    kn: 'ಅಡ್ಮಿನ್ಗಳು',
+    gu: 'એડમિન',
+  },
+  'User': {
+    hi: 'उपयोगकर्ता',
+    bn: 'ব্যবহারকারী',
+    ta: 'பயனர்',
+    te: 'యూజర్',
+    mr: 'वापरकर्ता',
+    kn: 'ಬಳಕೆದಾರ',
+    gu: 'વપરાશકર્તા',
+  },
+  'Role': {
+    hi: 'भूमिका',
+    bn: 'ভূমিকা',
+    ta: 'பங்கு',
+    te: 'పాత్ర',
+    mr: 'భూమిక',
+    kn: 'ಪಾತ್ರ',
+    gu: 'ભૂમિકા',
+  },
+  'Account Status': {
+    hi: 'खाता स्थिति',
+    bn: 'অ্যাাকাউন্ট স্থিতি',
+    ta: 'கணக்கு நிலை',
+    te: 'ఖాతా స్థితి',
+    mr: 'खाते स्थिती',
+    kn: 'ಖಾತೆ ಸ್ಥಿತಿ',
+    gu: 'ખાતાની સ્થિતિ',
+  },
+  'Registered': {
+    hi: 'पंजीकृत',
+    bn: 'নিবন্ধিত',
+    ta: 'பதிவு செய்யப்பட்டது',
+    te: 'నమోదైంది',
+    mr: 'नोंदणीकृत',
+    kn: 'ನೋಂದಾಯಿಸಲಾಗಿದೆ',
+    gu: 'નોંધાયેલ',
+  },
+  'Actions': {
+    hi: 'कार्रवाई',
+    bn: 'পদক্ষেপসমূহ',
+    ta: 'செயல்கள்',
+    te: 'చర్యలు',
+    mr: 'कृती',
+    kn: 'ಕ್ರಿಯೆಗಳು',
+    gu: 'કાર્ડ કાયદા',
+  },
+  'Suspended': {
+    hi: 'निलंबित',
+    bn: 'স্থগিত',
+    ta: 'இடைநீக்கம் செய்யப்பட்டது',
+    te: 'సస్పెండ్ చేయబడింది',
+    mr: 'निलंबित',
+    kn: 'ಅಮಾನತುಗೊಳಿಸಲಾಗಿದೆ',
+    gu: 'મોકૂફ',
+  },
+  'Active': {
+    hi: 'सक्रिय',
+    bn: 'সক্রিয়',
+    ta: 'செயலில் உள்ள',
+    te: 'యాక్టివ్',
+    mr: 'सक्रिय',
+    kn: 'ಸಕ್ರಿಯ',
+    gu: 'સક્રિય',
+  },
+};
+
+function generateTranslationsForText(enText: string): Record<string, string> {
+  const result: Record<string, string> = { en: enText };
+  LANGUAGES.forEach((lang) => {
+    if (lang === 'en') return;
+    if (INDIC_MAP[enText] && INDIC_MAP[enText][lang]) {
+      result[lang] = INDIC_MAP[enText][lang];
+    } else {
+      // General translation approximation
+      result[lang] = enText;
+    }
+  });
+  return result;
+}
+
+const newKeysStore: Record<string, Record<string, string>> = {};
+
+function getAllFiles(dir: string, ext = '.tsx'): string[] {
+  let results: string[] = [];
+  const list = fs.readdirSync(dir);
+  list.forEach((file) => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(getAllFiles(filePath, ext));
+    } else if (filePath.endsWith(ext)) {
+      results.push(filePath);
+    }
+  });
+  return results;
+}
+
+const allFiles = getAllFiles(srcDir, '.tsx');
+console.log(`Processing ${allFiles.length} TSX files...`);

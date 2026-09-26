@@ -178,11 +178,11 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               onClick={() => setOnlyWishlisted(!onlyWishlisted)}
               className={`px-3 py-1.5 rounded-[2px] text-xs font-semibold transition-all flex items-center gap-1.5 border cursor-pointer ${
                 onlyWishlisted
-                  ? 'bg-[#FB641B] text-[#FFFFFF] border-[#FB641B] shadow-xs'
-                  : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:border-[#FB641B] hover:text-[#FB641B]'
+                  ? t('bgFb641bTextFfffffBorderFb641bShado', 'bg-[#FB641B] text-[#FFFFFF] border-[#FB641B] shadow-xs')
+                  : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:border-[#FB641B] hover:text-[#FB641B]')
               }`}
             >
-              <Heart className={`w-3.5 h-3.5 ${onlyWishlisted ? 'fill-[#FFFFFF] text-[#FFFFFF]' : 'text-[#FB641B]'}`} />
+              <Heart className={`w-3.5 h-3.5 ${onlyWishlisted ? t('fillFfffffTextFfffff', 'fill-[#FFFFFF] text-[#FFFFFF]') : 'text-[#FB641B]'}`} />
               <span>{t('wishlist', 'Wishlist')} ({wishlistedCount})</span>
             </button>
 
@@ -191,8 +191,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               onClick={() => setOnlyFunded(!onlyFunded)}
               className={`px-3 py-1.5 rounded-[2px] text-xs font-semibold transition-all flex items-center gap-1.5 border cursor-pointer ${
                 onlyFunded
-                  ? 'bg-[#388E3C] text-[#FFFFFF] border-[#388E3C] shadow-xs'
-                  : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:border-[#388E3C] hover:text-[#388E3C]'
+                  ? t('bg388e3cTextFfffffBorder388e3cShado', 'bg-[#388E3C] text-[#FFFFFF] border-[#388E3C] shadow-xs')
+                  : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:border-[#388E3C] hover:text-[#388E3C]')
               }`}
             >
               <Sparkles className={`w-3.5 h-3.5 ${onlyFunded ? 'text-[#FFFFFF]' : 'text-[#388E3C]'}`} />
@@ -234,7 +234,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     {t('exploreCategories', 'Filters & Categories')}
                   </span>
                 </div>
-                {(selectedCategory !== 'All' || onlyFunded || searchQuery) && (
+                {(selectedCategory !== t('all', 'All') || onlyFunded || searchQuery) && (
                   <button
                     onClick={handleResetFilters}
                     className="text-xs font-bold text-[#2874F0] hover:underline flex items-center gap-1 cursor-pointer"
@@ -247,11 +247,11 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
               <div className="space-y-0.5">
                 {categories.map((cat) => {
-                  const count = cat === 'All'
+                  const count = cat === t('all', 'All')
                     ? products.length
                     : products.filter((p) => p.category === cat).length;
                   const isSelected = selectedCategory === cat;
-                  const displayName = cat === 'All' ? t('allCategories', 'All Categories') : localizeCategory(cat);
+                  const displayName = cat === t('all', 'All') ? t('allCategories', 'All Categories') : localizeCategory(cat);
 
                   return (
                     <button
@@ -259,8 +259,8 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                       onClick={() => setSelectedCategory(cat)}
                       className={`w-full text-left px-3 py-2 rounded-[2px] text-xs transition-colors flex items-center justify-between cursor-pointer ${
                         isSelected
-                          ? 'bg-[#EBF2FE] text-[#2874F0] font-bold border-l-2 border-[#2874F0]'
-                          : 'text-[#212121] hover:bg-[#F9F9F9]'
+                          ? t('bgEbf2feText2874f0FontBoldBorderL2B', 'bg-[#EBF2FE] text-[#2874F0] font-bold border-l-2 border-[#2874F0]')
+                          : t('text212121HoverBgF9f9f9', 'text-[#212121] hover:bg-[#F9F9F9]')
                       }`}
                     >
                       <span>{displayName}</span>
@@ -298,13 +298,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             {/* Header info count */}
             <div className="flex items-center justify-between text-xs text-[#878787] mb-3 pb-2 border-b border-[#EAEAEA] bg-white px-3 py-2 rounded-[2px]">
               <div>
-                <span>Showing </span>
+                <span>{t('showing', 'Showing')}</span>
                 <strong className="text-[#212121]">{filteredProducts.length}</strong>
-                <span> of {products.length} {t('items', 'products')}</span>
-                {selectedCategory !== 'All' && <span> in <strong className="text-[#2874F0]">{localizeCategory(selectedCategory)}</strong></span>}
+                <span> {t('of', 'of')}{products.length} {t('items', 'products')}</span>
+                {selectedCategory !== t('all', 'All') && <span> {t('in', 'in')}<strong className="text-[#2874F0]">{localizeCategory(selectedCategory)}</strong></span>}
                 {onlyFunded && <span className="text-[#388E3C] font-semibold"> ({t('craftAssuredBadge', 'Craft-Assured')})</span>}
               </div>
-              {(selectedCategory !== 'All' || onlyFunded || activeSearchQuery) && (
+              {(selectedCategory !== t('all', 'All') || onlyFunded || activeSearchQuery) && (
                 <button
                   onClick={handleResetFilters}
                   className="text-xs text-[#2874F0] hover:underline font-bold cursor-pointer"
@@ -320,16 +320,14 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <div className="flex items-center gap-2">
                   <Search className="w-3.5 h-3.5 text-[#2874F0]" />
                   <span className="text-xs text-[#212121]">
-                    Search results for <strong className="text-[#2874F0]">"{activeSearchQuery}"</strong> ({filteredProducts.length} items found)
-                  </span>
+                    {t('searchResultsFor', 'Search results for')}<strong className="text-[#2874F0]">"{activeSearchQuery}"</strong> ({filteredProducts.length} {t('itemsFound', 'items found)')}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleUpdateSearch('')}
                   className="text-xs font-bold text-[#2874F0] hover:underline cursor-pointer"
                 >
-                  Clear search
-                </button>
+                  {t('clearSearch', 'Clear search')}</button>
               </div>
             )}
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, ArtisanPayoutDetails } from '../types';
 import { ImageUploadDropzone } from './common/ImageUploadDropzone';
+import { API_BASE_URL } from '../api/config';
 import {
   User as UserIcon,
   Briefcase,
@@ -18,6 +19,8 @@ import {
   FileText,
   Clock,
 } from 'lucide-react';
+
+import { useLanguage } from '../context/LanguageContext';
 
 interface CompleteProfilePageProps {
   currentUser: User | null;
@@ -82,6 +85,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
   onNavigate,
   showToast,
 }) => {
+  const { t } = useLanguage();
   const isEditing = Boolean(currentUser?.profileCompleted);
 
   // Form State
@@ -204,7 +208,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
       showToast('Please fill all required profile fields before proceeding.', 'error');
@@ -213,6 +217,37 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
     }
 
     setIsSubmitting(true);
+
+    const token = currentUser?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null);
+    if (token) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/me/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            full_name: legalName.trim(),
+            phone: phone.trim(),
+            city: city.trim(),
+            state: state.trim(),
+            craft_type: craftType.trim(),
+            bio: bio.trim(),
+          }),
+        });
+
+        if (!res.ok) {
+          showToast("Couldn't connect to the server — make sure the backend is running", 'error');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch {
+        showToast("Couldn't connect to the server — make sure the backend is running", 'error');
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     const payoutDetails: ArtisanPayoutDetails = {
       accountHolderName: accountHolderName.trim(),
@@ -261,10 +296,10 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
         {/* Breadcrumb Bar */}
         <div className="bg-[#FFFFFF] rounded-[4px] border border-[#E0E0E0] p-3.5 sm:p-4 mb-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[#878787]">Craftify Seller Hub</span>
+            <span className="text-[#878787]">{t('craftifySellerHub', 'Craftify Seller Hub')}</span>
             <span className="text-[#878787]">/</span>
             <span className="font-semibold text-[#2874F0]">
-              {isEditing ? 'Edit Artisan Profile' : 'Artisan Onboarding — Complete Profile'}
+              {isEditing ? t('editArtisanProfile', 'Edit Artisan Profile') : t('artisanOnboardingCompleteProfile', 'Artisan Onboarding — Complete Profile')}
             </span>
           </div>
 
@@ -275,14 +310,14 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
               className="px-3 py-1.5 bg-[#F1F3F6] hover:bg-[#EAEAEA] text-[#2874F0] border border-[#2874F0]/30 rounded-[2px] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Fill Demo Profile</span>
+              <span>{t('fillDemoProfile', 'Fill Demo Profile')}</span>
             </button>
             <button
               type="button"
               onClick={() => onNavigate(isEditing ? 'creator-dashboard' : 'home')}
               className="px-3 py-1.5 text-xs text-[#878787] hover:text-[#212121] transition-colors cursor-pointer"
             >
-              {isEditing ? 'Back to Dashboard' : 'Cancel'}
+              {isEditing ? t('backToDashboard', 'Back to Dashboard') : t('cancel', 'Cancel')}
             </button>
           </div>
         </div>
@@ -293,20 +328,19 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[2px] bg-[#EBF3FE] text-[#2874F0] text-[11px] font-bold uppercase tracking-wider mb-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#2874F0]" />
-                <span>Craftify Verified Artisan Enrollment</span>
+                <span>{t('craftifyVerifiedArtisanEnrollment', 'Craftify Verified Artisan Enrollment')}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#212121] tracking-tight">
-                {isEditing ? 'Manage Your Artisan Profile' : 'Complete Your Artisan Profile'}
+                {isEditing ? t('manageYourArtisanProfile', 'Manage Your Artisan Profile') : t('completeYourArtisanProfile', 'Complete Your Artisan Profile')}
               </h1>
               <p className="text-xs sm:text-sm text-[#878787] mt-1.5 max-w-2xl leading-relaxed">
-                Before launching a crowdfunding campaign or listing handcrafted pieces, complete your seller profile. Your workshop story, craft lineage, and simulated payout escrow account will be authenticated for backer trust.
-              </p>
+                {t('beforeLaunchingACrowdfundingCampaig', 'Before launching a crowdfunding campaign or listing handcrafted pieces, complete your seller profile. Your workshop story, craft lineage, and simulated payout escrow account will be authenticated for backer trust.')}</p>
             </div>
 
             <div className="hidden sm:flex flex-col items-center justify-center w-24 h-24 bg-[#F8FAFC] border border-[#E0E0E0] rounded-[4px] p-2 text-center shrink-0">
               <Building2 className="w-7 h-7 text-[#2874F0] mb-1" />
               <span className="text-[10px] font-bold text-[#212121] leading-tight">
-                {isEditing ? 'Profile Active' : 'Step 1 of 1'}
+                {isEditing ? t('profileActive', 'Profile Active') : t('step1Of1', 'Step 1 of 1')}
               </span>
             </div>
           </div>
@@ -315,19 +349,19 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
           <div className="mt-5 pt-4 border-t border-[#F0F0F0] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             <div className="flex items-center gap-2 p-2 rounded-[2px] bg-[#F8FAFC] border border-[#EAEAEA]">
               <UserIcon className="w-4 h-4 text-[#2874F0] shrink-0" />
-              <span className="font-semibold text-[#212121] truncate">1. Personal Info</span>
+              <span className="font-semibold text-[#212121] truncate">{t('key_1PersonalInfo', '1. Personal Info')}</span>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-[2px] bg-[#F8FAFC] border border-[#EAEAEA]">
               <Briefcase className="w-4 h-4 text-[#2874F0] shrink-0" />
-              <span className="font-semibold text-[#212121] truncate">2. Your Craft</span>
+              <span className="font-semibold text-[#212121] truncate">{t('key_2YourCraft', '2. Your Craft')}</span>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-[2px] bg-[#F8FAFC] border border-[#EAEAEA]">
               <Camera className="w-4 h-4 text-[#2874F0] shrink-0" />
-              <span className="font-semibold text-[#212121] truncate">3. Story & Photo</span>
+              <span className="font-semibold text-[#212121] truncate">{t('key_3StoryPhoto', '3. Story & Photo')}</span>
             </div>
             <div className="flex items-center gap-2 p-2 rounded-[2px] bg-[#F8FAFC] border border-[#EAEAEA]">
               <CreditCard className="w-4 h-4 text-[#2874F0] shrink-0" />
-              <span className="font-semibold text-[#212121] truncate">4. Escrow Payout</span>
+              <span className="font-semibold text-[#212121] truncate">{t('key_4EscrowPayout', '4. Escrow Payout')}</span>
             </div>
           </div>
         </div>
@@ -341,32 +375,32 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                 1
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#212121]">Personal Details</h2>
-                <p className="text-xs text-[#878787]">Legal identity and workshop location credentials</p>
+                <h2 className="text-base font-bold text-[#212121]">{t('personalDetails', 'Personal Details')}</h2>
+                <p className="text-xs text-[#878787]">{t('legalIdentityAndWorkshopLocationCre', 'Legal identity and workshop location credentials')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Full Legal Name <span className="text-[#D32F2F]">*</span>
+                  {t('fullLegalName', 'Full Legal Name')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <input
                   type="text"
                   value={legalName}
                   onChange={(e) => setLegalName(e.target.value)}
-                  placeholder="e.g. Radha Devi Sharma"
+                  placeholder={t('eGRadhaDeviSharma', 'e.g. Radha Devi Sharma')}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                    errors.legalName ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                    errors.legalName ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.legalName && <p className="text-[11px] text-[#D32F2F] mt-1">{errors.legalName}</p>}
-                <p className="text-[10px] text-[#878787] mt-1">Official name as on government ID or artisan passbook</p>
+                <p className="text-[10px] text-[#878787] mt-1">{t('officialNameAsOnGovernmentIdOrArtis', 'Official name as on government ID or artisan passbook')}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Contact Phone Number <span className="text-[#D32F2F]">*</span>
+                  {t('contactPhoneNumber', 'Contact Phone Number')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-xs text-[#878787] font-semibold">+91</span>
@@ -376,25 +410,25 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                     onChange={(e) => setPhone('+91 ' + e.target.value.trimStart())}
                     placeholder="98765 43210"
                     className={`w-full pl-11 pr-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                      errors.phone ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                      errors.phone ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                     }`}
                   />
                 </div>
                 {errors.phone && <p className="text-[11px] text-[#D32F2F] mt-1">{errors.phone}</p>}
-                <p className="text-[10px] text-[#878787] mt-1">For order courier dispatch and admin communication</p>
+                <p className="text-[10px] text-[#878787] mt-1">{t('forOrderCourierDispatchAndAdminComm', 'For order courier dispatch and admin communication')}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  City / Artisan Cluster <span className="text-[#D32F2F]">*</span>
+                  {t('cityArtisanCluster', 'City / Artisan Cluster')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="e.g. Chanderi, Ashoknagar District"
+                  placeholder={t('eGChanderiAshoknagarDistrict', 'e.g. Chanderi, Ashoknagar District')}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                    errors.city ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                    errors.city ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.city && <p className="text-[11px] text-[#D32F2F] mt-1">{errors.city}</p>}
@@ -402,13 +436,13 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Region / State <span className="text-[#D32F2F]">*</span>
+                  {t('regionState', 'Region / State')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                    errors.state ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                    errors.state ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 >
                   {INDIAN_STATES.map((st) => (
@@ -423,7 +457,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
               <div className="sm:col-span-2 pt-2 border-t border-[#F0F0F0]">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-[#212121]">
-                    GSTIN Number <span className="text-[#878787] font-normal">(Optional for Artisans)</span>
+                    {t('gstinNumber', 'GSTIN Number')}<span className="text-[#878787] font-normal">{t('optionalForArtisans', '(Optional for Artisans)')}</span>
                   </label>
                   <label className="flex items-center gap-1.5 text-xs text-[#666666] cursor-pointer select-none">
                     <input
@@ -435,7 +469,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                       }}
                       className="rounded-[2px] text-[#2874F0] focus:ring-[#2874F0]"
                     />
-                    <span>Not registered for GST (Small artisan turnover exemption)</span>
+                    <span>{t('notRegisteredForGstSmallArtisanTurn', 'Not registered for GST (Small artisan turnover exemption)')}</span>
                   </label>
                 </div>
                 {!notGstRegistered && (
@@ -444,7 +478,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                       type="text"
                       value={gstNumber}
                       onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
-                      placeholder="e.g. 23AAAAA0000A1Z5"
+                      placeholder={t('eG23aaaaa0000a1z5', 'e.g. 23AAAAA0000A1Z5')}
                       maxLength={15}
                       className="w-full px-3 py-2 text-xs rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] uppercase focus:outline-none focus:ring-1 focus:ring-[#2874F0]"
                     />
@@ -462,32 +496,32 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                 2
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#212121]">Your Craft & Workshop</h2>
-                <p className="text-xs text-[#878787]">Your artisanal enterprise identity and traditional craft lineage</p>
+                <h2 className="text-base font-bold text-[#212121]">{t('yourCraftWorkshop', 'Your Craft & Workshop')}</h2>
+                <p className="text-xs text-[#878787]">{t('yourArtisanalEnterpriseIdentityAndT', 'Your artisanal enterprise identity and traditional craft lineage')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Business / Workshop Name <span className="text-[#D32F2F]">*</span>
+                  {t('businessWorkshopName', 'Business / Workshop Name')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <input
                   type="text"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="e.g. Radha Devi Handlooms & Weaver Guild"
+                  placeholder={t('eGRadhaDeviHandloomsWeaverGuild', 'e.g. Radha Devi Handlooms & Weaver Guild')}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                    errors.businessName ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                    errors.businessName ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.businessName && <p className="text-[11px] text-[#D32F2F] mt-1">{errors.businessName}</p>}
-                <p className="text-[10px] text-[#878787] mt-1">Displayed prominently on your campaign cards and product listings</p>
+                <p className="text-[10px] text-[#878787] mt-1">{t('displayedProminentlyOnYourCampaignC', 'Displayed prominently on your campaign cards and product listings')}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Years of Experience in Craft <span className="text-[#D32F2F]">*</span>
+                  {t('yearsOfExperienceInCraft', 'Years of Experience in Craft')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -496,31 +530,31 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                     max={80}
                     value={yearsOfExperience}
                     onChange={(e) => setYearsOfExperience(e.target.value)}
-                    placeholder="e.g. 18"
+                    placeholder={t('eG18', 'e.g. 18')}
                     className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                      errors.yearsOfExperience ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                      errors.yearsOfExperience ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                     }`}
                   />
-                  <span className="absolute right-3 top-2 text-xs text-[#878787]">years</span>
+                  <span className="absolute right-3 top-2 text-xs text-[#878787]">{t('years', 'years')}</span>
                 </div>
                 {errors.yearsOfExperience && (
                   <p className="text-[11px] text-[#D32F2F] mt-1">{errors.yearsOfExperience}</p>
                 )}
-                <p className="text-[10px] text-[#878787] mt-1">Demonstrates generational mastery to prospective backers</p>
+                <p className="text-[10px] text-[#878787] mt-1">{t('demonstratesGenerationalMasteryToPr', 'Demonstrates generational mastery to prospective backers')}</p>
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Primary Craft Heritage / Technique <span className="text-[#D32F2F]">*</span>
+                  {t('primaryCraftHeritageTechnique', 'Primary Craft Heritage / Technique')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     value={craftType}
                     onChange={(e) => setCraftType(e.target.value)}
-                    placeholder="e.g. Chanderi Handloom Weaving"
+                    placeholder={t('eGChanderiHandloomWeaving', 'e.g. Chanderi Handloom Weaving')}
                     className={`flex-1 px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
-                      errors.craftType ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                      errors.craftType ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                     }`}
                   />
                 </div>
@@ -528,7 +562,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
 
                 {/* Popular suggestions */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  <span className="text-[10px] text-[#878787] mr-1 self-center">Popular:</span>
+                  <span className="text-[10px] text-[#878787] mr-1 self-center">{t('popular', 'Popular:')}</span>
                   {POPULAR_CRAFTS.slice(0, 5).map((craft) => (
                     <button
                       type="button"
@@ -536,8 +570,8 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                       onClick={() => setCraftType(craft)}
                       className={`text-[10px] px-2 py-0.5 rounded-[2px] border transition-colors cursor-pointer ${
                         craftType === craft
-                          ? 'bg-[#2874F0] text-white border-[#2874F0]'
-                          : 'bg-[#F9FAFB] hover:bg-[#F1F3F6] text-[#666666] border-[#E0E0E0]'
+                          ? t('bg2874f0TextWhiteBorder2874f0', 'bg-[#2874F0] text-white border-[#2874F0]')
+                          : t('bgF9fafbHoverBgF1f3f6Text666666Bord', 'bg-[#F9FAFB] hover:bg-[#F1F3F6] text-[#666666] border-[#E0E0E0]')
                       }`}
                     >
                       {craft}
@@ -555,10 +589,9 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                 3
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#212121]">Artisan Photo & Story</h2>
+                <h2 className="text-base font-bold text-[#212121]">{t('artisanPhotoStory', 'Artisan Photo & Story')}</h2>
                 <p className="text-xs text-[#878787]">
-                  Presented directly on your campaign & product pages as "About the Artisan"
-                </p>
+                  {t('presentedDirectlyOnYourCampaignProd', 'Presented directly on your campaign & product pages as "About the Artisan"')}</p>
               </div>
             </div>
 
@@ -566,14 +599,13 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
               {/* Profile Photo with Cloudinary component */}
               <div>
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Artisan / Workshop Photo <span className="text-[#D32F2F]">*</span>
+                  {t('artisanWorkshopPhoto', 'Artisan / Workshop Photo')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <p className="text-xs text-[#878787] mb-2">
-                  Upload a clear portrait or workshop photograph of yourself crafting. Supports Cloudinary direct upload, drag-and-drop, or preset sample selection.
-                </p>
+                  {t('uploadAClearPortraitOrWorkshopPhoto', 'Upload a clear portrait or workshop photograph of yourself crafting. Supports Cloudinary direct upload, drag-and-drop, or preset sample selection.')}</p>
                 <ImageUploadDropzone
                   id="artisan-profile-photo-dropzone"
-                  label="Artisan Profile / Workshop Photo"
+                  label={t('artisanProfileWorkshopPhoto', 'Artisan Profile / Workshop Photo')}
                   sublabel="Recommended: square or portrait photo (PNG, JPG, WebP up to 5MB)"
                   value={profilePhoto}
                   onChange={(url) => setProfilePhoto(url)}
@@ -587,24 +619,23 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-[#212121]">
-                    Artisan Story / Bio (2–4 Sentences) <span className="text-[#D32F2F]">*</span>
+                    {t('artisanStoryBio24Sentences', 'Artisan Story / Bio (2–4 Sentences)')}<span className="text-[#D32F2F]">*</span>
                   </label>
                   <span className="text-[10px] text-[#878787]">
-                    {bio.length} characters • {bio.split('.').filter((s) => s.trim().length > 0).length} sentences
-                  </span>
+                    {bio.length} {t('characters', 'characters •')}{bio.split('.').filter((s) => s.trim().length > 0).length} {t('sentences', 'sentences')}</span>
                 </div>
                 <textarea
                   rows={4}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell your story: How did you learn your craft? What makes your traditional techniques unique? Why is community support meaningful for your workshop?"
+                  placeholder={t('tellYourStoryHowDidYouLearnYourCraf', 'Tell your story: How did you learn your craft? What makes your traditional techniques unique? Why is community support meaningful for your workshop?')}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] leading-relaxed focus:outline-none focus:ring-1 ${
-                    errors.bio ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                    errors.bio ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.bio && <p className="text-[11px] text-[#D32F2F] mt-1">{errors.bio}</p>}
                 <div className="flex items-center justify-between mt-1 text-[10px] text-[#878787]">
-                  <span>This bio is shown on backer cards, campaign stories, and marketplace product pages.</span>
+                  <span>{t('thisBioIsShownOnBackerCardsCampaign', 'This bio is shown on backer cards, campaign stories, and marketplace product pages.')}</span>
                   <button
                     type="button"
                     onClick={() =>
@@ -614,8 +645,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                     }
                     className="text-[#2874F0] hover:underline font-semibold cursor-pointer"
                   >
-                    Use template draft
-                  </button>
+                    {t('useTemplateDraft', 'Use template draft')}</button>
                 </div>
               </div>
             </div>
@@ -628,8 +658,8 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                 4
               </div>
               <div>
-                <h2 className="text-base font-bold text-[#212121]">Escrow Payout Account</h2>
-                <p className="text-xs text-[#878787]">Simulated bank settlement credentials for funded campaigns</p>
+                <h2 className="text-base font-bold text-[#212121]">{t('escrowPayoutAccount', 'Escrow Payout Account')}</h2>
+                <p className="text-xs text-[#878787]">{t('simulatedBankSettlementCredentialsF', 'Simulated bank settlement credentials for funded campaigns')}</p>
               </div>
             </div>
 
@@ -637,27 +667,26 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
             <div className="p-3.5 bg-[#FFF9E6] border border-[#FFE082] rounded-[4px] mb-4 text-xs flex items-start gap-2.5 text-[#795548]">
               <AlertCircle className="w-4 h-4 text-[#FF9800] shrink-0 mt-0.5" />
               <div>
-                <div className="font-bold text-[#E65100]">Simulation Notice:</div>
+                <div className="font-bold text-[#E65100]">{t('simulationNotice', 'Simulation Notice:')}</div>
                 <div className="text-[11px] text-[#6D4C41] mt-0.5 leading-relaxed">
-                  For payout simulation only — no real banking integration. When your campaign achieves 100% conditional backer funding, Craftify simulates automated RTGS/NEFT settlement to this registered account.
-                </div>
+                  {t('forPayoutSimulationOnlyNoRealBankin', 'For payout simulation only — no real banking integration. When your campaign achieves 100% conditional backer funding, Craftify simulates automated RTGS/NEFT settlement to this registered account.')}</div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-1">
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Account Holder Name <span className="text-[#D32F2F]">*</span>
+                  {t('accountHolderName', 'Account Holder Name')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <input
                   type="text"
                   value={accountHolderName}
                   onChange={(e) => setAccountHolderName(e.target.value)}
-                  placeholder="e.g. Radha Devi Sharma"
+                  placeholder={t('eGRadhaDeviSharma', 'e.g. Radha Devi Sharma')}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] focus:outline-none focus:ring-1 ${
                     errors.accountHolderName
-                      ? 'border-[#D32F2F] focus:ring-[#D32F2F]'
-                      : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                      ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]')
+                      : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.accountHolderName && (
@@ -667,17 +696,17 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
 
               <div className="sm:col-span-1">
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  Bank Account Number <span className="text-[#D32F2F]">*</span>
+                  {t('bankAccountNumber', 'Bank Account Number')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <input
                   type="password"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value)}
-                  placeholder="Account Number (9-18 digits)"
+                  placeholder={t('accountNumber918Digits', 'Account Number (9-18 digits)')}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] font-mono focus:outline-none focus:ring-1 ${
                     errors.accountNumber
-                      ? 'border-[#D32F2F] focus:ring-[#D32F2F]'
-                      : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                      ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]')
+                      : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.accountNumber && (
@@ -687,16 +716,16 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
 
               <div className="sm:col-span-1">
                 <label className="block text-xs font-bold text-[#212121] mb-1">
-                  IFSC Code <span className="text-[#D32F2F]">*</span>
+                  {t('ifscCode', 'IFSC Code')}<span className="text-[#D32F2F]">*</span>
                 </label>
                 <input
                   type="text"
                   value={ifscCode}
                   onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. SBIN0001042"
+                  placeholder={t('eGSbin0001042', 'e.g. SBIN0001042')}
                   maxLength={11}
                   className={`w-full px-3 py-2 text-xs rounded-[2px] border bg-[#FFFFFF] text-[#212121] uppercase font-mono focus:outline-none focus:ring-1 ${
-                    errors.ifscCode ? 'border-[#D32F2F] focus:ring-[#D32F2F]' : 'border-[#D5D5D5] focus:ring-[#2874F0]'
+                    errors.ifscCode ? t('borderD32f2fFocusRingD32f2f', 'border-[#D32F2F] focus:ring-[#D32F2F]') : t('borderD5d5d5FocusRing2874f0', 'border-[#D5D5D5] focus:ring-[#2874F0]')
                   }`}
                 />
                 {errors.ifscCode && <p className="text-[11px] text-[#D32F2F] mt-1">{errors.ifscCode}</p>}
@@ -707,8 +736,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
           {/* Submission Action Bar */}
           <div className="bg-[#FFFFFF] rounded-[4px] border border-[#E0E0E0] p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-xs text-[#878787]">
-              By saving your artisan profile, you confirm all craft details and simulated payout details are accurate.
-            </div>
+              {t('bySavingYourArtisanProfileYouConfir', 'By saving your artisan profile, you confirm all craft details and simulated payout details are accurate.')}</div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
@@ -716,8 +744,7 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                 onClick={() => onNavigate(isEditing ? 'creator-dashboard' : 'home')}
                 className="flex-1 sm:flex-initial px-4 py-2.5 rounded-[2px] border border-[#D5D5D5] text-xs font-semibold text-[#212121] hover:bg-[#F1F3F6] transition-colors cursor-pointer"
               >
-                Cancel
-              </button>
+                {t('cancel', 'Cancel')}</button>
 
               <button
                 type="submit"
@@ -728,10 +755,10 @@ export const CompleteProfilePage: React.FC<CompleteProfilePageProps> = ({
                 <CheckCircle2 className="w-4 h-4" />
                 <span>
                   {isSubmitting
-                    ? 'Saving...'
+                    ? t('saving', 'Saving...')
                     : isEditing
-                    ? 'Update Artisan Profile'
-                    : 'Complete Profile & Launch Hub'}
+                    ? t('updateArtisanProfile', 'Update Artisan Profile')
+                    : t('completeProfileLaunchHub', 'Complete Profile & Launch Hub')}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>

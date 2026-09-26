@@ -23,7 +23,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onCheckout,
   onViewFullCart,
 }) => {
-  const { t } = useLanguage();
+  const { t, localizeCartItem } = useLanguage();
   if (!isOpen) return null;
 
   const productItems = items.filter((item) => item.type === 'product');
@@ -63,7 +63,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             id="btn-close-cart-drawer"
             onClick={onClose}
             className="p-1 rounded-[2px] text-[#FFFFFF] hover:bg-white/10 transition-colors cursor-pointer"
-            aria-label="Close cart"
+            aria-label={t('closeCart', 'Close cart')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -93,7 +93,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <span>{productItems.length} {t('items', 'items')}</span>
                   </div>
 
-                  {productItems.map((item) => (
+                  {productItems.map((rawItem) => {
+                    const item = localizeCartItem(rawItem);
+                    return (
                     <div
                       key={item.id}
                       className="p-3 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] flex gap-3 items-center shadow-xs"
@@ -108,8 +110,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           {item.title}
                         </h4>
                         <div className="text-xs text-[#878787]">
-                          {formatINR(item.price)} each
-                        </div>
+                          {formatINR(item.price)} {t('each', 'each')}</div>
 
                         {/* Quantity controls */}
                         <div className="flex items-center gap-2 mt-2">
@@ -136,13 +137,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         <button
                           onClick={() => onRemoveItem(item.id)}
                           className="text-[#878787] hover:text-[#FB641B] text-xs mt-2 cursor-pointer p-1"
-                          aria-label="Remove item"
+                          aria-label={t('removeItem', 'Remove item')}
                         >
                           <Trash2 className="w-3.5 h-3.5 ml-auto" />
                         </button>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               )}
 
@@ -151,10 +153,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="space-y-2 pt-2">
                   <div className="flex items-center justify-between text-xs text-[#2874F0] font-bold uppercase tracking-wider px-1">
                     <span>{t('pledge', 'Authorized Pledges (₹0 Charged Today)')}</span>
-                    <span>{pledgeItems.length} active</span>
+                    <span>{pledgeItems.length} {t('active', 'active')}</span>
                   </div>
 
-                  {pledgeItems.map((item) => (
+                  {pledgeItems.map((rawItem) => {
+                    const item = localizeCartItem(rawItem);
+                    return (
                     <div
                       key={item.id}
                       className="p-3 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] flex gap-3 items-center shadow-xs"
@@ -186,13 +190,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         <button
                           onClick={() => onRemoveItem(item.id)}
                           className="text-[#878787] hover:text-[#FB641B] text-xs mt-1 cursor-pointer p-1"
-                          aria-label="Remove pledge"
+                          aria-label={t('removePledge', 'Remove pledge')}
                         >
                           <Trash2 className="w-3.5 h-3.5 ml-auto" />
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>

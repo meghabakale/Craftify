@@ -4,6 +4,8 @@ import { ShieldCheck, Calendar, Package, ArrowRight, ExternalLink, RefreshCw, Al
 import { formatINR } from '../utils/format';
 import { formatDeadlineDate } from '../utils/settleCampaign';
 
+import { useLanguage } from '../context/LanguageContext';
+
 interface MyPledgesPageProps {
   currentUser: User | null;
   campaigns: Campaign[];
@@ -27,6 +29,7 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
   onSimulateSettlement,
   onTrackOrder,
 }) => {
+  const { t, localizePledge } = useLanguage();
   const [pledges, setPledges] = useState<BuyerPledge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +50,42 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
       // ignore
     }
 
-    const allLocal: UserPledgeRecord[] = [...localPledges];
+    const isBuyerPledge = (lp: UserPledgeRecord): boolean => {
+      if (!currentUser) return false;
+
+      const currentUserIdStr = String(currentUser.id || '').trim();
+      const pledgeBuyerIdStr = String(lp.buyerId || '').trim();
+
+      // 1. Direct ID match
+      if (pledgeBuyerIdStr && currentUserIdStr && pledgeBuyerIdStr === currentUserIdStr) {
+        return true;
+      }
+
+      // 2. Name match for seeded demo user
+      const userNames = [currentUser.name, currentUser.legalName]
+        .filter(Boolean)
+        .map((s) => s!.toLowerCase().trim());
+
+      if (userNames.length === 0) return false;
+
+      const pledgeBuyerTokens = [lp.buyerId]
+        .filter(Boolean)
+        .map((s) => s!.toLowerCase().trim());
+
+      // If pledge has no buyerId attached, only allow for default seeded user (usr-001 / Aarav Sharma / Arjun Mehta)
+      if (pledgeBuyerTokens.length === 0) {
+        return currentUserIdStr === 'usr-001' || userNames.some((u) => u.includes('aarav') || u.includes('arjun'));
+      }
+
+      return userNames.some((uName) => {
+        if (uName.length < 3) return false;
+        return pledgeBuyerTokens.some((pName) => pName.includes(uName) || uName.includes(pName));
+      });
+    };
+
+    const allLocal: UserPledgeRecord[] = localPledges.filter(isBuyerPledge);
     for (const sp of localSaved) {
-      if (!allLocal.some((p) => String(p.id) === String(sp.id))) {
+      if (isBuyerPledge(sp) && !allLocal.some((p) => String(p.id) === String(sp.id))) {
         allLocal.push(sp);
       }
     }
@@ -170,23 +206,20 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-[11px] font-bold uppercase tracking-wider bg-[#FFF8E1] text-[#B78103] border border-[#B78103]/30">
             <span className="w-1.5 h-1.5 rounded-full bg-[#B78103]"></span>
-            Authorized — card hold only
-          </span>
+            {t('authorizedCardHoldOnly', 'Authorized — card hold only')}</span>
         );
       case 'captured':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-[11px] font-bold uppercase tracking-wider bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/30">
             <span className="w-1.5 h-1.5 rounded-full bg-[#388E3C]"></span>
-            Charged — campaign funded
-          </span>
+            {t('chargedCampaignFunded', 'Charged — campaign funded')}</span>
         );
       case 'released':
       case 'cancelled':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-[11px] font-bold uppercase tracking-wider bg-[#F1F3F6] text-[#666666] border border-[#D5D5D5]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#878787]"></span>
-            Released — campaign did not reach goal, no charge
-          </span>
+            {t('releasedCampaignDidNotReachGoalNoCh', 'Released — campaign did not reach goal, no charge')}</span>
         );
       default:
         return (
@@ -203,10 +236,9 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
         {/* Breadcrumb Trail */}
         <div className="flex items-center gap-2 text-xs text-[#878787] mb-3">
           <button onClick={() => onNavigate('home')} className="hover:text-[#2874F0] cursor-pointer">
-            Home
-          </button>
+            {t('home', 'Home')}</button>
           <span>/</span>
-          <span className="text-[#212121] font-semibold">My Backed Pledges</span>
+          <span className="text-[#212121] font-semibold">{t('myBackedPledges', 'My Backed Pledges')}</span>
         </div>
 
         {/* Page Header with Escrow Assurance */}
@@ -215,32 +247,28 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <ShieldCheck className="w-4 h-4 text-[#388E3C]" />
               <span className="text-xs uppercase tracking-wider text-[#388E3C] font-bold">
-                100% Protected Escrow Covenants
-              </span>
+                {t('key_100ProtectedEscrowCovenants', '100% Protected Escrow Covenants')}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-[#212121]">
-              My Crowdfunding Pledges
-            </h1>
+              {t('myCrowdfundingPledges', 'My Crowdfunding Pledges')}</h1>
             <p className="text-xs sm:text-sm text-[#878787] mt-1 max-w-2xl leading-relaxed">
-              Track the status of all your backed artisan projects. Funds are held in verified escrow as pre-authorizations and only captured when the campaign reaches 100% of its minimum goal.
-            </p>
+              {t('trackTheStatusOfAllYourBackedArtisa', 'Track the status of all your backed artisan projects. Funds are held in verified escrow as pre-authorizations and only captured when the campaign reaches 100% of its minimum goal.')}</p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={fetchPledges}
               className="px-3.5 py-2 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-xs font-semibold text-[#212121] flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Refresh ledger"
+              title={t('refreshLedger', 'Refresh ledger')}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+              <span>{t('refresh', 'Refresh')}</span>
             </button>
             <button
               onClick={() => onNavigate('campaigns')}
               className="px-4 py-2 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer shadow-xs"
             >
-              Discover Campaigns
-            </button>
+              {t('discoverCampaigns', 'Discover Campaigns')}</button>
           </div>
         </div>
 
@@ -250,15 +278,13 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-[#FB641B] shrink-0" />
               <div className="text-xs text-[#212121]">
-                <span className="font-bold">You are currently viewing guest/demo pledges.</span> Sign in with your registered patron account to sync live ledger authorizations.
-              </div>
+                <span className="font-bold">{t('youAreCurrentlyViewingGuestDemoPled', 'You are currently viewing guest/demo pledges.')}</span> {t('signInWithYourRegisteredPatronAccou', 'Sign in with your registered patron account to sync live ledger authorizations.')}</div>
             </div>
             <button
               onClick={onOpenAuth}
               className="px-4 py-1.5 bg-[#2874F0] text-white rounded-[2px] text-xs font-bold shrink-0 hover:bg-[#1C5BC2] cursor-pointer"
             >
-              Sign In
-            </button>
+              {t('signIn', 'Sign In')}</button>
           </div>
         )}
 
@@ -272,28 +298,28 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
         {loading ? (
           <div className="bg-[#FFFFFF] p-12 rounded-[4px] border border-[#EAEAEA] text-center">
             <div className="w-8 h-8 border-3 border-[#2874F0] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-xs font-semibold text-[#878787]">Loading verified escrow pledges...</p>
+            <p className="text-xs font-semibold text-[#878787]">{t('loadingVerifiedEscrowPledges', 'Loading verified escrow pledges...')}</p>
           </div>
         ) : pledges.length === 0 ? (
           <div className="bg-[#FFFFFF] p-12 rounded-[4px] border border-[#EAEAEA] text-center max-w-xl mx-auto shadow-xs">
             <div className="w-16 h-16 bg-[#F1F3F6] rounded-full flex items-center justify-center mx-auto mb-4 text-[#878787]">
               <Package className="w-8 h-8 text-[#2874F0]" />
             </div>
-            <h3 className="text-lg font-bold text-[#212121] mb-1">No Active Pledges Found</h3>
+            <h3 className="text-lg font-bold text-[#212121] mb-1">{t('noActivePledgesFound', 'No Active Pledges Found')}</h3>
             <p className="text-xs text-[#878787] mb-6 leading-relaxed">
-              You haven’t backed any artisan campaigns yet. Discover master weavers, terracotta potters, and brass casters raising funds for their next production run.
-            </p>
+              {t('youHavenTBackedAnyArtisanCampaignsY', 'You haven’t backed any artisan campaigns yet. Discover master weavers, terracotta potters, and brass casters raising funds for their next production run.')}</p>
             <button
               onClick={() => onNavigate('campaigns')}
               className="px-6 py-2.5 bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold rounded-[2px] transition-colors cursor-pointer shadow-xs inline-flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Explore Active Campaigns</span>
+              <span>{t('exploreActiveCampaigns', 'Explore Active Campaigns')}</span>
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            {pledges.map((pledge) => {
+            {pledges.map((rawPledge) => {
+              const pledge = localizePledge(rawPledge);
               const matchedCamp = campaigns.find(
                 (c) =>
                   c.id === String(pledge.campaignId) ||
@@ -335,11 +361,11 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                       </h3>
 
                       <div className="mt-1 text-xs text-[#666666]">
-                        <span className="font-semibold text-[#212121]">Reward Tier:</span> {pledge.tierTitle}
+                        <span className="font-semibold text-[#212121]">{t('rewardTier', 'Reward Tier:')}</span> {pledge.tierTitle}
                       </div>
 
                       <div className="mt-0.5 text-xs text-[#878787]">
-                        <span className="font-medium text-[#212121]">Fulfillment Window:</span> {pledge.estimatedDelivery}
+                        <span className="font-medium text-[#212121]">{t('fulfillmentWindow', 'Fulfillment Window:')}</span> {pledge.estimatedDelivery}
                       </div>
 
                       {/* Escrow Status Specific Context Callout */}
@@ -347,8 +373,8 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                         <div className="mt-2.5 p-2.5 rounded-[2px] bg-[#FFF8E1] border border-[#B78103]/30 text-xs text-[#B78103] flex items-start gap-2">
                           <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
                           <span>
-                            Will only be charged if the campaign reaches its goal of{' '}
-                            <strong>{formatINR(matchedCamp?.goalAmount || matchedCamp?.fundingGoal || 100000)}</strong> by{' '}
+                            {t('willOnlyBeChargedIfTheCampaignReach', 'Will only be charged if the campaign reaches its goal of')}{' '}
+                            <strong>{formatINR(matchedCamp?.goalAmount || matchedCamp?.fundingGoal || 100000)}</strong> {t('by', 'by')}{' '}
                             <strong>{formatDeadlineDate(matchedCamp?.deadline, matchedCamp?.daysLeft)}</strong>.
                           </span>
                         </div>
@@ -358,8 +384,8 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                         <div className="mt-2.5 p-2.5 rounded-[2px] bg-[#EAF8EB] border border-[#388E3C]/30 text-xs text-[#388E3C] flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                           <span>
-                            Campaign reached its funding goal! Captured on{' '}
-                            <strong>{pledge.settlementDate || matchedCamp?.settlementDate || pledge.createdAt || 'Settlement'}</strong>. Amount charged:{' '}
+                            {t('campaignReachedItsFundingGoalCaptur', 'Campaign reached its funding goal! Captured on')}{' '}
+                            <strong>{pledge.settlementDate || matchedCamp?.settlementDate || pledge.createdAt || t('settlement', 'Settlement')}</strong>{t('amountCharged', '. Amount charged:')}{' '}
                             <strong>{formatINR(pledge.amount)}</strong>.
                           </span>
                         </div>
@@ -369,8 +395,8 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                         <div className="mt-2.5 p-2.5 rounded-[2px] bg-[#F1F3F6] border border-[#D5D5D5] text-xs text-[#666666] flex items-start gap-2">
                           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#878787]" />
                           <span>
-                            Campaign did not reach its goal before the deadline. All patron holds have been released.{' '}
-                            <strong className="text-[#212121]">₹0 was charged to your card.</strong>
+                            {t('campaignDidNotReachItsGoalBeforeThe', 'Campaign did not reach its goal before the deadline. All patron holds have been released.')}{' '}
+                            <strong className="text-[#212121]">{t('key_0WasChargedToYourCard', '₹0 was charged to your card.')}</strong>
                           </span>
                         </div>
                       )}
@@ -380,8 +406,7 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                         <div className="mt-3 pt-2.5 border-t border-[#F0F0F0] flex flex-wrap items-center gap-1.5">
                           <span className="text-[10px] uppercase font-bold text-[#878787] flex items-center gap-1 mr-1">
                             <Sparkles className="w-3 h-3 text-[#2874F0]" />
-                            Simulate:
-                          </span>
+                            {t('simulate', 'Simulate:')}</span>
 
                           <button
                             id={`btn-simulate-pledge-funded-${pledge.id}`}
@@ -391,13 +416,13 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                             }}
                             className={`px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 ${
                               pledge.status === 'captured'
-                                ? 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/40'
-                                : 'bg-[#FFFFFF] hover:bg-[#EAF8EB] text-[#2E7D32] border border-[#388E3C]/30 shadow-2xs'
+                                ? t('bgEaf8ebText388e3cBorderBorder388e3', 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/40')
+                                : t('bgFfffffHoverBgEaf8ebText2e7d32Bord', 'bg-[#FFFFFF] hover:bg-[#EAF8EB] text-[#2E7D32] border border-[#388E3C]/30 shadow-2xs')
                             }`}
-                            title="Simulate 100%+ goal met: captures hold and marks as Funded"
+                            title={t('simulate100GoalMetCapturesHoldAndMa', 'Simulate 100%+ goal met: captures hold and marks as Funded')}
                           >
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>Simulate: Goal Met (Funded)</span>
+                            <span>{t('simulateGoalMetFunded', 'Simulate: Goal Met (Funded)')}</span>
                           </button>
 
                           <button
@@ -408,13 +433,13 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                             }}
                             className={`px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 ${
                               pledge.status === 'released'
-                                ? 'bg-[#F1F3F6] text-[#666666] border border-[#D5D5D5]'
-                                : 'bg-[#FFFFFF] hover:bg-[#FFF3EC] text-[#FB641B] border border-[#FB641B]/30'
+                                ? t('bgF1f3f6Text666666BorderBorderD5d5d', 'bg-[#F1F3F6] text-[#666666] border border-[#D5D5D5]')
+                                : t('bgFfffffHoverBgFff3ecTextFb641bBord', 'bg-[#FFFFFF] hover:bg-[#FFF3EC] text-[#FB641B] border border-[#FB641B]/30')
                             }`}
-                            title="Simulate deadline expired without reaching goal (hold released)"
+                            title={t('simulateDeadlineExpiredWithoutReach', 'Simulate deadline expired without reaching goal (hold released)')}
                           >
                             <AlertCircle className="w-3 h-3" />
-                            <span>Simulate: Unsuccessful</span>
+                            <span>{t('simulateUnsuccessful', 'Simulate: Unsuccessful')}</span>
                           </button>
 
                           {pledge.status !== 'authorized' && (
@@ -425,10 +450,10 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                                 onSimulateSettlement(String(pledge.campaignId), 'reset');
                               }}
                               className="px-2 py-1 rounded-[2px] text-[10px] font-medium text-[#666666] hover:text-[#212121] bg-[#FFFFFF] hover:bg-[#F1F3F6] border border-[#D5D5D5] transition-colors cursor-pointer flex items-center gap-1"
-                              title="Reset campaign back to previous state"
+                              title={t('resetCampaignBackToPreviousState', 'Reset campaign back to previous state')}
                             >
                               <RefreshCw className="w-3 h-3" />
-                              <span>Reset to Previous State</span>
+                              <span>{t('resetToPreviousState', 'Reset to Previous State')}</span>
                             </button>
                           )}
                         </div>
@@ -442,41 +467,35 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                       {pledge.status === 'captured' ? (
                         <>
                           <span className="text-[10px] uppercase tracking-wider text-[#388E3C] block font-bold">
-                            Amount Charged
-                          </span>
+                            {t('amountCharged', 'Amount Charged')}</span>
                           <span className="text-xl sm:text-2xl font-bold text-[#388E3C]">
                             {formatINR(pledge.amount)}
                           </span>
                           <span className="text-[11px] text-[#878787] block">
-                            Captured on {pledge.settlementDate || matchedCamp?.settlementDate || pledge.createdAt}
+                            {t('capturedOn', 'Captured on')}{pledge.settlementDate || matchedCamp?.settlementDate || pledge.createdAt}
                           </span>
                         </>
                       ) : pledge.status === 'released' ? (
                         <>
                           <span className="text-[10px] uppercase tracking-wider text-[#878787] block font-semibold">
-                            Amount Charged
-                          </span>
+                            {t('amountCharged', 'Amount Charged')}</span>
                           <span className="text-xl sm:text-2xl font-bold text-[#212121]">
                             ₹0
                           </span>
                           <span className="text-[11px] text-[#878787] block line-through">
-                            {formatINR(pledge.amount)} pre-authorized
-                          </span>
+                            {formatINR(pledge.amount)} {t('preAuthorized', 'pre-authorized')}</span>
                           <span className="text-[10px] font-bold text-[#388E3C] block">
-                            Hold Released • Zero Charge
-                          </span>
+                            {t('holdReleasedZeroCharge', 'Hold Released • Zero Charge')}</span>
                         </>
                       ) : (
                         <>
                           <span className="text-[10px] uppercase tracking-wider text-[#878787] block font-semibold">
-                            Authorized Hold
-                          </span>
+                            {t('authorizedHold', 'Authorized Hold')}</span>
                           <span className="text-xl sm:text-2xl font-bold text-[#212121]">
                             {formatINR(pledge.amount)}
                           </span>
                           <span className="text-[10px] text-[#B78103] font-bold block">
-                            ₹0 charged today
-                          </span>
+                            {t('key_0ChargedToday', '₹0 charged today')}</span>
                         </>
                       )}
                     </div>
@@ -499,10 +518,10 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                             }
                           }}
                           className="px-4 py-2 rounded-[2px] bg-[#388E3C] hover:bg-[#2E7D32] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                          title="Track your reward fulfillment delivery"
+                          title={t('trackYourRewardFulfillmentDelivery', 'Track your reward fulfillment delivery')}
                         >
                           <Truck className="w-3.5 h-3.5" />
-                          <span>Track your reward</span>
+                          <span>{t('trackYourReward', 'Track your reward')}</span>
                         </button>
                       )}
 
@@ -510,7 +529,7 @@ export const MyPledgesPage: React.FC<MyPledgesPageProps> = ({
                         onClick={() => handleCampaignClick(pledge)}
                         className="px-4 py-2 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5BC2] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                       >
-                        <span>View Campaign</span>
+                        <span>{t('viewCampaign', 'View Campaign')}</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </button>
                     </div>

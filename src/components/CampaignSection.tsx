@@ -60,8 +60,8 @@ export const CampaignSection: React.FC<CampaignSectionProps> = ({
                   onClick={() => setSelectedCategory(cat.key)}
                   className={`px-3 py-1.5 rounded-[2px] transition-colors cursor-pointer border ${
                     selectedCategory === cat.key
-                      ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs font-bold'
-                      : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:border-[#2874F0] hover:text-[#2874F0]'
+                      ? t('bg2874f0TextFfffffBorder2874f0Shado', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs font-bold')
+                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:border-[#2874F0] hover:text-[#2874F0]')
                   }`}
                 >
                   {cat.label}

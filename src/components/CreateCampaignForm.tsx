@@ -3,6 +3,7 @@ import { Campaign, RewardTier } from '../types';
 import { SmartInput } from './common/SmartInput';
 import { SmartTextarea } from './common/SmartTextarea';
 import { formatINR } from '../utils/format';
+import { registerDynamicCampaignTranslation } from '../i18n/dataTranslations';
 import {
   Sparkles,
   ArrowRight,
@@ -38,11 +39,14 @@ interface CreateCampaignFormProps {
 
 const PRESET_INDIAN_CRAFT_IMAGES = PRESET_CRAFT_IMAGES;
 
+import { useLanguage } from '../context/LanguageContext';
+
 export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
   onCancel,
   onCampaignCreated,
   defaultCreatorName = 'Varanasi Heritage Guild',
 }) => {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const totalSteps = 5;
 
@@ -249,6 +253,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
       rewardTiers,
     };
 
+    registerDynamicCampaignTranslation(newCampaign);
     onCampaignCreated(newCampaign);
   };
 
@@ -266,9 +271,9 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
         {/* Top Breadcrumb & Actions Bar */}
         <div className="bg-[#FFFFFF] rounded-[4px] border border-[#E0E0E0] p-4 mb-5 shadow-xs flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[#878787]">Craftify Creator Hub</span>
+            <span className="text-[#878787]">{t('craftifyCreatorHub', 'Craftify Creator Hub')}</span>
             <span className="text-[#878787]">/</span>
-            <span className="font-semibold text-[#2874F0]">Launch Crowdfunding Campaign</span>
+            <span className="font-semibold text-[#2874F0]">{t('launchCrowdfundingCampaign', 'Launch Crowdfunding Campaign')}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -279,15 +284,14 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
               className="px-3 py-1.5 bg-[#F1F3F6] hover:bg-[#EAEAEA] text-[#2874F0] border border-[#2874F0]/30 rounded-[2px] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Fill Demo Data</span>
+              <span>{t('fillDemoData', 'Fill Demo Data')}</span>
             </button>
             <button
               type="button"
               onClick={onCancel}
               className="px-3 py-1.5 text-xs text-[#878787] hover:text-[#212121] font-medium transition-colors cursor-pointer"
             >
-              Cancel Draft
-            </button>
+              {t('cancelDraft', 'Cancel Draft')}</button>
           </div>
         </div>
 
@@ -297,18 +301,16 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
             <div>
               <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] bg-[#EBF3FE] text-[#2874F0] text-[11px] font-bold uppercase tracking-wider mb-2">
                 <Award className="w-3.5 h-3.5" />
-                <span>Craftify Creator Escrow Pipeline</span>
+                <span>{t('craftifyCreatorEscrowPipeline', 'Craftify Creator Escrow Pipeline')}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#212121] tracking-tight">
-                Start an Artisan Crowdfunding Campaign
-              </h1>
+                {t('startAnArtisanCrowdfundingCampaign', 'Start an Artisan Crowdfunding Campaign')}</h1>
               <p className="text-sm text-[#878787] mt-1.5 max-w-2xl leading-relaxed">
-                Raise production capital directly from conscious buyers across India. Reach 100% of your escrow target to manufacture your batch and graduate into the permanent Craftify Shop.
-              </p>
+                {t('raiseProductionCapitalDirectlyFromC', 'Raise production capital directly from conscious buyers across India. Reach 100% of your escrow target to manufacture your batch and graduate into the permanent Craftify Shop.')}</p>
             </div>
             <div className="hidden sm:flex flex-col items-center justify-center w-24 h-24 bg-[#F8FAFC] border border-[#E0E0E0] rounded-[4px] p-2 text-center shrink-0">
               <ShieldCheck className="w-7 h-7 text-[#2874F0] mb-1" />
-              <span className="text-[10px] font-bold text-[#212121] leading-tight">100% Escrow Protection</span>
+              <span className="text-[10px] font-bold text-[#212121] leading-tight">{t('key_100EscrowProtection', '100% Escrow Protection')}</span>
             </div>
           </div>
 
@@ -328,15 +330,15 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                     onClick={() => isCompleted && setCurrentStep(s.num)}
                     className={`text-left p-2.5 rounded-[3px] border transition-all ${
                       isCurrent
-                        ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs'
+                        ? t('bg2874f0TextFfffffBorder2874f0Shado', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs')
                         : isCompleted
-                        ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9] hover:bg-[#C8E6C9]/40 cursor-pointer'
-                        : 'bg-[#F9FAFB] text-[#878787] border-[#E5E7EB] cursor-not-allowed opacity-75'
+                        ? t('bgE8f5e9Text2e7d32BorderC8e6c9Hover', 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9] hover:bg-[#C8E6C9]/40 cursor-pointer')
+                        : t('bgF9fafbText878787BorderE5e7ebCurso', 'bg-[#F9FAFB] text-[#878787] border-[#E5E7EB] cursor-not-allowed opacity-75')
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-[#FFFFFF]' : isCompleted ? 'text-[#2E7D32]' : 'text-[#878787]'}`}>
-                        Step {s.num}
+                        {t('step', 'Step')}{s.num}
                       </span>
                       {isCompleted ? (
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#2E7D32]" />
@@ -369,65 +371,59 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
             <div className="space-y-6">
               <div className="border-b border-[#F0F0F0] pb-3">
                 <h2 className="text-lg font-bold text-[#212121]">
-                  1. Product Essentials & Cover Imagery
-                </h2>
+                  {t('key_1ProductEssentialsCoverImagery', '1. Product Essentials & Cover Imagery')}</h2>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Define the name, category, artisan collective, and media representing your creation.
-                </p>
+                  {t('defineTheNameCategoryArtisanCollect', 'Define the name, category, artisan collective, and media representing your creation.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Product / Campaign Title *
-                </label>
+                  {t('productCampaignTitle', 'Product / Campaign Title *')}</label>
                 <SmartInput
                   id="campaign-title-input"
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onValueChange={(val) => setTitle(val)}
-                  placeholder="e.g. Khurja Imperial Cobalt Blue Fluted Vase"
+                  placeholder={t('eGKhurjaImperialCobaltBlueFlutedVas', 'e.g. Khurja Imperial Cobalt Blue Fluted Vase')}
                   className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] placeholder-[#878787] focus:outline-none focus:border-[#2874F0]"
                   enableVoice={true}
                   enableLanguageDetection={true}
                 />
                 <span className="text-[11px] text-[#878787] mt-1 block">
-                  Give your product a clear, descriptive title showcasing the craft technique and origin.
-                </span>
+                  {t('giveYourProductAClearDescriptiveTit', 'Give your product a clear, descriptive title showcasing the craft technique and origin.')}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Product Category *
-                  </label>
+                    {t('productCategory', 'Product Category *')}</label>
                   <select
                     id="campaign-category-select"
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] focus:outline-none focus:border-[#2874F0] bg-[#FFFFFF]"
                   >
-                    <option value="Pottery & Ceramics">Pottery & Ceramics</option>
-                    <option value="Handloom Textiles">Handloom Textiles</option>
-                    <option value="Metal Craft & Bidri">Metal Craft & Bidri</option>
-                    <option value="Woodcraft">Woodcraft</option>
-                    <option value="Heritage Decor">Heritage Decor</option>
-                    <option value="Design & Tools">Design & Tools</option>
-                    <option value="Culinary Hardware">Culinary Hardware</option>
+                    <option value="Pottery & Ceramics">{t('potteryCeramics', 'Pottery & Ceramics')}</option>
+                    <option value="Handloom Textiles">{t('handloomTextiles', 'Handloom Textiles')}</option>
+                    <option value="Metal Craft & Bidri">{t('metalCraftBidri', 'Metal Craft & Bidri')}</option>
+                    <option value="Woodcraft">{t('woodcraft', 'Woodcraft')}</option>
+                    <option value="Heritage Decor">{t('heritageDecor', 'Heritage Decor')}</option>
+                    <option value="Design & Tools">{t('designTools', 'Design & Tools')}</option>
+                    <option value="Culinary Hardware">{t('culinaryHardware', 'Culinary Hardware')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Artisan / Collective Name *
-                  </label>
+                    {t('artisanCollectiveName', 'Artisan / Collective Name *')}</label>
                   <SmartInput
                     id="campaign-creator-input"
                     type="text"
                     value={creator}
                     onChange={(e) => setCreator(e.target.value)}
                     onValueChange={(val) => setCreator(val)}
-                    placeholder="e.g. Khurja Master Potters Guild"
+                    placeholder={t('eGKhurjaMasterPottersGuild', 'e.g. Khurja Master Potters Guild')}
                     className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] placeholder-[#878787] focus:outline-none focus:border-[#2874F0]"
                     enableVoice={true}
                   />
@@ -436,15 +432,14 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Artisan Workshop Location *
-                </label>
+                  {t('artisanWorkshopLocation', 'Artisan Workshop Location *')}</label>
                 <SmartInput
                   id="campaign-location-input"
                   type="text"
                   value={creatorLocation}
                   onChange={(e) => setCreatorLocation(e.target.value)}
                   onValueChange={(val) => setCreatorLocation(val)}
-                  placeholder="e.g. Khurja, Uttar Pradesh"
+                  placeholder={t('eGKhurjaUttarPradesh', 'e.g. Khurja, Uttar Pradesh')}
                   className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] placeholder-[#878787] focus:outline-none focus:border-[#2874F0]"
                   enableVoice={true}
                 />
@@ -472,15 +467,14 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Concise One-Line Pitch *
-                </label>
+                  {t('conciseOneLinePitch', 'Concise One-Line Pitch *')}</label>
                 <SmartTextarea
                   id="campaign-pitch-input"
                   rows={2}
                   value={shortDescription}
                   onChange={(e) => setShortDescription(e.target.value)}
                   onValueChange={(val) => setShortDescription(val)}
-                  placeholder="A brief summary highlighting utility, handcrafted materials, and artisan tradition."
+                  placeholder={t('aBriefSummaryHighlightingUtilityHan', 'A brief summary highlighting utility, handcrafted materials, and artisan tradition.')}
                   className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] placeholder-[#878787] focus:outline-none focus:border-[#2874F0]"
                   enableVoice={true}
                 />
@@ -490,7 +484,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
               <div className="space-y-3">
                 <ImageUploadDropzone
                   id="create-campaign-cover-uploader"
-                  label="Cover Image"
+                  label={t('coverImage', 'Cover Image')}
                   sublabel="Click or drag to upload cover image. Supported formats: JPG, PNG, WEBP up to 5MB."
                   value={imageUrl}
                   onChange={(url) => {
@@ -507,7 +501,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                 <div className="pt-2 border-t border-[#F0F0F0]">
                   <div className="text-xs text-[#878787] font-medium flex items-center gap-1.5 mb-2">
                     <ImageIcon className="w-3.5 h-3.5 text-[#2874F0]" />
-                    <span>Or select a verified Indian artisan craft photo preset:</span>
+                    <span>{t('orSelectAVerifiedIndianArtisanCraft', 'Or select a verified Indian artisan craft photo preset:')}</span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
@@ -522,8 +516,8 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                         }}
                         className={`relative aspect-[16/10] overflow-hidden rounded-[3px] border transition-all text-left ${
                           imageUrl === preset.url
-                            ? 'border-2 border-[#2874F0] ring-2 ring-[#2874F0]/20'
-                            : 'border-[#E0E0E0] opacity-80 hover:opacity-100 hover:border-[#2874F0]/60'
+                            ? t('border2Border2874f0Ring2Ring2874f02', 'border-2 border-[#2874F0] ring-2 ring-[#2874F0]/20')
+                            : t('borderE0e0e0Opacity80HoverOpacity10', 'border-[#E0E0E0] opacity-80 hover:opacity-100 hover:border-[#2874F0]/60')
                         }`}
                       >
                         <img
@@ -547,24 +541,21 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
             <div className="space-y-6">
               <div className="border-b border-[#F0F0F0] pb-3">
                 <h2 className="text-lg font-bold text-[#212121]">
-                  2. Artisan Heritage & Technical Specifications
-                </h2>
+                  {t('key_2ArtisanHeritageTechnicalSpecif', '2. Artisan Heritage & Technical Specifications')}</h2>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Share the authentic story behind your creation, sustainable materials, and precise dimensions.
-                </p>
+                  {t('shareTheAuthenticStoryBehindYourCre', 'Share the authentic story behind your creation, sustainable materials, and precise dimensions.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Full Craft Narrative & Artisan Philosophy *
-                </label>
+                  {t('fullCraftNarrativeArtisanPhilosophy', 'Full Craft Narrative & Artisan Philosophy *')}</label>
                 <SmartTextarea
                   id="campaign-story-input"
                   rows={5}
                   value={fullStory}
                   onChange={(e) => setFullStory(e.target.value)}
                   onValueChange={(val) => setFullStory(val)}
-                  placeholder="Explain why this handcrafted creation is unique, how raw materials are prepared, and how it impacts rural artisan livelihoods."
+                  placeholder={t('explainWhyThisHandcraftedCreationIs', 'Explain why this handcrafted creation is unique, how raw materials are prepared, and how it impacts rural artisan livelihoods.')}
                   className="w-full px-3.5 py-2.5 border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] focus:outline-none focus:border-[#2874F0] leading-relaxed"
                   enableVoice={true}
                   enableLanguageDetection={true}
@@ -575,15 +566,14 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs uppercase tracking-wider text-[#212121] font-bold">
-                    Technical Specifications
-                  </label>
+                    {t('technicalSpecifications', 'Technical Specifications')}</label>
                   <button
                     type="button"
                     onClick={handleAddSpecRow}
                     className="text-xs text-[#2874F0] hover:underline font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Add Parameter</span>
+                    <span>{t('addParameter', 'Add Parameter')}</span>
                   </button>
                 </div>
 
@@ -595,7 +585,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                         value={spec.label}
                         onChange={(e) => handleUpdateSpec(i, 'label', e.target.value)}
                         onValueChange={(val) => handleUpdateSpec(i, 'label', val)}
-                        placeholder="Parameter (e.g. Material)"
+                        placeholder={t('parameterEGMaterial', 'Parameter (e.g. Material)')}
                         className="w-1/3 px-3 py-2 border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                       />
                       <SmartInput
@@ -603,14 +593,14 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                         value={spec.value}
                         onChange={(e) => handleUpdateSpec(i, 'value', e.target.value)}
                         onValueChange={(val) => handleUpdateSpec(i, 'value', val)}
-                        placeholder="Value (e.g. Khurja River Clay & Lead-free Glaze)"
+                        placeholder={t('valueEGKhurjaRiverClayLeadFreeGlaze', 'Value (e.g. Khurja River Clay & Lead-free Glaze)')}
                         className="flex-1 px-3 py-2 border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                       />
                       <button
                         type="button"
                         onClick={() => handleRemoveSpec(i)}
                         className="p-2 text-[#FB641B] hover:bg-[#FFF3EC] rounded-[2px] text-xs transition-colors cursor-pointer"
-                        aria-label="Remove spec"
+                        aria-label={t('removeSpec', 'Remove spec')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -626,18 +616,15 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
             <div className="space-y-6">
               <div className="border-b border-[#F0F0F0] pb-3">
                 <h2 className="text-lg font-bold text-[#212121]">
-                  3. Escrow Funding Goal & Campaign Duration
-                </h2>
+                  {t('key_3EscrowFundingGoalCampaignDurat', '3. Escrow Funding Goal & Campaign Duration')}</h2>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Set a realistic INR target. Backers authorize funds today; money is transferred into production escrow ONLY upon reaching 100%.
-                </p>
+                  {t('setARealisticInrTargetBackersAuthor', 'Set a realistic INR target. Backers authorize funds today; money is transferred into production escrow ONLY upon reaching 100%.')}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Funding Target Threshold (₹ INR) *
-                  </label>
+                    {t('fundingTargetThresholdInr', 'Funding Target Threshold (₹ INR) *')}</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-2.5 text-base font-bold text-[#2874F0]">₹</span>
                     <input
@@ -651,14 +638,12 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                     />
                   </div>
                   <span className="text-[11px] text-[#878787] mt-1 block">
-                    Current value: <strong className="text-[#212121]">{formatINR(goalAmount)}</strong>. Must cover kiln batches, raw materials, and insured dispatch.
-                  </span>
+                    {t('currentValue', 'Current value:')}<strong className="text-[#212121]">{formatINR(goalAmount)}</strong>{t('mustCoverKilnBatchesRawMaterialsAnd', '. Must cover kiln batches, raw materials, and insured dispatch.')}</span>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Campaign Duration (Days) *
-                  </label>
+                    {t('campaignDurationDays', 'Campaign Duration (Days) *')}</label>
                   <div className="grid grid-cols-4 gap-2">
                     {[15, 30, 45, 60].map((days) => (
                       <button
@@ -667,17 +652,15 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                         onClick={() => setDaysLeft(days)}
                         className={`py-2.5 rounded-[2px] border text-xs font-bold text-center transition-all cursor-pointer ${
                           daysLeft === days
-                            ? 'border-[#2874F0] bg-[#2874F0] text-[#FFFFFF] shadow-xs'
-                            : 'border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] hover:border-[#2874F0]'
+                            ? t('border2874f0Bg2874f0TextFfffffShado', 'border-[#2874F0] bg-[#2874F0] text-[#FFFFFF] shadow-xs')
+                            : t('borderD5d5d5BgFfffffText212121Hover', 'border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] hover:border-[#2874F0]')
                         }`}
                       >
-                        {days} Days
-                      </button>
+                        {days} {t('days', 'Days')}</button>
                     ))}
                   </div>
                   <span className="text-[11px] text-[#878787] mt-1 block">
-                    Recommended: 30 days generates optimal discovery on Craftify.
-                  </span>
+                    {t('recommended30DaysGeneratesOptimalDi', 'Recommended: 30 days generates optimal discovery on Craftify.')}</span>
                 </div>
               </div>
 
@@ -685,19 +668,16 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
               <div className="p-5 bg-[#F8FAFC] border border-[#E0E0E0] rounded-[4px] space-y-3">
                 <div className="flex items-center gap-2 font-bold text-sm text-[#212121]">
                   <ShieldCheck className="w-5 h-5 text-[#2E7D32]" />
-                  <span>The Craftify Escrow Covenant</span>
+                  <span>{t('theCraftifyEscrowCovenant', 'The Craftify Escrow Covenant')}</span>
                 </div>
 
                 <ul className="text-xs text-[#535766] space-y-2 list-disc pl-4 leading-relaxed">
                   <li>
-                    <strong>0% Financial Risk for Backers:</strong> Cards and UPI authorizations are conditional. Backers are charged zero upfront until the campaign reaches 100%.
-                  </li>
+                    <strong>{t('key_0FinancialRiskForBackers', '0% Financial Risk for Backers:')}</strong> {t('cardsAndUpiAuthorizationsAreConditi', 'Cards and UPI authorizations are conditional. Backers are charged zero upfront until the campaign reaches 100%.')}</li>
                   <li>
-                    <strong>Milestone-Based Release:</strong> Pledged funds are unlocked in milestones: 50% upon reaching target for raw material acquisition, and 50% upon shipment proof.
-                  </li>
+                    <strong>{t('milestoneBasedRelease', 'Milestone-Based Release:')}</strong> {t('pledgedFundsAreUnlockedInMilestones', 'Pledged funds are unlocked in milestones: 50% upon reaching target for raw material acquisition, and 50% upon shipment proof.')}</li>
                   <li>
-                    <strong>Guaranteed Marketplace Graduation:</strong> Fulfilling backer rewards unlocks automatic verified seller placement on Craftify Shop.
-                  </li>
+                    <strong>{t('guaranteedMarketplaceGraduation', 'Guaranteed Marketplace Graduation:')}</strong> {t('fulfillingBackerRewardsUnlocksAutom', 'Fulfilling backer rewards unlocks automatic verified seller placement on Craftify Shop.')}</li>
                 </ul>
 
                 <label className="flex items-start gap-2.5 pt-2 cursor-pointer border-t border-[#EAEAEA]">
@@ -708,8 +688,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                     className="mt-0.5 w-4 h-4 text-[#2874F0] rounded-[2px] focus:ring-0"
                   />
                   <span className="text-xs text-[#212121] font-medium">
-                    I agree to the Craftify Escrow Covenant and certify that all rewards will be fulfilled before commercial marketplace sales.
-                  </span>
+                    {t('iAgreeToTheCraftifyEscrowCovenantAn', 'I agree to the Craftify Escrow Covenant and certify that all rewards will be fulfilled before commercial marketplace sales.')}</span>
                 </label>
               </div>
             </div>
@@ -721,11 +700,9 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
               <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
                 <div>
                   <h2 className="text-lg font-bold text-[#212121]">
-                    4. Backer Reward Packages & Pledge Tiers
-                  </h2>
+                    {t('key_4BackerRewardPackagesPledgeTier', '4. Backer Reward Packages & Pledge Tiers')}</h2>
                   <p className="text-xs text-[#878787] mt-0.5">
-                    Structure early bird tiers with compelling pricing in Indian Rupees.
-                  </p>
+                    {t('structureEarlyBirdTiersWithCompelli', 'Structure early bird tiers with compelling pricing in Indian Rupees.')}</p>
                 </div>
 
                 <button
@@ -734,7 +711,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                   className="px-3 py-1.5 bg-[#2874F0] hover:bg-[#1259C3] text-[#FFFFFF] text-xs font-bold rounded-[2px] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add Reward Tier</span>
+                  <span>{t('addRewardTier', 'Add Reward Tier')}</span>
                 </button>
               </div>
 
@@ -746,7 +723,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                   >
                     <div className="flex items-center justify-between pb-3 border-b border-[#EAEAEA]">
                       <span className="text-xs font-bold text-[#2874F0] uppercase tracking-wider">
-                        Reward Tier {idx + 1}
+                        {t('rewardTier', 'Reward Tier')}{idx + 1}
                       </span>
                       <button
                         type="button"
@@ -754,21 +731,20 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                         className="text-[#FB641B] hover:text-[#D84A05] text-xs font-bold flex items-center gap-1 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete Tier</span>
+                        <span>{t('deleteTier', 'Delete Tier')}</span>
                       </button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="sm:col-span-2">
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Reward Title *
-                        </label>
+                          {t('rewardTitle', 'Reward Title *')}</label>
                         <SmartInput
                           type="text"
                           value={tier.title}
                           onChange={(e) => handleUpdateTier(idx, 'title', e.target.value)}
                           onValueChange={(val) => handleUpdateTier(idx, 'title', val)}
-                          placeholder="e.g. Early Bird Single Unit"
+                          placeholder={t('eGEarlyBirdSingleUnit', 'e.g. Early Bird Single Unit')}
                           className="w-full px-3 py-2 border border-[#D5D5D5] rounded-[2px] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                           enableVoice={true}
                         />
@@ -776,8 +752,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
 
                       <div>
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Pledge Amount (₹ INR) *
-                        </label>
+                          {t('pledgeAmountInr', 'Pledge Amount (₹ INR) *')}</label>
                         <div className="relative">
                           <span className="absolute left-2.5 top-1.5 text-xs font-bold text-[#2874F0]">₹</span>
                           <input
@@ -795,14 +770,13 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
 
                     <div>
                       <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        Reward Package Description
-                      </label>
+                        {t('rewardPackageDescription', 'Reward Package Description')}</label>
                       <SmartTextarea
                         rows={2}
                         value={tier.description}
                         onChange={(e) => handleUpdateTier(idx, 'description', e.target.value)}
                         onValueChange={(val) => handleUpdateTier(idx, 'description', val)}
-                        placeholder="What exclusive items or craft finishes are bundled in this package?"
+                        placeholder={t('whatExclusiveItemsOrCraftFinishesAr', 'What exclusive items or craft finishes are bundled in this package?')}
                         className="w-full px-3 py-2 border border-[#D5D5D5] rounded-[2px] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                         enableVoice={true}
                       />
@@ -820,22 +794,20 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Estimated Delivery Month
-                        </label>
+                          {t('estimatedDeliveryMonth', 'Estimated Delivery Month')}</label>
                         <SmartInput
                           type="text"
                           value={tier.estimatedDelivery}
                           onChange={(e) => handleUpdateTier(idx, 'estimatedDelivery', e.target.value)}
                           onValueChange={(val) => handleUpdateTier(idx, 'estimatedDelivery', val)}
-                          placeholder="e.g. Dec 2026"
+                          placeholder={t('eGDec2026', 'e.g. Dec 2026')}
                           className="w-full px-3 py-2 border border-[#D5D5D5] rounded-[2px] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                         />
                       </div>
 
                       <div>
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Backer Quantity Limit (Optional)
-                        </label>
+                          {t('backerQuantityLimitOptional', 'Backer Quantity Limit (Optional)')}</label>
                         <input
                           type="number"
                           min={1}
@@ -847,7 +819,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                               e.target.value ? parseInt(e.target.value) : undefined
                             )
                           }
-                          placeholder="Unlimited if blank"
+                          placeholder={t('unlimitedIfBlank', 'Unlimited if blank')}
                           className="w-full px-3 py-2 border border-[#D5D5D5] rounded-[2px] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                         />
                       </div>
@@ -863,11 +835,9 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
             <div className="space-y-6">
               <div className="border-b border-[#F0F0F0] pb-3">
                 <h2 className="text-lg font-bold text-[#212121]">
-                  5. Review Campaign Card & Launch to Live Escrow
-                </h2>
+                  {t('key_5ReviewCampaignCardLaunchToLive', '5. Review Campaign Card & Launch to Live Escrow')}</h2>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Verify how your crowdfunding listing will appear to shoppers and backers across Craftify.
-                </p>
+                  {t('verifyHowYourCrowdfundingListingWil', 'Verify how your crowdfunding listing will appear to shoppers and backers across Craftify.')}</p>
               </div>
 
               {/* Live Preview Card */}
@@ -884,10 +854,9 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[10px] uppercase font-bold bg-[#EBF3FE] text-[#2874F0] px-2 py-0.5 rounded-[2px]">
-                        Funding Live (0% Raised)
-                      </span>
+                        {t('fundingLive0Raised', 'Funding Live (0% Raised)')}</span>
                       <span className="text-xs text-[#878787]">
-                        {category} • by <strong className="text-[#212121]">{creator}</strong> ({creatorLocation})
+                        {category} {t('by', '• by')}<strong className="text-[#212121]">{creator}</strong> ({creatorLocation})
                       </span>
                     </div>
 
@@ -896,16 +865,16 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
 
                     <div className="pt-3 border-t border-[#EAEAEA] grid grid-cols-3 gap-3 text-xs">
                       <div>
-                        <div className="text-[10px] text-[#878787] uppercase font-bold">Escrow Target</div>
+                        <div className="text-[10px] text-[#878787] uppercase font-bold">{t('escrowTarget', 'Escrow Target')}</div>
                         <div className="text-sm font-bold text-[#2874F0]">{formatINR(goalAmount)}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-[#878787] uppercase font-bold">Campaign Window</div>
-                        <div className="text-sm font-bold text-[#212121]">{daysLeft} Days</div>
+                        <div className="text-[10px] text-[#878787] uppercase font-bold">{t('campaignWindow', 'Campaign Window')}</div>
+                        <div className="text-sm font-bold text-[#212121]">{daysLeft} {t('days', 'Days')}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-[#878787] uppercase font-bold">Pledge Tiers</div>
-                        <div className="text-sm font-bold text-[#212121]">{rewardTiers.length} Options</div>
+                        <div className="text-[10px] text-[#878787] uppercase font-bold">{t('pledgeTiers', 'Pledge Tiers')}</div>
+                        <div className="text-sm font-bold text-[#212121]">{rewardTiers.length} {t('options', 'Options')}</div>
                       </div>
                     </div>
                   </div>
@@ -916,9 +885,8 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
               <div className="p-4 bg-[#E8F5E9] border border-[#C8E6C9] rounded-[4px] text-xs text-[#2E7D32] flex items-start gap-2.5">
                 <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0 text-[#2E7D32]" />
                 <div>
-                  <strong className="block text-sm font-bold">Ready to publish on Craftify Live Escrow:</strong>
-                  Your campaign will be assigned a unique tracking code and indexed on the discovery feed. Buyers can immediately begin placing conditional pledges with 0% upfront charges.
-                </div>
+                  <strong className="block text-sm font-bold">{t('readyToPublishOnCraftifyLiveEscrow', 'Ready to publish on Craftify Live Escrow:')}</strong>
+                  {t('yourCampaignWillBeAssignedAUniqueTr', 'Your campaign will be assigned a unique tracking code and indexed on the discovery feed. Buyers can immediately begin placing conditional pledges with 0% upfront charges.')}</div>
               </div>
             </div>
           )}
@@ -933,7 +901,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                 className="px-5 py-2.5 border border-[#D5D5D5] hover:border-[#212121] rounded-[2px] text-[#212121] text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Step {currentStep - 1}</span>
+                <span>{t('backToStep', 'Back to Step')}{currentStep - 1}</span>
               </button>
             ) : (
               <button
@@ -941,8 +909,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                 onClick={onCancel}
                 className="px-4 py-2 border border-[#E0E0E0] rounded-[2px] text-xs text-[#878787] hover:text-[#212121] font-semibold transition-colors cursor-pointer"
               >
-                Cancel Draft
-              </button>
+                {t('cancelDraft', 'Cancel Draft')}</button>
             )}
 
             {currentStep < totalSteps ? (
@@ -952,7 +919,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                 onClick={handleNext}
                 className="px-6 py-2.5 bg-[#2874F0] hover:bg-[#1259C3] text-[#FFFFFF] rounded-[2px] text-xs font-bold flex items-center gap-2 transition-colors ml-auto cursor-pointer shadow-xs"
               >
-                <span>Continue to Step {currentStep + 1}</span>
+                <span>{t('continueToStep', 'Continue to Step')}{currentStep + 1}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
@@ -963,7 +930,7 @@ export const CreateCampaignForm: React.FC<CreateCampaignFormProps> = ({
                 className="px-8 py-3 bg-[#FB641B] hover:bg-[#D84A05] text-[#FFFFFF] rounded-[2px] text-sm font-bold flex items-center gap-2 transition-colors ml-auto cursor-pointer shadow-sm"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Submit for Admin Approval</span>
+                <span>{t('submitForAdminApproval', 'Submit for Admin Approval')}</span>
               </button>
             )}
           </div>

@@ -17,6 +17,8 @@ interface AIDescriptionWriterProps {
   targetFieldName?: string;
 }
 
+import { useLanguage } from '../../context/LanguageContext';
+
 export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
   craftType,
   setCraftType,
@@ -31,6 +33,7 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
   className = '',
   targetFieldName = 'description field',
 }) => {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'full_story' | 'complete_sentences'>('full_story');
   const [draftInput, setDraftInput] = useState(currentDraftText);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,12 +43,16 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
   const [copied, setCopied] = useState(false);
   const [previousTextBeforeApply, setPreviousTextBeforeApply] = useState<string | null>(null);
 
-  // Sync draft input when currentDraftText changes externally if draftInput was empty
+  // Sync draft input & clear generated results when form inputs are reset
   useEffect(() => {
-    if (currentDraftText && !draftInput) {
-      setDraftInput(currentDraftText);
+    setDraftInput(currentDraftText);
+    if (!currentDraftText && !craftType && !material && !region && !keywords) {
+      setGeneratedResult(null);
+      setPreviousTextBeforeApply(null);
+      setErrorMessage(null);
+      setSuccessNotice(null);
     }
-  }, [currentDraftText]);
+  }, [currentDraftText, craftType, material, region, keywords]);
 
   const handleGenerate = async (overrideMode?: 'full_story' | 'complete_sentences') => {
     const activeMode = overrideMode || mode;
@@ -78,7 +85,7 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
 
     const draftToSend = activeMode === 'complete_sentences'
       ? (draftInput || currentDraftText || '').trim()
-      : (draftInput || currentDraftText || '').trim();
+      : '';
 
     try {
       const generated = await generateDescription({
@@ -131,11 +138,11 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-[#2874F0]/15 pb-2">
         <div className="flex items-center gap-1.5 text-xs font-bold text-[#2874F0] uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5 text-[#2874F0]" />
-          <span>AI Story & Grammar Writer</span>
+          <span>{t('aiStoryGrammarWriter', 'AI Story & Grammar Writer')}</span>
         </div>
         <div className="inline-flex items-center gap-1 text-[11px] text-[#388E3C] font-semibold bg-[#EAF8EB] px-2 py-0.5 rounded-[2px] border border-[#388E3C]/20">
           <CheckCircle2 className="w-3 h-3 shrink-0" />
-          <span>Complete Sentences & Grammar Guaranteed</span>
+          <span>{t('completeSentencesGrammarGuaranteed', 'Complete Sentences & Grammar Guaranteed')}</span>
         </div>
       </div>
 
@@ -149,12 +156,12 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
           }}
           className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-[2px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             mode === 'full_story'
-              ? 'bg-[#2874F0] text-[#FFFFFF] shadow-xs'
-              : 'text-[#555555] hover:text-[#212121] hover:bg-[#F1F3F6]'
+              ? t('bg2874f0TextFfffffShadowXs', 'bg-[#2874F0] text-[#FFFFFF] shadow-xs')
+              : t('text555555HoverText212121HoverBgF1f', 'text-[#555555] hover:text-[#212121] hover:bg-[#F1F3F6]')
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Write Full Story</span>
+          <span>{t('writeFullStory', 'Write Full Story')}</span>
         </button>
 
         <button
@@ -168,12 +175,12 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
           }}
           className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-[2px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
             mode === 'complete_sentences'
-              ? 'bg-[#2874F0] text-[#FFFFFF] shadow-xs'
-              : 'text-[#555555] hover:text-[#212121] hover:bg-[#F1F3F6]'
+              ? t('bg2874f0TextFfffffShadowXs', 'bg-[#2874F0] text-[#FFFFFF] shadow-xs')
+              : t('text555555HoverText212121HoverBgF1f', 'text-[#555555] hover:text-[#212121] hover:bg-[#F1F3F6]')
           }`}
         >
           <PenTool className="w-3.5 h-3.5" />
-          <span>Complete Lines & Fix Grammar</span>
+          <span>{t('completeLinesFixGrammar', 'Complete Lines & Fix Grammar')}</span>
         </button>
       </div>
 
@@ -181,8 +188,7 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
           <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1">
-            Craft Type *
-          </label>
+            {t('craftType', 'Craft Type *')}</label>
           <input
             id="ai-craft-type-input"
             type="text"
@@ -191,15 +197,14 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
               setCraftType(e.target.value);
               if (errorMessage) setErrorMessage(null);
             }}
-            placeholder="e.g. High-fire Glazed Terracotta Pottery"
+            placeholder={t('eGHighFireGlazedTerracottaPottery', 'e.g. High-fire Glazed Terracotta Pottery')}
             className="w-full px-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
           />
         </div>
 
         <div>
           <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1">
-            Material Used *
-          </label>
+            {t('materialUsed', 'Material Used *')}</label>
           <input
             id="ai-material-input"
             type="text"
@@ -208,15 +213,14 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
               setMaterial(e.target.value);
               if (errorMessage) setErrorMessage(null);
             }}
-            placeholder="e.g. Natural Gangetic clay, mineral slips"
+            placeholder={t('eGNaturalGangeticClayMineralSlips', 'e.g. Natural Gangetic clay, mineral slips')}
             className="w-full px-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
           />
         </div>
 
         <div>
           <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1">
-            Region / State *
-          </label>
+            {t('regionState', 'Region / State *')}</label>
           <input
             id="ai-region-input"
             type="text"
@@ -225,21 +229,20 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
               setRegion(e.target.value);
               if (errorMessage) setErrorMessage(null);
             }}
-            placeholder="e.g. Khurja, Uttar Pradesh"
+            placeholder={t('eGKhurjaUttarPradesh', 'e.g. Khurja, Uttar Pradesh')}
             className="w-full px-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
           />
         </div>
 
         <div>
           <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121] mb-1">
-            Keywords or Special Nuance
-          </label>
+            {t('keywordsOrSpecialNuance', 'Keywords or Special Nuance')}</label>
           <input
             id="ai-keywords-input"
             type="text"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
-            placeholder="e.g. kiln-fired, cobalt glaze, generational guild"
+            placeholder={t('eGKilnFiredCobaltGlazeGenerationalG', 'e.g. kiln-fired, cobalt glaze, generational guild')}
             className="w-full px-2.5 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
           />
         </div>
@@ -250,16 +253,14 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
         <div className="space-y-1 bg-[#FFFFFF] p-2.5 rounded-[2px] border border-[#2874F0]/25">
           <div className="flex items-center justify-between">
             <label className="block text-[10px] uppercase tracking-wider font-bold text-[#212121]">
-              Draft Lines or Incomplete Sentences to Complete & Correct *
-            </label>
+              {t('draftLinesOrIncompleteSentencesToCo', 'Draft Lines or Incomplete Sentences to Complete & Correct *')}</label>
             {currentDraftText && currentDraftText !== draftInput && (
               <button
                 type="button"
                 onClick={() => setDraftInput(currentDraftText)}
                 className="text-[10px] text-[#2874F0] hover:underline font-semibold"
               >
-                Pull from current description
-              </button>
+                {t('pullFromCurrentDescription', 'Pull from current description')}</button>
             )}
           </div>
           <textarea
@@ -270,12 +271,11 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
               setDraftInput(e.target.value);
               if (errorMessage) setErrorMessage(null);
             }}
-            placeholder="e.g. We mold every vase on a hand-turned wheel and use natural clay from... and fire them in kiln..."
+            placeholder={t('eGWeMoldEveryVaseOnAHandTurnedWheel', 'e.g. We mold every vase on a hand-turned wheel and use natural clay from... and fire them in kiln...')}
             className="w-full px-2.5 py-1.5 bg-[#FBFBFB] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0] resize-y"
           />
           <p className="text-[11px] text-[#555555]">
-            💡 AI will complete any unfinished thoughts, fix all grammatical errors, and ensure every sentence ends with proper punctuation.
-          </p>
+            {t('aiWillCompleteAnyUnfinishedThoughts', '💡 AI will complete any unfinished thoughts, fix all grammatical errors, and ensure every sentence ends with proper punctuation.')}</p>
         </div>
       )}
 
@@ -288,22 +288,22 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
           onClick={() => handleGenerate()}
           className={`px-4 py-2 rounded-[2px] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs ${
             isLoading
-              ? 'bg-[#2874F0]/70 text-[#FFFFFF] cursor-wait'
-              : 'bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF]'
+              ? t('bg2874f070TextFfffffCursorWait', 'bg-[#2874F0]/70 text-[#FFFFFF] cursor-wait')
+              : t('bg2874f0HoverBg1c5fd0TextFfffff', 'bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF]')
           }`}
         >
           {isLoading ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span>
-                {mode === 'complete_sentences' ? 'Completing sentences & polishing...' : 'Writing story...'}
+                {mode === 'complete_sentences' ? t('completingSentencesPolishing', 'Completing sentences & polishing...') : t('writingStory', 'Writing story...')}
               </span>
             </>
           ) : (
             <>
               <Sparkles className="w-3.5 h-3.5" />
               <span>
-                {mode === 'complete_sentences' ? '✨ Complete Sentences & Fix Grammar' : '✨ Write Complete Story'}
+                {mode === 'complete_sentences' ? t('completeSentencesFixGrammar', '✨ Complete Sentences & Fix Grammar') : t('writeCompleteStory', '✨ Write Complete Story')}
               </span>
             </>
           )}
@@ -317,7 +317,7 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
             className="px-3 py-2 rounded-[2px] border border-[#D5D5D5] hover:border-[#2874F0] bg-[#FFFFFF] text-[#212121] hover:text-[#2874F0] text-xs font-bold uppercase tracking-wider flex items-center gap-1 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>Regenerate</span>
+            <span>{t('regenerate', 'Regenerate')}</span>
           </button>
         )}
 
@@ -329,7 +329,7 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
             className="px-3 py-2 rounded-[2px] border border-[#D5D5D5] hover:border-[#FB641B] bg-[#FFFFFF] text-[#555555] hover:text-[#FB641B] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
           >
             <Undo2 className="w-3 h-3" />
-            <span>Revert</span>
+            <span>{t('revert', 'Revert')}</span>
           </button>
         )}
 
@@ -338,10 +338,10 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
             type="button"
             onClick={handleCopy}
             className="px-2.5 py-2 rounded-[2px] border border-[#D5D5D5] hover:border-[#2874F0] bg-[#FFFFFF] text-[#555555] hover:text-[#2874F0] text-xs flex items-center gap-1 transition-colors cursor-pointer ml-auto"
-            title="Copy to clipboard"
+            title={t('copyToClipboard', 'Copy to clipboard')}
           >
             {copied ? <Check className="w-3.5 h-3.5 text-[#388E3C]" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            <span>{copied ? t('copied', 'Copied') : t('copy', 'Copy')}</span>
           </button>
         )}
       </div>
@@ -367,8 +367,7 @@ export const AIDescriptionWriter: React.FC<AIDescriptionWriterProps> = ({
           <div className="flex-1">
             <span className="font-semibold">{successNotice}</span>
             <span className="block text-[11px] text-[#2E7D32] mt-0.5">
-              Every sentence is grammatically complete, punctuated with terminal periods, and ready to edit or publish.
-            </span>
+              {t('everySentenceIsGrammaticallyComplet', 'Every sentence is grammatically complete, punctuated with terminal periods, and ready to edit or publish.')}</span>
           </div>
         </div>
       )}

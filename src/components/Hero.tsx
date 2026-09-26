@@ -31,7 +31,7 @@ export const Hero: React.FC<HeroProps> = ({
         <div className="relative overflow-hidden bg-[#FFFFFF] border border-[#E0E0E0] rounded-[4px] shadow-xs">
           {/* Carousel Left Arrow */}
           <button
-            aria-label="Previous Slide"
+            aria-label={t('previousSlide', 'Previous Slide')}
             onClick={onScrollToCampaigns}
             className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 hover:bg-white border border-[#E0E0E0] shadow-sm flex items-center justify-center text-[#757575] hover:text-[#212121] cursor-pointer transition-all"
           >
@@ -40,7 +40,7 @@ export const Hero: React.FC<HeroProps> = ({
 
           {/* Carousel Right Arrow */}
           <button
-            aria-label="Next Slide"
+            aria-label={t('nextSlide', 'Next Slide')}
             onClick={onScrollToShop}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/95 hover:bg-white border border-[#E0E0E0] shadow-sm flex items-center justify-center text-[#757575] hover:text-[#212121] cursor-pointer transition-all"
           >
@@ -146,7 +146,7 @@ export const Hero: React.FC<HeroProps> = ({
               {/* Handcrafted Indian Decor Hero Image */}
               <img
                 src="/image.png"
-                alt="Handcrafted Indian decor: Brass elephant figurine, Jaipur blue pottery vase, and draped royal blue silk textile"
+                alt={t('handcraftedIndianDecorBrassElephant', 'Handcrafted Indian decor: Brass elephant figurine, Jaipur blue pottery vase, and draped royal blue silk textile')}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-[center_55%] transition-transform duration-700 hover:scale-102"
                 onError={(e) => {
@@ -157,8 +157,8 @@ export const Hero: React.FC<HeroProps> = ({
               {/* Verified Heritage Tag */}
               <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-[3px] border border-[#E0E0E0] shadow-xs flex items-center gap-2 z-10">
                 <span className="w-2 h-2 rounded-full bg-[#388E3C] animate-pulse"></span>
-                <span className="text-[11px] font-bold text-[#212121]">Varanasi Silk & Brass Guild</span>
-                <span className="text-[10px] text-[#2874F0] font-semibold">GI Certified</span>
+                <span className="text-[11px] font-bold text-[#212121]">{t('varanasiSilkBrassGuild', 'Varanasi Silk & Brass Guild')}</span>
+                <span className="text-[10px] text-[#2874F0] font-semibold">{t('giCertified', 'GI Certified')}</span>
               </div>
             </div>
           </div>

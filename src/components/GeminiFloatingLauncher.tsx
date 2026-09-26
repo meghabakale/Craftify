@@ -1,6 +1,8 @@
 import React from 'react';
 import { Sparkles, Bot, MessageSquare } from 'lucide-react';
 
+import { useLanguage } from '../context/LanguageContext';
+
 interface GeminiFloatingLauncherProps {
   isOpen: boolean;
   onToggle: () => void;
@@ -11,6 +13,7 @@ export const GeminiFloatingLauncher: React.FC<GeminiFloatingLauncherProps> = ({
   isOpen,
   onToggle,
 }) => {
+  const { t } = useLanguage();
   if (isOpen) return null;
 
   return (
@@ -18,7 +21,7 @@ export const GeminiFloatingLauncher: React.FC<GeminiFloatingLauncherProps> = ({
       <button
         id="gemini-floating-launcher-btn"
         onClick={onToggle}
-        aria-label="Open Craftify AI Concierge"
+        aria-label={t('aiAssistant', 'Open Craftify AI Concierge')}
         className="group relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_8px_24px_rgba(26,86,219,0.35)]"
       >
         {/* Subtle breathing aura */}
@@ -44,7 +47,7 @@ export const GeminiFloatingLauncher: React.FC<GeminiFloatingLauncherProps> = ({
         {/* Modern Hover Tooltip */}
         <div className="absolute right-full mr-3.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-full bg-[#0F172A] border border-white/10 text-white text-xs font-semibold shadow-2xl opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap pointer-events-none flex items-center gap-2">
           <Sparkles className="w-3.5 h-3.5 text-[#FFE500]" />
-          <span>Ask Craftify AI</span>
+          <span>{t('aiAssistant', 'Ask Craftify AI')}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
           {/* Tooltip Arrow */}
           <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-[#0F172A]" />

@@ -178,6 +178,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
   onBack,
   isModal = false,
 }) => {
+  const { t } = useLanguage();
   // REQUIREMENT: Start a fresh new conversation every time the chatbot is opened!
   // We initialize with an empty message thread.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -203,9 +204,13 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
   const [toastNotification, setToastNotification] = useState<string | null>('New conversation started');
 
   // Saved past sessions for history drawer
+  // Saved past sessions for history drawer (scoped to currentUser.id)
+  const currentUserId = currentUser?.id || 'guest';
+  const getSessionsKey = (userId?: string) => `craftify_gemini_saved_sessions_${userId || 'guest'}`;
+
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>(() => {
     try {
-      const stored = localStorage.getItem(SESSIONS_STORAGE_KEY);
+      const stored = localStorage.getItem(getSessionsKey(currentUser?.id));
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -214,6 +219,27 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
 
   const { language, setLanguage } = useLanguage();
   const [detectedLang, setDetectedLang] = useState<ReturnType<typeof detectLanguage> | null>(null);
+
+  // RESET CHATBOT ON AUTH CHANGE:
+  // When logged-in user changes (or logs out), reset message thread to empty and start a fresh session.
+  useEffect(() => {
+    if (isLoading && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setMessages([]);
+    setCurrentSessionId(`session-${Date.now()}`);
+    setInputValue('');
+    setErrorMessage(null);
+    setShowHistoryDrawer(false);
+
+    const userKey = getSessionsKey(currentUser?.id);
+    try {
+      const stored = localStorage.getItem(userKey);
+      setSavedSessions(stored ? JSON.parse(stored) : []);
+    } catch {
+      setSavedSessions([]);
+    }
+  }, [currentUser?.id]);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -307,18 +333,19 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
         messages,
       };
 
+      const userKey = getSessionsKey(currentUser?.id);
       setSavedSessions((prev) => {
         const filtered = prev.filter((s) => s.id !== currentSessionId);
         const updated = [updatedSession, ...filtered].slice(0, 15); // Keep up to 15 recent sessions
         try {
-          localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(updated));
+          localStorage.setItem(userKey, JSON.stringify(updated));
         } catch {
           // ignore
         }
         return updated;
       });
     }
-  }, [messages, currentSessionId, selectedPersona.id, selectedModel]);
+  }, [messages, currentSessionId, selectedPersona.id, selectedModel, currentUser?.id]);
 
   // Explicit New Conversation trigger
   const handleStartNewConversation = () => {
@@ -351,10 +378,11 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
   // Delete a saved session
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const userKey = getSessionsKey(currentUser?.id);
     setSavedSessions((prev) => {
       const updated = prev.filter((s) => s.id !== sessionId);
       try {
-        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(updated));
+        localStorage.setItem(userKey, JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -616,9 +644,9 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
       className={`flex flex-col bg-[#F8FAFC] text-[#212121] border border-[#E2E8F0] shadow-2xl transition-all duration-200 overflow-hidden relative ${
         isModal
           ? isExpanded
-            ? 'w-full h-full max-w-6xl max-h-[96vh] rounded-[8px]'
-            : 'w-full max-w-2xl h-[720px] max-h-[90vh] rounded-[8px]'
-          : 'w-full h-full min-h-[620px] rounded-[6px]'
+            ? t('wFullHFullMaxW6xlMaxH96vhRounded8px', 'w-full h-full max-w-6xl max-h-[96vh] rounded-[8px]')
+            : t('wFullMaxW2xlH720pxMaxH90vhRounded8p', 'w-full max-w-2xl h-[720px] max-h-[90vh] rounded-[8px]')
+          : t('wFullHFullMinH620pxRounded6px', 'w-full h-full min-h-[620px] rounded-[6px]')
       }`}
     >
       {/* TOAST NOTIFICATION PILL */}
@@ -648,9 +676,9 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   onClose();
                 }
               }}
-              aria-label="Back"
+              aria-label={t('back', 'Back')}
               className="p-1.5 -ml-1 rounded-full hover:bg-white/15 text-[#FFFFFF] transition-colors cursor-pointer shrink-0"
-              title="Back"
+              title={t('back', 'Back')}
             >
               <ArrowLeft className="w-4.5 h-4.5 text-[#FFFFFF]" />
             </button>
@@ -669,11 +697,10 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="font-bold text-sm sm:text-base text-[#FFFFFF] tracking-tight truncate flex items-center gap-1.5">
-                <span>Craftify Concierge</span>
+                <span>{t('craftifyConcierge', 'Craftify Concierge')}</span>
               </h2>
               <span className="bg-[#FFE500] text-[#1E293B] text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded-[2px] shrink-0 tracking-wider">
-                AI Pro
-              </span>
+                {t('aiPro', 'AI Pro')}</span>
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-white/85">
               <span className="truncate max-w-[130px] sm:max-w-[210px] font-medium">
@@ -695,11 +722,11 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             type="button"
             onClick={handleStartNewConversation}
             className="bg-white text-[#1A56DB] hover:bg-white/95 px-2.5 py-1 sm:px-3 sm:py-1 rounded-[4px] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
-            title="Start a fresh new conversation"
+            title={t('startAFreshNewConversation', 'Start a fresh new conversation')}
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span className="hidden sm:inline">New Chat</span>
-            <span className="sm:hidden">New</span>
+            <span className="hidden sm:inline">{t('newChat', 'New Chat')}</span>
+            <span className="sm:hidden">{t('new', 'New')}</span>
           </button>
 
           {/* Role & Model Dropdown Toggle */}
@@ -713,7 +740,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                 setShowMoreMenu(false);
               }}
               className="p-1.5 rounded-[4px] bg-white/10 hover:bg-white/20 text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
-              title="Change Assistant Role"
+              title={t('changeAssistantRole', 'Change Assistant Role')}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <ChevronDown className="w-3 h-3 opacity-75" />
@@ -723,7 +750,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             {showPersonaMenu && (
               <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-[#FFFFFF] text-[#212121] border border-[#E2E8F0] rounded-[6px] shadow-2xl z-50 p-2.5 space-y-1.5">
                 <div className="flex items-center justify-between pb-1.5 border-b border-[#F1F5F9] px-1">
-                  <span className="font-bold text-xs text-[#0F172A]">Select Specialized AI Role</span>
+                  <span className="font-bold text-xs text-[#0F172A]">{t('selectSpecializedAiRole', 'Select Specialized AI Role')}</span>
                   <button
                     onClick={() => setShowPersonaMenu(false)}
                     className="p-1 text-[#64748B] hover:text-[#0F172A] rounded cursor-pointer"
@@ -741,15 +768,15 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         onClick={() => handleSelectPersona(persona)}
                         className={`w-full text-left p-2.5 rounded-[4px] border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#EFF6FF] border-[#2874F0] text-[#1D4ED8]'
-                            : 'bg-[#FFFFFF] hover:bg-[#F8FAFC] border-[#E2E8F0] text-[#1E293B]'
+                            ? t('bgEff6ffBorder2874f0Text1d4ed8', 'bg-[#EFF6FF] border-[#2874F0] text-[#1D4ED8]')
+                            : t('bgFfffffHoverBgF8fafcBorderE2e8f0Te', 'bg-[#FFFFFF] hover:bg-[#F8FAFC] border-[#E2E8F0] text-[#1E293B]')
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="font-bold text-xs">{persona.name}</span>
                           <span
                             className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-bold ${
-                              isSelected ? 'bg-[#2874F0] text-white' : 'bg-[#F1F5F9] text-[#64748B]'
+                              isSelected ? t('bg2874f0TextWhite', 'bg-[#2874F0] text-white') : t('bgF1f5f9Text64748b', 'bg-[#F1F5F9] text-[#64748B]')
                             }`}
                           >
                             {persona.badge}
@@ -772,7 +799,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             type="button"
             onClick={() => setShowHistoryDrawer(!showHistoryDrawer)}
             className="p-1.5 rounded-[4px] bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer relative"
-            title="Past Conversations & Archives"
+            title={t('pastConversationsArchives', 'Past Conversations & Archives')}
           >
             <History className="w-4 h-4" />
             {savedSessions.length > 0 && (
@@ -791,7 +818,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                 setShowModelMenu(false);
               }}
               className="p-1.5 rounded-[4px] bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-              title="More options"
+              title={t('moreOptions', 'More options')}
             >
               <MoreVertical className="w-4 h-4" />
             </button>
@@ -805,7 +832,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   className="w-full text-left px-3.5 py-2 hover:bg-[#F1F5F9] flex items-center gap-2 text-[#0F172A] transition-colors cursor-pointer font-medium"
                 >
                   <RotateCcw className="w-4 h-4 text-[#FB641B]" />
-                  <span>Start New Conversation</span>
+                  <span>{t('startNewConversation', 'Start New Conversation')}</span>
                 </button>
 
                 <button
@@ -817,7 +844,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   className="w-full text-left px-3.5 py-2 hover:bg-[#F1F5F9] flex items-center gap-2 text-[#0F172A] transition-colors cursor-pointer font-medium"
                 >
                   <Bot className="w-4 h-4 text-[#2874F0]" />
-                  <span>Select Gemini Model ({selectedModel})</span>
+                  <span>{t('selectGeminiModel', 'Select Gemini Model (')}{selectedModel})</span>
                 </button>
 
                 <button
@@ -829,14 +856,13 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   className="w-full text-left px-3.5 py-2 hover:bg-[#F1F5F9] flex items-center gap-2 text-[#0F172A] transition-colors cursor-pointer font-medium"
                 >
                   <Edit3 className="w-4 h-4 text-[#64748B]" />
-                  <span>Custom System Instructions</span>
+                  <span>{t('customSystemInstructions', 'Custom System Instructions')}</span>
                 </button>
 
                 <div className="h-px bg-[#E2E8F0] my-1" />
 
                 <div className="px-3.5 py-1.5 text-[10px] text-[#64748B]">
-                  Powered by Gemini 3.8 Series API with full server-side key security.
-                </div>
+                  {t('poweredByGemini38SeriesApiWithFullS', 'Powered by Gemini 3.8 Series API with full server-side key security.')}</div>
               </div>
             )}
           </div>
@@ -845,7 +871,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
           {showModelMenu && (
             <div className="absolute right-4 top-14 w-72 bg-[#FFFFFF] text-[#212121] border border-[#E2E8F0] rounded-[6px] shadow-2xl z-50 p-2.5 space-y-1.5">
               <div className="flex items-center justify-between pb-1.5 border-b border-[#F1F5F9] px-1">
-                <span className="font-bold text-xs text-[#0F172A]">Select Model Engine</span>
+                <span className="font-bold text-xs text-[#0F172A]">{t('selectModelEngine', 'Select Model Engine')}</span>
                 <button
                   onClick={() => setShowModelMenu(false)}
                   className="p-1 text-[#64748B] hover:text-[#0F172A] rounded cursor-pointer"
@@ -868,8 +894,8 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                       }}
                       className={`w-full text-left p-2 rounded-[4px] border transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#EFF6FF] border-[#2874F0] text-[#1D4ED8]'
-                          : 'bg-[#FFFFFF] hover:bg-[#F8FAFC] border-[#E2E8F0] text-[#1E293B]'
+                          ? t('bgEff6ffBorder2874f0Text1d4ed8', 'bg-[#EFF6FF] border-[#2874F0] text-[#1D4ED8]')
+                          : t('bgFfffffHoverBgF8fafcBorderE2e8f0Te', 'bg-[#FFFFFF] hover:bg-[#F8FAFC] border-[#E2E8F0] text-[#1E293B]')
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -879,7 +905,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         </div>
                         <span
                           className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${
-                            isSelected ? 'bg-[#2874F0] text-white' : 'bg-[#F1F5F9] text-[#64748B]'
+                            isSelected ? t('bg2874f0TextWhite', 'bg-[#2874F0] text-white') : t('bgF1f5f9Text64748b', 'bg-[#F1F5F9] text-[#64748B]')
                           }`}
                         >
                           {m.badge}
@@ -899,7 +925,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
           {isModal && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              title={isExpanded ? 'Restore window size' : 'Expand full screen'}
+              title={isExpanded ? t('restoreWindowSize', 'Restore window size') : t('expandFullScreen', 'Expand full screen')}
               className="p-1.5 rounded-[4px] bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
             >
               {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -911,7 +937,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             <button
               id="gemini-close-btn"
               onClick={onClose}
-              title="Close Assistant"
+              title={t('closeAssistant', 'Close Assistant')}
               className="p-1.5 rounded-[4px] bg-white/10 hover:bg-red-500 text-white transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -927,7 +953,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             <div className="p-3.5 border-b border-[#E2E8F0] flex items-center justify-between bg-[#F8FAFC]">
               <div className="flex items-center gap-2">
                 <History className="w-4 h-4 text-[#2874F0]" />
-                <h3 className="text-xs font-bold text-[#0F172A]">Past Conversations</h3>
+                <h3 className="text-xs font-bold text-[#0F172A]">{t('pastConversations', 'Past Conversations')}</h3>
               </div>
               <button
                 type="button"
@@ -939,14 +965,14 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             </div>
 
             <div className="p-3 bg-[#EFF6FF] border-b border-[#DBEAFE] flex items-center justify-between text-xs">
-              <span className="text-[#1E40AF]">Start fresh anytime:</span>
+              <span className="text-[#1E40AF]">{t('startFreshAnytime', 'Start fresh anytime:')}</span>
               <button
                 type="button"
                 onClick={handleStartNewConversation}
                 className="bg-[#2874F0] text-white px-2.5 py-1 rounded-[4px] font-bold text-xs flex items-center gap-1 hover:bg-[#1D4ED8] cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>New Chat</span>
+                <span>{t('newChat', 'New Chat')}</span>
               </button>
             </div>
 
@@ -954,10 +980,9 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
               {savedSessions.length === 0 ? (
                 <div className="text-center py-12 text-[#94A3B8] space-y-2">
                   <MessageSquare className="w-8 h-8 mx-auto opacity-40" />
-                  <p className="text-xs font-medium">No past conversations archived yet.</p>
+                  <p className="text-xs font-medium">{t('noPastConversationsArchivedYet', 'No past conversations archived yet.')}</p>
                   <p className="text-[11px] max-w-[200px] mx-auto">
-                    New conversations are started automatically every time you open the assistant.
-                  </p>
+                    {t('newConversationsAreStartedAutomatic', 'New conversations are started automatically every time you open the assistant.')}</p>
                 </div>
               ) : (
                 savedSessions.map((session) => (
@@ -974,7 +999,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         type="button"
                         onClick={(e) => handleDeleteSession(session.id, e)}
                         className="text-[#94A3B8] hover:text-red-500 opacity-0 group-hover:opacity-100 p-0.5 transition-opacity"
-                        title="Delete session"
+                        title={t('deleteSession', 'Delete session')}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -985,8 +1010,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         <span>{session.timestamp}</span>
                       </span>
                       <span className="bg-[#F1F5F9] px-1.5 py-0.5 rounded font-mono">
-                        {session.messages.length} msgs
-                      </span>
+                        {session.messages.length} {t('msgs', 'msgs')}</span>
                     </div>
                   </div>
                 ))
@@ -1005,8 +1029,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   }}
                   className="w-full py-1.5 text-xs text-[#DC2626] hover:bg-red-50 rounded font-medium transition-colors cursor-pointer text-center"
                 >
-                  Clear All History
-                </button>
+                  {t('clearAllHistory', 'Clear All History')}</button>
               </div>
             )}
           </div>
@@ -1019,7 +1042,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-1.5 font-bold text-[#0F172A]">
               <Info className="w-4 h-4 text-[#2874F0]" />
-              <span>Active System Instruction ({selectedPersona.name})</span>
+              <span>{t('activeSystemInstruction', 'Active System Instruction (')}{selectedPersona.name})</span>
             </div>
             <button
               onClick={() => setShowSystemInstructionModal(false)}
@@ -1029,8 +1052,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             </button>
           </div>
           <p className="text-[11px] text-[#64748B]">
-            This prompt configures Gemini's persona, covenants knowledge base, and tone for Craftify multi-turn conversations.
-          </p>
+            {t('thisPromptConfiguresGeminiSPersonaC', 'This prompt configures Gemini\'s persona, covenants knowledge base, and tone for Craftify multi-turn conversations.')}</p>
           <textarea
             value={customSystemInstruction}
             onChange={(e) => setCustomSystemInstruction(e.target.value)}
@@ -1042,14 +1064,12 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
               onClick={() => setCustomSystemInstruction(selectedPersona.systemInstruction)}
               className="px-3 py-1 bg-[#FFFFFF] border border-[#CBD5E1] rounded-[4px] text-[#334155] hover:bg-[#F1F5F9] text-xs cursor-pointer font-medium"
             >
-              Reset to Default
-            </button>
+              {t('resetToDefault', 'Reset to Default')}</button>
             <button
               onClick={() => setShowSystemInstructionModal(false)}
               className="px-3 py-1 bg-[#2874F0] text-[#FFFFFF] rounded-[4px] hover:bg-[#1D4ED8] text-xs font-bold cursor-pointer shadow-xs"
             >
-              Apply Prompt
-            </button>
+              {t('applyPrompt', 'Apply Prompt')}</button>
           </div>
         </div>
       )}
@@ -1065,8 +1085,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             onClick={() => setErrorMessage(null)}
             className="text-[#E11D48] hover:underline font-bold text-[11px] cursor-pointer"
           >
-            Dismiss
-          </button>
+            {t('dismiss', 'Dismiss')}</button>
         </div>
       )}
 
@@ -1085,34 +1104,32 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                 <Bot className="w-6 h-6" />
               </div>
               <h3 className="text-lg sm:text-xl font-extrabold text-[#0F172A] tracking-tight">
-                {currentUser ? `Welcome back, ${currentUser.name.split(' ')[0]}` : 'How can I assist your craft journey?'}
+                {currentUser ? `Welcome back, ${currentUser.name.split(' ')[0]}` : t('howCanIAssistYourCraftJourney', 'How can I assist your craft journey?')}
               </h3>
               <p className="text-xs sm:text-sm text-[#64748B] max-w-md mx-auto leading-relaxed">
-                Your dedicated intelligence engine for authentic Indian handcrafts, all-or-nothing escrow guarantees, and artisan campaigns.
-              </p>
+                {t('yourDedicatedIntelligenceEngineForA', 'Your dedicated intelligence engine for authentic Indian handcrafts, all-or-nothing escrow guarantees, and artisan campaigns.')}</p>
             </div>
 
             {/* Platform Covenants Trust Badges */}
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>₹0 Pre-Auth Escrow Protection</span>
+                <span>{t('key_0PreAuthEscrowProtection', '₹0 Pre-Auth Escrow Protection')}</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-semibold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Verified GI Provenance</span>
+                <span>{t('verifiedGiProvenance', 'Verified GI Provenance')}</span>
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold">
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>Direct Artisan Payout (92%)</span>
+                <span>{t('directArtisanPayout92', 'Direct Artisan Payout (92%)')}</span>
               </span>
             </div>
 
             {/* Role Selectors Tabs */}
             <div className="pt-2">
               <div className="text-[11px] uppercase tracking-wider font-bold text-[#64748B] mb-2 px-1">
-                Choose Specialized Mode:
-              </div>
+                {t('chooseSpecializedMode', 'Choose Specialized Mode:')}</div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {PERSONAS.map((persona) => {
                   const isSelected = selectedPersona.id === persona.id;
@@ -1123,8 +1140,8 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                       onClick={() => handleSelectPersona(persona)}
                       className={`p-2 rounded-[6px] border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#FFFFFF] border-[#2874F0] shadow-xs text-[#1D4ED8] ring-1 ring-[#2874F0]/20'
-                          : 'bg-[#FFFFFF] hover:bg-[#F1F5F9] border-[#E2E8F0] text-[#334155]'
+                          ? t('bgFfffffBorder2874f0ShadowXsText1d4', 'bg-[#FFFFFF] border-[#2874F0] shadow-xs text-[#1D4ED8] ring-1 ring-[#2874F0]/20')
+                          : t('bgFfffffHoverBgF1f5f9BorderE2e8f0Te', 'bg-[#FFFFFF] hover:bg-[#F1F5F9] border-[#E2E8F0] text-[#334155]')
                       }`}
                     >
                       <div className="text-xs font-bold truncate">{persona.name.split(' ')[0]}</div>
@@ -1138,8 +1155,8 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             {/* Executive Quick Prompt Cards */}
             <div className="space-y-2 pt-1">
               <div className="text-[11px] uppercase tracking-wider font-bold text-[#64748B] px-1 flex items-center justify-between">
-                <span>Suggested Questions for {selectedPersona.name}:</span>
-                <span className="text-[10px] font-normal lowercase text-[#94A3B8]">click to send</span>
+                <span>{t('suggestedQuestionsFor', 'Suggested Questions for')}{selectedPersona.name}:</span>
+                <span className="text-[10px] font-normal lowercase text-[#94A3B8]">{t('clickToSend', 'click to send')}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {selectedPersona.starterPrompts.map((prompt, idx) => (
@@ -1154,7 +1171,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                     </span>
                     <span className="text-[10px] text-[#2874F0] font-bold mt-2 flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-[#FB641B]" />
-                      <span>Ask Concierge</span>
+                      <span>{t('askConcierge', 'Ask Concierge')}</span>
                       <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </button>
@@ -1166,7 +1183,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             <div className="text-center pt-2">
               <span className="text-[11px] text-[#94A3B8] inline-flex items-center gap-1">
                 <RotateCcw className="w-3 h-3 text-[#2874F0]" />
-                <span>Every time you open the assistant, a fresh conversation is ready.</span>
+                <span>{t('everyTimeYouOpenTheAssistantAFreshC', 'Every time you open the assistant, a fresh conversation is ready.')}</span>
               </span>
             </div>
           </div>
@@ -1196,9 +1213,9 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   }`}
                 >
                   {/* Sender Metadata Bar */}
-                  <div className={`flex items-center gap-2 text-[11px] px-1 ${isUser ? 'justify-end text-[#64748B]' : 'justify-start text-[#64748B]'}`}>
+                  <div className={`flex items-center gap-2 text-[11px] px-1 ${isUser ? t('justifyEndText64748b', 'justify-end text-[#64748B]') : t('justifyStartText64748b', 'justify-start text-[#64748B]')}`}>
                     <span className="font-bold text-[#0F172A]">
-                      {isUser ? (currentUser ? currentUser.name : 'You') : 'Craftify Concierge'}
+                      {isUser ? (currentUser ? currentUser.name : t('you', 'You')) : t('craftifyConcierge', 'Craftify Concierge')}
                     </span>
                     {isModel && (
                       <span className="font-mono text-[9px] bg-[#E2E8F0] text-[#475569] px-1.5 py-0.2 rounded font-medium">
@@ -1212,8 +1229,8 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                   <div
                     className={`p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed rounded-xl shadow-xs ${
                       isUser
-                        ? 'bg-[#1A56DB] text-white rounded-tr-xs shadow-md'
-                        : 'bg-white text-[#0F172A] border border-[#E2E8F0] rounded-tl-xs shadow-xs'
+                        ? t('bg1a56dbTextWhiteRoundedTrXsShadowM', 'bg-[#1A56DB] text-white rounded-tr-xs shadow-md')
+                        : t('bgWhiteText0f172aBorderBorderE2e8f0', 'bg-white text-[#0F172A] border border-[#E2E8F0] rounded-tl-xs shadow-xs')
                     }`}
                   >
                     {isUser ? (
@@ -1228,7 +1245,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                           msg.isStreaming && (
                             <div className="flex items-center gap-2.5 text-xs text-[#2874F0] py-1 font-medium">
                               <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#2874F0] animate-ping" />
-                              <span>Synthesizing response with Craftify Gemini engine...</span>
+                              <span>{t('synthesizingResponseWithCraftifyGem', 'Synthesizing response with Craftify Gemini engine...')}</span>
                             </div>
                           )
                         )}
@@ -1243,17 +1260,17 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         <button
                           onClick={() => handleCopyMessage(msg.content, index)}
                           className="px-2 py-1 hover:text-[#1A56DB] hover:bg-[#F1F5F9] rounded flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
-                          title="Copy response"
+                          title={t('copyResponse', 'Copy response')}
                         >
                           {copiedIndex === index ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              <span className="text-emerald-700 font-bold">Copied</span>
+                              <span className="text-emerald-700 font-bold">{t('copied', 'Copied')}</span>
                             </>
                           ) : (
                             <>
                               <Copy className="w-3.5 h-3.5" />
-                              <span>Copy</span>
+                              <span>{t('copy', 'Copy')}</span>
                             </>
                           )}
                         </button>
@@ -1263,9 +1280,9 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         <button
                           onClick={() => handleFeedback(msg.id, 'up')}
                           className={`p-1 rounded hover:text-[#1A56DB] hover:bg-[#F1F5F9] transition-colors cursor-pointer ${
-                            feedback === 'up' ? 'text-emerald-600 font-bold' : ''
+                            feedback === 'up' ? t('textEmerald600FontBold', 'text-emerald-600 font-bold') : ''
                           }`}
-                          title="Helpful response"
+                          title={t('helpfulResponse', 'Helpful response')}
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
                         </button>
@@ -1273,9 +1290,9 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                         <button
                           onClick={() => handleFeedback(msg.id, 'down')}
                           className={`p-1 rounded hover:text-rose-600 hover:bg-[#F1F5F9] transition-colors cursor-pointer ${
-                            feedback === 'down' ? 'text-rose-600 font-bold' : ''
+                            feedback === 'down' ? t('textRose600FontBold', 'text-rose-600 font-bold') : ''
                           }`}
-                          title="Report inaccurate info"
+                          title={t('reportInaccurateInfo', 'Report inaccurate info')}
                         >
                           <ThumbsDown className="w-3.5 h-3.5" />
                         </button>
@@ -1286,10 +1303,10 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                             <button
                               onClick={handleRetryLast}
                               className="px-2 py-1 hover:text-[#1A56DB] hover:bg-[#F1F5F9] rounded flex items-center gap-1 transition-colors text-[11px] cursor-pointer"
-                              title="Regenerate response"
+                              title={t('regenerateResponse', 'Regenerate response')}
                             >
                               <RotateCcw className="w-3 h-3" />
-                              <span>Retry</span>
+                              <span>{t('retry', 'Retry')}</span>
                             </button>
                           </>
                         )}
@@ -1299,8 +1316,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                       {index === messages.length - 1 && (
                         <div className="pt-1.5 space-y-1">
                           <span className="text-[10px] uppercase font-bold text-[#94A3B8] tracking-wider">
-                            Suggested follow-ups:
-                          </span>
+                            {t('suggestedFollowUps', 'Suggested follow-ups:')}</span>
                           <div className="flex flex-wrap gap-1.5">
                             {getFollowUpSuggestions(msg.content).map((suggestion, sIdx) => (
                               <button
@@ -1339,10 +1355,10 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
           <div className="flex items-center gap-2 truncate">
             <span className="flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
               <ShieldCheck className="w-3 h-3 text-emerald-600" />
-              <span>Escrow Protected</span>
+              <span>{t('escrowProtected', 'Escrow Protected')}</span>
             </span>
             <span className="hidden sm:inline text-[#CBD5E1]">•</span>
-            <span className="hidden sm:inline">Role: {selectedPersona.name}</span>
+            <span className="hidden sm:inline">{t('role', 'Role:')}{selectedPersona.name}</span>
           </div>
 
           {isLoading ? (
@@ -1351,7 +1367,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
               className="text-[#DC2626] font-bold hover:underline flex items-center gap-1.5 cursor-pointer bg-red-50 px-2 py-0.5 rounded border border-red-200"
             >
               <span className="w-2 h-2 rounded-xs bg-[#DC2626] animate-pulse" />
-              <span>Stop Generating</span>
+              <span>{t('stopGenerating', 'Stop Generating')}</span>
             </button>
           ) : (
             <button
@@ -1360,7 +1376,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
               className="text-[#2874F0] hover:underline font-bold text-[11px] flex items-center gap-1 cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Reset & New Chat</span>
+              <span>{t('resetNewChat', 'Reset & New Chat')}</span>
             </button>
           )}
         </div>
@@ -1371,12 +1387,12 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             {isListening ? (
               <div className="flex items-center gap-1.5 font-bold">
                 <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
-                <span className="text-red-700">Listening... Speak in English, Hindi, or any Indian regional language</span>
+                <span className="text-red-700">{t('listeningSpeakInEnglishHindiOrAnyIn', 'Listening... Speak in English, Hindi, or any Indian regional language')}</span>
               </div>
             ) : detectedLang ? (
               <div className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5" />
-                <span>Detected language: <strong>{detectedLang.name}</strong> ({detectedLang.nativeName})</span>
+                <span>{t('detectedLanguage', 'Detected language:')}<strong>{detectedLang.name}</strong> ({detectedLang.nativeName})</span>
               </div>
             ) : null}
 
@@ -1386,7 +1402,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                 onClick={() => setLanguage(detectedLang.code as any)}
                 className="text-[11px] font-bold text-[#1D4ED8] underline hover:text-[#1E40AF] cursor-pointer ml-auto"
               >
-                Switch app language to {detectedLang.nativeName}
+                {t('switchAppLanguageTo', 'Switch app language to')}{detectedLang.nativeName}
               </button>
             )}
           </div>
@@ -1400,7 +1416,7 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about escrow covenants, GI tags, artisan campaigns, or store items..."
+            placeholder={t('askAboutEscrowCovenantsGiTagsArtisa', 'Ask about escrow covenants, GI tags, artisan campaigns, or store items...')}
             rows={2}
             disabled={isLoading}
             className="w-full bg-transparent resize-none focus:outline-none text-xs sm:text-sm text-[#0F172A] placeholder-[#94A3B8] min-h-[44px] max-h-32 leading-relaxed"
@@ -1416,10 +1432,10 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
                 disabled={isLoading}
                 className={`p-2 rounded-[4px] transition-all flex items-center justify-center cursor-pointer ${
                   isListening
-                    ? 'bg-red-600 text-white animate-pulse shadow-sm font-bold'
-                    : 'bg-white text-[#2874F0] border border-[#CBD5E1] hover:bg-[#F1F5F9]'
+                    ? t('bgRed600TextWhiteAnimatePulseShadow', 'bg-red-600 text-white animate-pulse shadow-sm font-bold')
+                    : t('bgWhiteText2874f0BorderBorderCbd5e1', 'bg-white text-[#2874F0] border border-[#CBD5E1] hover:bg-[#F1F5F9]')
                 }`}
-                title={isListening ? 'Stop recording voice' : 'Voice input in your native language'}
+                title={isListening ? t('stopRecordingVoice', 'Stop recording voice') : t('voiceInputInYourNativeLanguage', 'Voice input in your native language')}
               >
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
@@ -1433,21 +1449,21 @@ export const GeminiChat: React.FC<GeminiChatProps> = ({
               disabled={!inputValue.trim() || isLoading}
               className={`p-2 sm:px-3 sm:py-2 rounded-[4px] font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs ${
                 inputValue.trim() && !isLoading
-                  ? 'bg-[#1A56DB] hover:bg-[#1E40AF] text-white active:scale-95 cursor-pointer'
-                  : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
+                  ? t('bg1a56dbHoverBg1e40afTextWhiteActiv', 'bg-[#1A56DB] hover:bg-[#1E40AF] text-white active:scale-95 cursor-pointer')
+                  : t('bgE2e8f0Text94a3b8CursorNotAllowed', 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed')
               }`}
-              title="Send message (Enter)"
+              title={t('sendMessageEnter', 'Send message (Enter)')}
             >
               <Send className="w-4 h-4" />
-              <span className="hidden sm:inline">Send</span>
+              <span className="hidden sm:inline">{t('send', 'Send')}</span>
             </button>
           </div>
         </div>
 
         {/* Footer Meta Row */}
         <div className="flex justify-between items-center px-1 text-[10px] text-[#94A3B8]">
-          <span>Craftify AI Assistant • All-or-nothing escrow covenants strictly upheld.</span>
-          <span className="hidden sm:inline">Press <strong>Enter</strong> to send • <strong>Shift + Enter</strong> for line break</span>
+          <span>{t('craftifyAiAssistantAllOrNothingEscr', 'Craftify AI Assistant • All-or-nothing escrow covenants strictly upheld.')}</span>
+          <span className="hidden sm:inline">{t('press', 'Press')}<strong>{t('enter', 'Enter')}</strong> {t('toSend', 'to send •')}<strong>{t('shiftEnter', 'Shift + Enter')}</strong> {t('forLineBreak', 'for line break')}</span>
         </div>
       </div>
     </div>

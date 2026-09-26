@@ -83,8 +83,7 @@ export const ShopSection: React.FC<ShopSectionProps> = ({
                 onClick={onViewAllClick}
                 className="text-[#2874F0] hover:underline font-semibold cursor-pointer"
               >
-                {t('browseShop', 'Browse Full Catalog')} ({products.length * 12}+ items) →
-              </button>
+                {t('browseShop', 'Browse Full Catalog')} ({products.length * 12}{t('items', '+ items) →')}</button>
             )}
           </div>
         </div>

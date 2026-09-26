@@ -33,6 +33,8 @@ import { CheckCircle2, ArrowRight, ShieldCheck, Compass, Store, Sparkles, PlusCi
 import { transformBackendCampaign, transformBackendProduct, transformBackendPledge, transformBackendOrder } from './utils/apiAdapters';
 import { settleCampaign, isDeadlinePassed, formatDeadlineDate, calculateDaysRemaining } from './utils/settleCampaign';
 import { campaignActivity } from './data/campaignActivity';
+import { API_BASE_URL } from './api/config';
+import { registerDynamicProductTranslation, registerDynamicCampaignTranslation } from './i18n/dataTranslations';
 
 function CraftifyApp() {
   const {
@@ -121,10 +123,32 @@ function CraftifyApp() {
         const results = data?.results || (Array.isArray(data) ? data : []);
         if (results && results.length > 0) {
           const liveCampaigns = results.map(transformBackendCampaign);
-          setCampaigns(liveCampaigns);
+          liveCampaigns.forEach((c: Campaign) => registerDynamicCampaignTranslation(c));
+
+          setCampaigns((prev) => {
+            const map = new Map<string, Campaign>();
+            prev.forEach((c) => map.set(c.id, c));
+            liveCampaigns.forEach((lc: Campaign) => {
+              const existing = map.get(lc.id);
+              if (existing) {
+                map.set(lc.id, {
+                  ...existing,
+                  ...lc,
+                  imageUrl: existing.imageUrl || lc.imageUrl,
+                  galleryImages: existing.galleryImages && existing.galleryImages.length > 0 ? existing.galleryImages : lc.galleryImages,
+                  rewardTiers: existing.rewardTiers && existing.rewardTiers.length > 0 ? existing.rewardTiers : lc.rewardTiers,
+                });
+              } else {
+                map.set(lc.id, lc);
+              }
+            });
+            return Array.from(map.values());
+          });
+
           setSelectedCampaignForDetail((prev) => {
-            const found = liveCampaigns.find((c: Campaign) => c.id === prev?.id || c.slug === prev?.slug);
-            return found || liveCampaigns[0];
+            if (!prev) return liveCampaigns[0];
+            const found = liveCampaigns.find((c: Campaign) => c.id === prev.id || c.slug === prev.slug);
+            return found ? { ...prev, ...found } : prev;
           });
         }
       })
@@ -137,10 +161,31 @@ function CraftifyApp() {
         const results = data?.results || (Array.isArray(data) ? data : []);
         if (results && results.length > 0) {
           const liveProducts = results.map(transformBackendProduct);
-          setProducts(liveProducts);
+          liveProducts.forEach((p: Product) => registerDynamicProductTranslation(p));
+
+          setProducts((prev) => {
+            const map = new Map<string, Product>();
+            prev.forEach((p) => map.set(p.id, p));
+            liveProducts.forEach((lp: Product) => {
+              const existing = map.get(lp.id);
+              if (existing) {
+                map.set(lp.id, {
+                  ...existing,
+                  ...lp,
+                  imageUrl: existing.imageUrl || lp.imageUrl,
+                  galleryImages: existing.galleryImages && existing.galleryImages.length > 0 ? existing.galleryImages : lp.galleryImages,
+                });
+              } else {
+                map.set(lp.id, lp);
+              }
+            });
+            return Array.from(map.values());
+          });
+
           setSelectedProductForDetail((prev) => {
-            const found = liveProducts.find((p: Product) => p.id === prev?.id || p.sku === prev?.sku);
-            return found || liveProducts[0];
+            if (!prev) return liveProducts[0];
+            const found = liveProducts.find((p: Product) => p.id === prev.id || p.sku === prev.sku);
+            return found ? { ...prev, ...found } : prev;
           });
         }
       })
@@ -327,18 +372,55 @@ function CraftifyApp() {
     }
   }, [activeView, selectedCampaignForDetail?.slug]);
 
-  // Cart & Order state
-  const [cartItems, setCartItems] = useState<CartItem[]>([
+  // Default demo cart items typed as CartItem[]
+  const DEFAULT_DEMO_CART_ITEMS: CartItem[] = [
     {
       id: 'mock-cart-1',
       type: 'product',
       title: 'Solid Brass Hex Drafting Gauge',
-      price: 48,
+      price: 2450,
       quantity: 1,
       imageUrl: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=800&q=80',
       subtitle: 'SKU-086 • Graduated from CMP-055',
     },
-  ]);
+  ];
+
+  // User-scoped Cart State (keyed per currentUser.id)
+  const [userCarts, setUserCarts] = useState<Record<string, CartItem[]>>(() => {
+    try {
+      const saved = localStorage.getItem('craftify_user_carts');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  const activeCartUserId = currentUser?.id || 'guest';
+
+  // Derived cart items for the currently logged-in user
+  const cartItems = useMemo<CartItem[]>(() => {
+    if (userCarts[activeCartUserId] !== undefined) {
+      return userCarts[activeCartUserId];
+    }
+    // Seed default initial demo cart ONLY for the seeded default demo user ('usr-001' or 'usr-buyer-seeded')
+    if (activeCartUserId === 'usr-001' || activeCartUserId === 'usr-buyer-seeded') {
+      return DEFAULT_DEMO_CART_ITEMS;
+    }
+    return [];
+  }, [userCarts, activeCartUserId]);
+
+  const setCartItems = (updater: CartItem[] | ((prev: CartItem[]) => CartItem[])) => {
+    setUserCarts((prev) => {
+      const currentCart = prev[activeCartUserId] !== undefined
+        ? prev[activeCartUserId]
+        : (activeCartUserId === 'usr-001' || activeCartUserId === 'usr-buyer-seeded' ? DEFAULT_DEMO_CART_ITEMS : []);
+      const nextCart = typeof updater === 'function' ? updater(currentCart) : updater;
+      const nextUserCarts = { ...prev, [activeCartUserId]: nextCart };
+      try {
+        localStorage.setItem('craftify_user_carts', JSON.stringify(nextUserCarts));
+      } catch {}
+      return nextUserCarts;
+    });
+  };
 
   const updateOrdersState = (updater: (prev: CustomerOrder[]) => CustomerOrder[]) => {
     setOrders((prev) => {
@@ -361,15 +443,34 @@ function CraftifyApp() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Wishlist State & Local Storage Persistence
+  const activeUserId = currentUser?.id || 'guest';
+  const wishlistStorageKey = `craftify_wishlist_${activeUserId}`;
+
   const [wishlistProductIds, setWishlistProductIds] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('craftify_wishlist');
+      const saved = localStorage.getItem(wishlistStorageKey);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       // fallback
     }
-    return ['prod-01', 'prod-03'];
+    return (activeUserId === 'usr-001' || activeUserId === 'usr-buyer-seeded') ? ['prod-01', 'prod-03'] : [];
   });
+
+  React.useEffect(() => {
+    const key = `craftify_wishlist_${currentUser?.id || 'guest'}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        setWishlistProductIds(JSON.parse(saved));
+        return;
+      }
+    } catch {}
+    if (currentUser?.id === 'usr-001' || currentUser?.id === 'usr-buyer-seeded') {
+      setWishlistProductIds(['prod-01', 'prod-03']);
+    } else {
+      setWishlistProductIds([]);
+    }
+  }, [currentUser?.id]);
 
   const handleToggleWishlist = (product: Product) => {
     setWishlistProductIds((prev) => {
@@ -383,7 +484,8 @@ function CraftifyApp() {
         showToast(`Saved "${product.title}" to your Wishlist`);
       }
       try {
-        localStorage.setItem('craftify_wishlist', JSON.stringify(updated));
+        const key = `craftify_wishlist_${currentUser?.id || 'guest'}`;
+        localStorage.setItem(key, JSON.stringify(updated));
       } catch (e) {
         // ignore
       }
@@ -490,21 +592,39 @@ function CraftifyApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const [viewedCategories, setViewedCategories] = useState<string[]>(() => {
-    try {
-      const saved = sessionStorage.getItem('craftify_viewed_categories');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
+  const [viewedCategories, setViewedCategories] = useState<string[]>([]);
+
+  // Scope & reset viewed categories per authenticated user so new accounts start from empty history (trending fallback)
+  React.useEffect(() => {
+    sessionStorage.removeItem('craftify_viewed_categories');
+    if (currentUser?.id) {
+      const userCategoryKey = `craftify_viewed_categories_${currentUser.id}`;
+      try {
+        const saved = sessionStorage.getItem(userCategoryKey);
+        setViewedCategories(saved ? JSON.parse(saved) : []);
+        return;
+      } catch {}
     }
-  });
+    setViewedCategories([]);
+  }, [currentUser?.id]);
+
+  // Reset transient global search, tracking selection, and modals on currentUser change
+  React.useEffect(() => {
+    setGlobalSearchQuery('');
+    setSelectedOrderForTracking(null);
+    setIsCartOpen(false);
+    setIsGeminiChatOpen(false);
+    setSelectedCampaignForPledge(null);
+    setInitialTierIdForPledge(undefined);
+  }, [currentUser?.id]);
 
   const addViewedCategory = (category?: string) => {
     if (!category) return;
     setViewedCategories((prev) => {
       const updated = [category, ...prev.filter((c) => c !== category)].slice(0, 10);
       try {
-        sessionStorage.setItem('craftify_viewed_categories', JSON.stringify(updated));
+        const userCategoryKey = currentUser?.id ? `craftify_viewed_categories_${currentUser.id}` : 'craftify_viewed_categories';
+        sessionStorage.setItem(userCategoryKey, JSON.stringify(updated));
       } catch { }
       return updated;
     });
@@ -925,11 +1045,55 @@ function CraftifyApp() {
   };
 
   const handleAdvanceOrderStatus = (orderId: string) => {
-    updateOrdersState((prev) =>
-      prev.map((o) => (o.id === orderId ? advanceOrderStatus(o) : o))
-    );
+    const targetIdStr = String(orderId || '').trim();
+    if (!targetIdStr) return;
+
+    updateOrdersState((prev) => {
+      const exists = prev.some((o) => String(o.id) === targetIdStr);
+      if (!exists) {
+        // Synthesize order object if created via backer reward fulfillment
+        const synthesizedOrder: CustomerOrder = {
+          id: targetIdStr,
+          orderDate: 'Just now',
+          status: 'packed',
+          carrierName: 'India Post Speed Post',
+          trackingNumber: `IN${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+          estimatedDeliveryRange: '3 - 5 business days',
+          items: [
+            {
+              id: `item-${Date.now()}`,
+              productId: 'prod-reward-01',
+              title: 'Artisan Backer Reward Item',
+              price: 1500,
+              quantity: 1,
+              imageUrl: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?auto=format&fit=crop&w=800&q=80',
+              subtitle: 'SKU-RWD-01',
+            },
+          ],
+          subtotal: 1500,
+          shipping: 0,
+          tax: 0,
+          total: 1500,
+          shippingAddress: {
+            fullName: 'Conscious Backer',
+            email: 'backer@craftify.in',
+            street: 'Craft Collector Hub',
+            city: 'New Delhi',
+            state: 'Delhi',
+            zip: '110001',
+            country: 'India',
+          },
+          paymentMethod: 'Escrow Backer Release',
+          history: buildDefaultHistory('packed', 'Just now'),
+          isBackerReward: true,
+        };
+        return [synthesizedOrder, ...prev];
+      }
+      return prev.map((o) => (String(o.id) === targetIdStr ? advanceOrderStatus(o) : o));
+    });
+
     setSelectedOrderForTracking((prev) => {
-      if (prev && prev.id === orderId) {
+      if (prev && String(prev.id) === targetIdStr) {
         return advanceOrderStatus(prev);
       }
       return prev;
@@ -963,21 +1127,70 @@ function CraftifyApp() {
     showToast(`Reset order #${orderId} to Confirmed.`);
   };
 
-  const handleCampaignCreated = (newCamp: Campaign) => {
-    const pendingCamp: Campaign = {
-      ...newCamp,
-      status: 'pending_review',
-      isApproved: false,
-      creatorProfilePhoto: currentUser?.profilePhoto || newCamp.creatorProfilePhoto,
-      creatorBusinessName: currentUser?.businessName || currentUser?.name || newCamp.creatorBusinessName || newCamp.creator,
-      creatorYearsOfExperience: currentUser?.yearsOfExperience ?? newCamp.creatorYearsOfExperience,
-      creatorCity: currentUser?.city || newCamp.creatorCity,
-      creatorState: currentUser?.state || newCamp.creatorState,
-    };
-    setCampaigns((prev) => [pendingCamp, ...prev]);
-    setSelectedCampaignForDetail(pendingCamp);
-    setActiveView('campaign-detail');
-    showToast(`Campaign "${pendingCamp.title}" submitted for curation review! An admin must approve it before it appears in the public marketplace.`);
+  const handleCampaignCreated = async (newCamp: Campaign) => {
+    registerDynamicCampaignTranslation(newCamp);
+    const token = currentUser?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('kaarigar_access_token') : null);
+
+    let res: Response | null = null;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      res = await fetch(`${API_BASE_URL}/campaigns/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title: newCamp.title,
+          short_description: newCamp.shortDescription,
+          full_story: newCamp.fullStory || newCamp.shortDescription,
+          funding_goal: newCamp.goalAmount,
+          days_left: newCamp.daysLeft,
+          image: newCamp.imageUrl,
+          gallery_images: newCamp.galleryImages || [newCamp.imageUrl],
+          category: newCamp.category,
+          craft_type: newCamp.craftHeritage || newCamp.category,
+          region_state: newCamp.creatorLocation || 'India',
+          reward_tiers: newCamp.rewardTiers,
+        }),
+      });
+    } catch {
+      showToast("Couldn't connect to the server — make sure the backend is running");
+      return;
+    }
+
+    if (!res.ok) {
+      showToast("Couldn't connect to the server — make sure the backend is running");
+      return;
+    }
+
+    const createdData = await res.json();
+    const createdCampaign = transformBackendCampaign(createdData);
+    registerDynamicCampaignTranslation(createdCampaign);
+
+    // Fetch the artisan's real campaigns via GET /api/campaigns/?artisan=me
+    try {
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const myRes = await fetch(`${API_BASE_URL}/campaigns/?artisan=me`, { headers });
+      if (myRes.ok) {
+        const myData = await myRes.json();
+        const results = myData?.results || (Array.isArray(myData) ? myData : []);
+        if (results && results.length > 0) {
+          const liveCampaigns = results.map(transformBackendCampaign);
+          liveCampaigns.forEach((c: Campaign) => registerDynamicCampaignTranslation(c));
+          setCampaigns((prev) => {
+            const existingIds = new Set(liveCampaigns.map((c: Campaign) => c.id));
+            const otherCampaigns = prev.filter((c) => !existingIds.has(c.id));
+            return [...liveCampaigns, ...otherCampaigns];
+          });
+        }
+      }
+    } catch { }
+
+    setCampaigns((prev) => [createdCampaign, ...prev.filter((c) => c.id !== createdCampaign.id)]);
+    setSelectedCampaignForDetail(createdCampaign);
+    setActiveView('creator-dashboard');
+    showToast(`Campaign "${createdCampaign.title}" submitted for curation review! Saved to database.`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -995,6 +1208,13 @@ function CraftifyApp() {
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('kaarigar_access_token');
+    sessionStorage.removeItem('craftify_viewed_categories');
+    setViewedCategories([]);
+    setGlobalSearchQuery('');
+    setSelectedOrderForTracking(null);
+    setIsCartOpen(false);
+    setIsGeminiChatOpen(false);
     setCurrentUser(null);
     if (activeView === 'account' || activeView === 'creator-dashboard' || activeView === 'admin-panel' || activeView === 'my-pledges') {
       setActiveView('home');
@@ -1375,9 +1595,47 @@ function CraftifyApp() {
   };
 
   // Direct Product Created Handler
-  const handleProductCreated = (newProd: Product) => {
-    setProducts((prev) => [newProd, ...prev]);
-    showToast(`"${newProd.title}" listed in Craftify Shop!`);
+  const handleProductCreated = async (newProd: Product) => {
+    const token = currentUser?.token || (typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') || localStorage.getItem('kaarigar_access_token') : null);
+
+    let res: Response | null = null;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      res = await fetch(`${API_BASE_URL}/products/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          title: newProd.title,
+          name: newProd.title,
+          category: newProd.category,
+          description: newProd.longDescription || newProd.shortDescription,
+          shortDescription: newProd.shortDescription,
+          price: newProd.price,
+          stock_quantity: newProd.stockCount,
+          stockCount: newProd.stockCount,
+          image: newProd.imageUrl,
+          imageUrl: newProd.imageUrl,
+          gallery_images: newProd.galleryImages || [newProd.imageUrl],
+          craft_heritage_note: newProd.craftHeritage || newProd.category,
+          region_state: newProd.creatorLocation || 'India',
+        }),
+      });
+    } catch {
+      showToast("Couldn't connect to the server — make sure the backend is running");
+      return;
+    }
+
+    if (!res.ok) {
+      showToast("Couldn't connect to the server — make sure the backend is running");
+      return;
+    }
+
+    const createdData = await res.json();
+    const createdProduct = transformBackendProduct(createdData);
+    setProducts((prev) => [createdProduct, ...prev.filter((p) => p.id !== createdProduct.id)]);
+    showToast(`"${createdProduct.title}" listed in Craftify Shop and saved to database!`);
   };
 
   const totalCartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -1605,6 +1863,7 @@ function CraftifyApp() {
         {/* VIEW: PRODUCT DETAIL */}
         {activeView === 'product-detail' && activeLocalizedProduct && (
           <ProductDetailPage
+            currentUser={currentUser}
             product={activeLocalizedProduct}
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
@@ -1680,22 +1939,22 @@ function CraftifyApp() {
               <div className="w-14 h-14 rounded-full bg-[#FFF3EC] text-[#FB641B] flex items-center justify-center mx-auto mb-3 border border-[#FB641B]/30">
                 <ShieldAlert className="w-7 h-7" />
               </div>
-              <h2 className="text-xl font-bold text-[#212121] mb-2">Artisan Account Required</h2>
+              <h2 className="text-xl font-bold text-[#212121] mb-2">{t('artisanAccountRequiredTitle', 'Artisan Account Required')}</h2>
               <p className="text-xs text-[#878787] max-w-md mx-auto mb-5 leading-relaxed">
-                Only verified artisan accounts can launch crowdfunding campaigns and list handcrafted items. Please sign up or switch to an artisan account.
+                {t('artisanAccountRequiredDesc', 'Only verified artisan accounts can launch crowdfunding campaigns and list handcrafted items. Please sign up or switch to an artisan account.')}
               </p>
               <div className="flex justify-center gap-2">
                 <button
                   onClick={() => handleNavigate('home')}
                   className="px-4 py-2 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-xs font-bold uppercase tracking-wider text-[#212121] cursor-pointer"
                 >
-                  Return to Store
+                  {t('returnToStoreBtn', 'Return to Store')}
                 </button>
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
                   className="px-4 py-2 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-xs font-bold uppercase tracking-wider text-[#FFFFFF] cursor-pointer"
                 >
-                  Sign In / Register
+                  {t('signInRegisterBtn', 'Sign In / Register')}
                 </button>
               </div>
             </div>
@@ -1704,22 +1963,22 @@ function CraftifyApp() {
               <div className="w-14 h-14 rounded-full bg-[#FFF3E0] text-[#E65100] flex items-center justify-center mx-auto mb-3 border border-[#FFE0B2]">
                 <ShieldAlert className="w-7 h-7" />
               </div>
-              <h2 className="text-xl font-bold text-[#212121] mb-2">Artisan Profile Incomplete</h2>
+              <h2 className="text-xl font-bold text-[#212121] mb-2">{t('artisanProfileIncompleteTitle', 'Artisan Profile Incomplete')}</h2>
               <p className="text-xs text-[#878787] max-w-md mx-auto mb-5 leading-relaxed">
-                Before launching a crowdfunding campaign, Craftify seller onboarding requires verified workshop information, craft heritage documentation, and bank payout credentials.
+                {t('artisanProfileIncompleteDesc', 'Before launching a crowdfunding campaign, Craftify seller onboarding requires verified workshop information, craft heritage documentation, and bank payout credentials.')}
               </p>
               <div className="flex justify-center gap-3">
                 <button
                   onClick={() => handleNavigate('home')}
                   className="px-4 py-2 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-xs font-bold uppercase tracking-wider text-[#212121] cursor-pointer"
                 >
-                  Return to Store
+                  {t('returnToStoreBtn', 'Return to Store')}
                 </button>
                 <button
                   onClick={() => handleNavigate('complete-profile')}
                   className="px-5 py-2 rounded-[2px] bg-[#2874F0] hover:bg-[#1259C3] text-xs font-bold uppercase tracking-wider text-[#FFFFFF] cursor-pointer shadow-xs"
                 >
-                  Complete Profile Now →
+                  {t('completeProfileNowBtn', 'Complete Profile Now →')}
                 </button>
               </div>
             </div>
@@ -1727,7 +1986,7 @@ function CraftifyApp() {
             <CreateCampaignForm
               onCancel={() => handleNavigate('home')}
               onCampaignCreated={handleCampaignCreated}
-              defaultCreatorName={currentUser?.name ?? 'Atelier Monolith'}
+              defaultCreatorName={currentUser?.name ?? t('atelierMonolith', 'Atelier Monolith')}
             />
           )
         )}
@@ -1739,22 +1998,22 @@ function CraftifyApp() {
               <div className="w-14 h-14 rounded-full bg-[#FFF3EC] text-[#FB641B] flex items-center justify-center mx-auto mb-3 border border-[#FB641B]/30">
                 <ShieldAlert className="w-7 h-7" />
               </div>
-              <h2 className="text-xl font-bold text-[#212121] mb-2">Artisan Access Only</h2>
+              <h2 className="text-xl font-bold text-[#212121] mb-2">{t('artisanAccessOnlyTitle', 'Artisan Access Only')}</h2>
               <p className="text-xs text-[#878787] max-w-md mx-auto mb-5 leading-relaxed">
-                The Creator Dashboard is reserved for verified master artisans. Please sign in or register as an artisan to view sales metrics and manage production.
+                {t('artisanAccessOnlyDesc', 'The Creator Dashboard is reserved for verified master artisans. Please sign in or register as an artisan to view sales metrics and manage production.')}
               </p>
               <div className="flex justify-center gap-2">
                 <button
                   onClick={() => handleNavigate('home')}
                   className="px-4 py-2 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-xs font-bold uppercase tracking-wider text-[#212121] cursor-pointer"
                 >
-                  Return to Store
+                  {t('returnToStoreBtn', 'Return to Store')}
                 </button>
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
                   className="px-4 py-2 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-xs font-bold uppercase tracking-wider text-[#FFFFFF] cursor-pointer"
                 >
-                  Sign In as Artisan
+                  {t('signInAsArtisanBtn', 'Sign In as Artisan')}
                 </button>
               </div>
             </div>
@@ -1799,22 +2058,22 @@ function CraftifyApp() {
               <div className="w-14 h-14 rounded-full bg-[#FBE9E7] text-[#D32F2F] flex items-center justify-center mx-auto mb-3 border border-[#D32F2F]/30">
                 <ShieldAlert className="w-7 h-7" />
               </div>
-              <h2 className="text-xl font-bold text-[#212121] mb-2">Access Denied: Platform Administrator Required</h2>
+              <h2 className="text-xl font-bold text-[#212121] mb-2">{t('accessDeniedAdminRequiredTitle', 'Access Denied: Platform Administrator Required')}</h2>
               <p className="text-xs text-[#878787] max-w-md mx-auto mb-5 leading-relaxed">
-                You do not have administrative clearance to access the curation desk. Only designated admin accounts can review campaigns and oversee platform trust.
+                {t('accessDeniedAdminRequiredDesc', 'You do not have administrative clearance to access the curation desk. Only designated admin accounts can review campaigns and oversee platform trust.')}
               </p>
               <div className="flex justify-center gap-2">
                 <button
                   onClick={() => handleNavigate('home')}
                   className="px-4 py-2 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-xs font-bold uppercase tracking-wider text-[#212121] cursor-pointer"
                 >
-                  Return Home
+                  {t('returnHomeBtn', 'Return Home')}
                 </button>
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
                   className="px-4 py-2 rounded-[2px] bg-[#2874F0] hover:bg-[#1259C3] text-xs font-bold uppercase tracking-wider text-[#FFFFFF] cursor-pointer"
                 >
-                  Switch Account
+                  {t('switchAccountBtn', 'Switch Account')}
                 </button>
               </div>
             </div>
@@ -1832,7 +2091,7 @@ function CraftifyApp() {
                       : c
                   )
                 );
-                showToast('Campaign successfully approved and published to public discovery!');
+                showToast(t('campaignSuccessfullyApprovedAndPubl', 'Campaign successfully approved and published to public discovery!'));
               }}
               showToast={showToast}
             />
@@ -1847,8 +2106,8 @@ function CraftifyApp() {
               setCurrentUser(updatedUser);
               showToast(
                 updatedUser.profileCompleted
-                  ? 'Artisan profile completed & verified! You can now launch campaigns.'
-                  : 'Profile draft saved.'
+                  ? t('artisanProfileCompletedVerifiedYouC', 'Artisan profile completed & verified! You can now launch campaigns.')
+                  : t('profileDraftSaved', 'Profile draft saved.')
               );
               handleNavigate('creator-dashboard');
             }}
@@ -1880,16 +2139,16 @@ function CraftifyApp() {
           ) : (
             <div className="max-w-md mx-auto px-4 py-20 text-center">
               <h2 className="font-display text-2xl font-bold text-[#1B2430] mb-2">
-                Authentication Required
+                {t('authRequiredTitle', 'Authentication Required')}
               </h2>
               <p className="text-xs font-ledger text-[#1B2430]/70 mb-6">
-                Please sign in to view your authorized pledges and delivery ledger.
+                {t('authRequiredPledgesDesc', 'Please sign in to view your authorized pledges and delivery ledger.')}
               </p>
               <button
                 onClick={() => setIsAuthModalOpen(true)}
                 className="px-6 py-2.5 bg-[#1B2430] text-[#ECE9E2] font-ledger text-xs uppercase tracking-wider font-semibold"
               >
-                Sign In / Create Account
+                {t('signInCreateAccountBtn', 'Sign In / Create Account')}
               </button>
             </div>
           )
@@ -1898,6 +2157,7 @@ function CraftifyApp() {
         {/* VIEW: MY ORDERS LIST */}
         {activeView === 'my-orders' && (
           <MyOrdersPage
+            currentUser={currentUser}
             orders={localizedOrders}
             onTrackOrder={handleTrackOrder}
             onNavigate={handleNavigate}
@@ -1946,7 +2206,7 @@ function CraftifyApp() {
         <PledgeModal
           campaign={selectedCampaignForPledge}
           initialTierId={initialTierIdForPledge}
-          defaultUserName={currentUser?.name || 'Eleanor Vance'}
+          defaultUserName={currentUser?.name || t('eleanorVance', 'Eleanor Vance')}
           onClose={() => {
             setSelectedCampaignForPledge(null);
             setInitialTierIdForPledge(undefined);

@@ -30,6 +30,8 @@ interface ImageUploadDropzoneProps {
   className?: string;
 }
 
+import { useLanguage } from '../../context/LanguageContext';
+
 export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
   id = 'image-upload-dropzone',
   label = 'Cover Image',
@@ -43,6 +45,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
   onClearWarning,
   className = '',
 }) => {
+  const { t } = useLanguage();
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -203,7 +206,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
         {isCloudinaryUrl && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] bg-[#E8F5E9] text-[#2E7D32] text-[10px] font-bold uppercase tracking-wider">
             <Cloud className="w-3 h-3 text-[#2E7D32]" />
-            <span>Cloudinary Hosted</span>
+            <span>{t('cloudinaryHosted', 'Cloudinary Hosted')}</span>
           </span>
         )}
       </div>
@@ -230,7 +233,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
             <div className="relative w-full sm:w-48 h-36 bg-[#F8FAFC] rounded-[3px] border border-[#E2E8F0] overflow-hidden shrink-0 flex items-center justify-center">
               <img
                 src={value}
-                alt="Uploaded cover preview"
+                alt={t('uploadedCoverPreview', 'Uploaded cover preview')}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   // Fallback icon if broken URL
@@ -239,7 +242,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
               />
               <div className="absolute top-1.5 left-1.5 bg-[#212121]/75 text-[#FFFFFF] text-[9px] font-bold px-1.5 py-0.5 rounded-[2px] backdrop-blur-2xs flex items-center gap-1">
                 <CheckCircle2 className="w-2.5 h-2.5 text-[#4CAF50]" />
-                <span>Uploaded</span>
+                <span>{t('uploaded', 'Uploaded')}</span>
               </div>
             </div>
 
@@ -247,7 +250,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
               <div className="space-y-0.5">
                 <div className="text-xs font-bold text-[#212121] flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-[#388E3C]" />
-                  <span>Cover image ready</span>
+                  <span>{t('coverImageReady', 'Cover image ready')}</span>
                 </div>
                 <p className="text-[11px] text-[#878787] break-all font-mono line-clamp-2">
                   {value}
@@ -263,7 +266,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
                   className="px-3 py-1.5 rounded-[2px] bg-[#F1F3F6] hover:bg-[#EAEAEA] text-[#2874F0] border border-[#2874F0]/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Change Image</span>
+                  <span>{t('changeImage', 'Change Image')}</span>
                 </button>
 
                 <button
@@ -274,7 +277,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
                   className="px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] hover:bg-[#FFF3EC] text-[#FB641B] border border-[#FB641B]/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove</span>
+                  <span>{t('remove', 'Remove')}</span>
                 </button>
               </div>
             </div>
@@ -294,10 +297,10 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
           }}
           className={`p-6 sm:p-8 border-2 border-dashed rounded-[4px] transition-all text-center flex flex-col items-center justify-center cursor-pointer select-none ${
             isDragOver
-              ? 'border-[#2874F0] bg-[#EBF3FE]'
+              ? t('border2874f0BgEbf3fe', 'border-[#2874F0] bg-[#EBF3FE]')
               : uploadError
-              ? 'border-[#FB641B]/50 bg-[#FFF3EC]/40 hover:border-[#FB641B]'
-              : 'border-[#D5D5D5] bg-[#F9F9F9] hover:border-[#2874F0] hover:bg-[#F1F3F6]'
+              ? t('borderFb641b50BgFff3ec40HoverBorder', 'border-[#FB641B]/50 bg-[#FFF3EC]/40 hover:border-[#FB641B]')
+              : t('borderD5d5d5BgF9f9f9HoverBorder2874', 'border-[#D5D5D5] bg-[#F9F9F9] hover:border-[#2874F0] hover:bg-[#F1F3F6]')
           }`}
         >
           {isUploading ? (
@@ -307,11 +310,10 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
                 <Loader2 className="w-6 h-6 text-[#2874F0] animate-spin" />
               </div>
               <div className="font-bold text-xs text-[#212121] flex items-center gap-1.5">
-                <span>Uploading image to Cloudinary...</span>
+                <span>{t('uploadingImageToCloudinary', 'Uploading image to Cloudinary...')}</span>
               </div>
               <p className="text-[11px] text-[#878787] mt-1">
-                Optimizing and storing high-resolution asset securely
-              </p>
+                {t('optimizingAndStoringHighResolutionA', 'Optimizing and storing high-resolution asset securely')}</p>
               <div className="w-48 h-1.5 bg-[#E0E0E0] rounded-full overflow-hidden mt-3">
                 <div className="h-full bg-[#2874F0] w-2/3 animate-pulse rounded-full" />
               </div>
@@ -322,24 +324,22 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
               <div
                 className={`w-12 h-12 rounded-full border flex items-center justify-center mb-3 transition-colors ${
                   isDragOver
-                    ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0]'
-                    : 'bg-[#FFFFFF] text-[#2874F0] border-[#E0E0E0]'
+                    ? t('bg2874f0TextFfffffBorder2874f0', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0]')
+                    : t('bgFfffffText2874f0BorderE0e0e0', 'bg-[#FFFFFF] text-[#2874F0] border-[#E0E0E0]')
                 }`}
               >
                 <Upload className="w-5 h-5" />
               </div>
 
               <div className="font-bold text-xs text-[#212121]">
-                Click or drag to upload cover image
-              </div>
+                {t('clickOrDragToUploadCoverImage', 'Click or drag to upload cover image')}</div>
               <p className="text-[11px] text-[#878787] mt-1 max-w-sm">
-                Supported formats: <strong className="font-semibold text-[#555]">JPG, PNG, WEBP</strong> • Max file size: <strong className="font-semibold text-[#555]">5MB</strong>
+                {t('supportedFormats', 'Supported formats:')}<strong className="font-semibold text-[#555]">{t('jpgPngWebp', 'JPG, PNG, WEBP')}</strong> {t('maxFileSize', '• Max file size:')}<strong className="font-semibold text-[#555]">{t('key_5mb', '5MB')}</strong>
               </p>
 
               <div className="mt-3">
                 <span className="inline-block px-3 py-1.5 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] text-xs font-semibold uppercase tracking-wider shadow-xs hover:bg-[#1C5FD0] transition-colors">
-                  Browse Files
-                </span>
+                  {t('browseFiles', 'Browse Files')}</span>
               </div>
             </div>
           )}
@@ -373,8 +373,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
               )}
               {!isCloudinaryConfigured && (
                 <div className="text-[10px] text-[#2874F0] mt-1 font-mono">
-                  Tip: Configure CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET in src/api/cloudinaryConfig.ts
-                </div>
+                  {t('tipConfigureCloudinaryCloudNameAndC', 'Tip: Configure CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET in src/api/cloudinaryConfig.ts')}</div>
               )}
             </div>
           </div>
@@ -386,8 +385,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
               onClick={() => fileInputRef.current?.click()}
               className="px-2.5 py-1 bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-[11px] font-bold uppercase rounded-[2px] transition-colors cursor-pointer"
             >
-              Retry
-            </button>
+              {t('retry', 'Retry')}</button>
             <button
               type="button"
               onClick={() => {
@@ -396,8 +394,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
               }}
               className="text-[11px] text-[#878787] hover:text-[#212121] px-1 py-1"
             >
-              Dismiss
-            </button>
+              {t('dismiss', 'Dismiss')}</button>
           </div>
         </div>
       )}
@@ -407,11 +404,9 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
         <div className="pt-3 border-t border-[#F0F0F0] space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase tracking-wider font-bold text-[#212121]">
-              Additional Gallery Photos (Optional)
-            </span>
+              {t('additionalGalleryPhotosOptional', 'Additional Gallery Photos (Optional)')}</span>
             <span className="text-[11px] text-[#878787]">
-              {galleryValues.length} uploaded
-            </span>
+              {galleryValues.length} {t('uploaded', 'uploaded')}</span>
           </div>
 
           {galleryError && (
@@ -436,7 +431,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
                   type="button"
                   onClick={(e) => handleRemoveGalleryImage(idx, e)}
                   className="absolute top-1 right-1 p-1 bg-[#212121]/80 hover:bg-[#FB641B] text-[#FFFFFF] rounded-[2px] opacity-90 transition-colors cursor-pointer"
-                  title="Remove photo"
+                  title={t('removePhoto', 'Remove photo')}
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -457,8 +452,7 @@ export const ImageUploadDropzone: React.FC<ImageUploadDropzoneProps> = ({
                 <>
                   <Plus className="w-4 h-4 text-[#2874F0] mb-0.5" />
                   <span className="text-[10px] font-bold text-[#2874F0] leading-tight">
-                    Add Photo
-                  </span>
+                    {t('addPhoto', 'Add Photo')}</span>
                 </>
               )}
             </button>

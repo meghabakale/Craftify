@@ -21,31 +21,26 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Col 1: ABOUT */}
           <div className="space-y-2.5">
             <div className="text-[#878787] font-semibold text-[11px] uppercase tracking-wider mb-3">
-              ABOUT
-            </div>
+              {t('about', 'ABOUT')}</div>
             <ul className="space-y-2 text-[#FFFFFF]/80">
               <li>
                 <button onClick={() => onNavigate('home')} className="hover:underline cursor-pointer">
-                  About Craftify
-                </button>
+                  {t('aboutCraftify', 'About Craftify')}</button>
               </li>
               <li>
                 <button onClick={() => onNavigate('campaigns')} className="hover:underline cursor-pointer">
-                  Artisan Pre-Orders
-                </button>
+                  {t('artisanPreOrders', 'Artisan Pre-Orders')}</button>
               </li>
               <li>
                 <button onClick={() => onNavigate('shop')} className="hover:underline cursor-pointer">
-                  Marketplace Catalog
-                </button>
+                  {t('marketplaceCatalog', 'Marketplace Catalog')}</button>
               </li>
               <li>
                 <button onClick={() => onNavigate('start-campaign')} className="hover:underline cursor-pointer">
-                  Weaver Guild Onboarding
-                </button>
+                  {t('weaverGuildOnboarding', 'Weaver Guild Onboarding')}</button>
               </li>
               <li>
-                <span className="text-[#878787]">GI Tag Verification</span>
+                <span className="text-[#878787]">{t('giTagVerification', 'GI Tag Verification')}</span>
               </li>
             </ul>
           </div>
@@ -53,56 +48,51 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Col 2: HELP */}
           <div className="space-y-2.5">
             <div className="text-[#878787] font-semibold text-[11px] uppercase tracking-wider mb-3">
-              HELP
-            </div>
+              {t('help', 'HELP')}</div>
             <ul className="space-y-2 text-[#FFFFFF]/80">
-              <li><span className="hover:underline cursor-pointer">Payments & Escrow</span></li>
-              <li><span className="hover:underline cursor-pointer">Shipping & Logistics</span></li>
-              <li><span className="hover:underline cursor-pointer">Cancellation & Returns</span></li>
-              <li><span className="hover:underline cursor-pointer">FAQ & Backer Protection</span></li>
-              <li><span className="hover:underline cursor-pointer">Report Infringement</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('paymentsEscrow', 'Payments & Escrow')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('shippingLogistics', 'Shipping & Logistics')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('cancellationReturns', 'Cancellation & Returns')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('faqBackerProtection', 'FAQ & Backer Protection')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('reportInfringement', 'Report Infringement')}</span></li>
             </ul>
           </div>
 
           {/* Col 3: CONSUMER POLICY */}
           <div className="space-y-2.5">
             <div className="text-[#878787] font-semibold text-[11px] uppercase tracking-wider mb-3">
-              CONSUMER POLICY
-            </div>
+              {t('consumerPolicy', 'CONSUMER POLICY')}</div>
             <ul className="space-y-2 text-[#FFFFFF]/80">
-              <li><span className="hover:underline cursor-pointer">Cancellation & Escrow Policy</span></li>
-              <li><span className="hover:underline cursor-pointer">Terms Of Use</span></li>
-              <li><span className="hover:underline cursor-pointer">Security Guarantee</span></li>
-              <li><span className="hover:underline cursor-pointer">Privacy Notice</span></li>
-              <li><span className="hover:underline cursor-pointer">Sitemap</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('cancellationEscrowPolicy', 'Cancellation & Escrow Policy')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('termsOfUse', 'Terms Of Use')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('securityGuarantee', 'Security Guarantee')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('privacyNotice', 'Privacy Notice')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('sitemap', 'Sitemap')}</span></li>
             </ul>
           </div>
 
           {/* Col 4: SOCIAL & COMMUNITIES */}
           <div className="space-y-2.5">
             <div className="text-[#878787] font-semibold text-[11px] uppercase tracking-wider mb-3">
-              CONNECT
-            </div>
+              {t('connect', 'CONNECT')}</div>
             <ul className="space-y-2 text-[#FFFFFF]/80">
-              <li><span className="hover:underline cursor-pointer">Instagram @craftify.in</span></li>
-              <li><span className="hover:underline cursor-pointer">Twitter / X</span></li>
-              <li><span className="hover:underline cursor-pointer">YouTube Workshops</span></li>
-              <li><span className="hover:underline cursor-pointer">Artisan Stories Podcast</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('instagramCraftifyIn', 'Instagram @craftify.in')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('twitterX', 'Twitter / X')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('youtubeWorkshops', 'YouTube Workshops')}</span></li>
+              <li><span className="hover:underline cursor-pointer">{t('artisanStoriesPodcast', 'Artisan Stories Podcast')}</span></li>
             </ul>
           </div>
 
           {/* Col 5: Registered Office */}
           <div className="col-span-2 md:col-span-1 border-l-0 md:border-l border-[#2D3C52] md:pl-6 space-y-2 text-[11px] text-[#878787]">
             <div className="text-[#878787] font-semibold text-[11px] uppercase tracking-wider mb-3">
-              REGISTERED OFFICE
-            </div>
+              {t('registeredOffice', 'REGISTERED OFFICE')}</div>
             <p className="leading-relaxed">
-              Craftify Internet Private Limited,<br />
-              Buildings Alyssa, Begonia & Clove Embassy Tech Village,<br />
-              Outer Ring Road, Devarabeesanahalli Village,<br />
-              Bengaluru, 560103, Karnataka, India<br />
-              CIN: U51109KA2026PTC066107
-            </p>
+              {t('craftifyInternetPrivateLimited', 'Craftify Internet Private Limited,')}<br />
+              {t('buildingsAlyssaBegoniaCloveEmbassyT', 'Buildings Alyssa, Begonia & Clove Embassy Tech Village,')}<br />
+              {t('outerRingRoadDevarabeesanahalliVill', 'Outer Ring Road, Devarabeesanahalli Village,')}<br />
+              {t('bengaluru560103KarnatakaIndia', 'Bengaluru, 560103, Karnataka, India')}<br />
+              {t('cinU51109ka2026ptc066107', 'CIN: U51109KA2026PTC066107')}</p>
           </div>
         </div>
 
@@ -120,17 +110,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </button>
             <div className="flex items-center gap-1.5 text-[#388E3C]">
               <ShieldCheck className="w-4 h-4" />
-              <span className="text-[#FFFFFF]">100% Escrow Protected</span>
+              <span className="text-[#FFFFFF]">{t('key_100EscrowProtected', '100% Escrow Protected')}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-[#878787]">© 2026 Craftify.com</span>
+            <span className="text-[#878787]">{t('key_2026CraftifyCom', '© 2026 Craftify.com')}</span>
             <button
               onClick={scrollToTop}
               className="flex items-center gap-1 text-[#2874F0] hover:text-[#FFE500] font-semibold uppercase tracking-wider cursor-pointer"
             >
-              <span>Back to top</span>
+              <span>{t('backToTop', 'Back to top')}</span>
               <ArrowUp className="w-3.5 h-3.5" />
             </button>
           </div>

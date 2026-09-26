@@ -12,7 +12,21 @@ class CampaignListCreateView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        campaigns = Campaign.objects.filter(is_approved=True).order_by('-created_at')
+        artisan_param = request.query_params.get('artisan')
+        include_unapproved = request.query_params.get('include_unapproved') == 'true'
+
+        if artisan_param == 'me' and request.user.is_authenticated:
+            campaigns = Campaign.objects.filter(artisan=request.user).order_by('-created_at')
+        elif artisan_param:
+            if str(artisan_param).isdigit():
+                campaigns = Campaign.objects.filter(Q(artisan__id=artisan_param) | Q(artisan__username=artisan_param)).order_by('-created_at')
+            else:
+                campaigns = Campaign.objects.filter(artisan__username=artisan_param).order_by('-created_at')
+        elif include_unapproved or (request.user.is_authenticated and (request.user.role == 'admin' or request.user.is_staff)):
+            campaigns = Campaign.objects.all().order_by('-created_at')
+        else:
+            campaigns = Campaign.objects.filter(is_approved=True).order_by('-created_at')
+
         serializer = CampaignSerializer(campaigns, many=True)
         return Response({
             'count': len(serializer.data),
@@ -28,11 +42,14 @@ class CampaignListCreateView(APIView):
             user = User.objects.first()
 
         title = data.get('title') or 'New Artisan Campaign'
-        goal = float(data.get('funding_goal') or data.get('goal_amount') or 100000)
-        desc = data.get('description') or data.get('short_description') or 'Artisan campaign'
+        goal = float(data.get('funding_goal') or data.get('goal_amount') or data.get('goalAmount') or 100000)
+        desc = data.get('description') or data.get('short_description') or data.get('shortDescription') or 'Artisan campaign'
+        full_story = data.get('full_story') or data.get('fullStory') or desc
         image = data.get('image') or data.get('imageUrl') or '/images/products/jaipur-blue-pottery-tea-set.jpg'
-        craft = data.get('craft_type') or data.get('category') or 'Traditional Craft'
-        region = data.get('region_state') or 'India'
+        gallery = data.get('gallery_images') or data.get('galleryImages') or [image]
+        craft = data.get('craft_type') or data.get('craftHeritage') or data.get('category') or 'Traditional Craft'
+        region = data.get('region_state') or data.get('artisanRegion') or data.get('creatorLocation') or 'India'
+        days = int(data.get('days_left') or data.get('daysLeft') or 30)
 
         campaign = Campaign.objects.create(
             title=title,
@@ -42,28 +59,42 @@ class CampaignListCreateView(APIView):
             craft_type=craft,
             region_state=region,
             image=image,
-            gallery_images=[image],
+            gallery_images=gallery,
+            days_left=days,
             is_approved=False,
             status=CampaignStatus.PENDING_REVIEW
         )
 
-        # Create default reward tiers
-        RewardTier.objects.create(
-            campaign=campaign,
-            title='Early Patron Supporter',
-            amount=round(goal * 0.01) or 1000,
-            description='Includes a signed thank-you note from the artisan cluster and digital workshop access.',
-            estimated_delivery='Nov 2026',
-            items_included=['Artisan Letter', 'Digital Workshop Archives']
-        )
-        RewardTier.objects.create(
-            campaign=campaign,
-            title='Collector Masterpiece Tier',
-            amount=round(goal * 0.035) or 3500,
-            description='Receive an original museum-grade handcrafted piece with GI seal of provenance.',
-            estimated_delivery='Dec 2026',
-            items_included=['Certified Craft Piece', 'Handmade Packaging', 'Artisan Guild Document']
-        )
+        reward_tiers_data = data.get('reward_tiers') or data.get('rewardTiers') or []
+        if reward_tiers_data and isinstance(reward_tiers_data, list):
+            for t in reward_tiers_data:
+                items = t.get('items_included') or t.get('itemsIncluded') or ['Handcrafted Creation']
+                RewardTier.objects.create(
+                    campaign=campaign,
+                    title=t.get('title') or 'Patron Tier',
+                    amount=float(t.get('amount') or t.get('pledgeAmount') or 1000),
+                    description=t.get('description') or 'Patron reward tier.',
+                    estimated_delivery=t.get('estimated_delivery') or t.get('estimatedDelivery') or 'Dec 2026',
+                    items_included=items,
+                    max_backers=t.get('max_backers') or t.get('maxBackers')
+                )
+        else:
+            RewardTier.objects.create(
+                campaign=campaign,
+                title='Early Patron Supporter',
+                amount=round(goal * 0.01) or 1000,
+                description='Includes a signed thank-you note from the artisan cluster and digital workshop access.',
+                estimated_delivery='Nov 2026',
+                items_included=['Artisan Letter', 'Digital Workshop Archives']
+            )
+            RewardTier.objects.create(
+                campaign=campaign,
+                title='Collector Masterpiece Tier',
+                amount=round(goal * 0.035) or 3500,
+                description='Receive an original museum-grade handcrafted piece with GI seal of provenance.',
+                estimated_delivery='Dec 2026',
+                items_included=['Certified Craft Piece', 'Handmade Packaging', 'Artisan Guild Document']
+            )
 
         serializer = CampaignSerializer(campaign)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

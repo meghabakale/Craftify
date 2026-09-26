@@ -28,6 +28,14 @@ export function ensureGrammaticallyComplete(text: string): string {
     cleaned = lines.slice(1, -1).join('\n').trim();
   }
 
+  // Strip markdown headers, bolding, italics, and bullet points
+  cleaned = cleaned
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^[\s*-]+\s+/gm, '')
+    .trim();
+
   const paragraphs = cleaned.split(/\n\n+/).map((p) => {
     let paragraph = p.trim();
     if (!paragraph) return '';
@@ -39,7 +47,7 @@ export function ensureGrammaticallyComplete(text: string): string {
         paragraph.lastIndexOf('! '),
         paragraph.lastIndexOf('? ')
       );
-      if (lastPeriodIdx > paragraph.length * 0.7) {
+      if (lastPeriodIdx > paragraph.length * 0.4) {
         paragraph = paragraph.substring(0, lastPeriodIdx + 1).trim();
       } else {
         paragraph = paragraph.replace(/[,;:-]\s*$/, '') + '.';

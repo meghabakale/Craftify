@@ -36,6 +36,9 @@ import { PRESET_CRAFT_IMAGES } from '../data/artisanAssets';
 import { calculatePayoutBreakdown, calculateDaysRemaining, formatDeadlineDate } from '../utils/settleCampaign';
 import { ImageUploadDropzone } from './common/ImageUploadDropzone';
 
+import { useLanguage } from '../context/LanguageContext';
+import { registerDynamicCampaignTranslation, registerDynamicProductTranslation } from '../i18n/dataTranslations';
+
 interface CreatorDashboardProps {
   currentUser: User | null;
   campaigns: Campaign[];
@@ -71,6 +74,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
   onAdvanceStatus,
   initialTab = 'my-campaigns',
 }) => {
+  const { t, localizeCampaign, localizeProduct } = useLanguage();
   const [activeTab, setActiveTab] = useState<'my-campaigns' | 'start-campaign' | 'list-product'>(initialTab);
   const [expandedCampaignId, setExpandedCampaignId] = useState<string | null>(null);
   const [showBackersForId, setShowBackersForId] = useState<string | null>(null);
@@ -118,6 +122,43 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
   const [prodError, setProdError] = useState<string | null>(null);
   const [prodSuccess, setProdSuccess] = useState<string | null>(null);
 
+  // RESET AI & FORM INPUTS ON TAB OR ACCOUNT SWITCH:
+  // Ensures typed values never leak between different artisan accounts or when navigating away and back.
+  const resetAllFormInputs = React.useCallback(() => {
+    setFormTitle('');
+    setFormDescription('');
+    setFormFullStory('');
+    setFormImageUrl('');
+    setFormGalleryImages([]);
+    setFormImageWarning(null);
+    setFormError(null);
+    setFormSuccessMessage(null);
+
+    setAiCraftType(currentUser?.craftType || '');
+    setAiMaterial('');
+    setAiRegion('');
+    setAiKeywords('');
+
+    setProdTitle('');
+    setProdDescription('');
+    setProdImageUrl('');
+    setProdGalleryImages([]);
+    setProdImageWarning(null);
+    setProdPrice(2450);
+    setProdStock(20);
+    setProdError(null);
+    setProdSuccess(null);
+
+    setProdAiCraftType(currentUser?.craftType || '');
+    setProdAiMaterial('');
+    setProdAiRegion('');
+    setProdAiKeywords('');
+  }, [currentUser?.id, currentUser?.craftType]);
+
+  React.useEffect(() => {
+    resetAllFormInputs();
+  }, [currentUser?.id, activeTab, resetAllFormInputs]);
+
   // Pledge Tier Builder State
   const [formTiers, setFormTiers] = useState<RewardTier[]>([
     {
@@ -145,17 +186,73 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
   // Creator identity
   const creatorName = currentUser?.name ? `${currentUser.name} Guild` : 'Varanasi Master Weavers';
 
-  // Filter campaigns belonging to this creator or display atelier campaigns for testing
-  const creatorCampaigns = campaigns.filter((c) => {
-    if (!currentUser) return true;
-    const authorLower = c.creator.toLowerCase();
-    const userLower = currentUser.name.toLowerCase();
-    return authorLower.includes('atelier') || authorLower.includes('vance') || authorLower.includes(userLower) || true; // Show full catalog for easy testing
-  });
+  // Helper for checking if a campaign/product/order belongs to currentUser
+  const isArtisanItem = (
+    artisanId?: string,
+    creatorNameVal?: string,
+    creatorLegalNameVal?: string,
+    creatorBusinessNameVal?: string
+  ): boolean => {
+    if (!currentUser) return false;
 
-  const totalEscrowPledged = creatorCampaigns.reduce((sum, c) => sum + c.pledgedAmount, 0);
-  const fundedCampaignsCount = creatorCampaigns.filter((c) => c.status === 'funded').length;
-  const graduatedShopProductsCount = products.filter((p) => (p.isFundedOnCraftify ?? p.isFundedOnLaunchMart)).length;
+    const currentUserIdStr = String(currentUser.id || '').trim();
+    const itemArtisanIdStr = String(artisanId || '').trim();
+
+    // 1. Direct ID match
+    if (itemArtisanIdStr && currentUserIdStr && itemArtisanIdStr === currentUserIdStr) {
+      return true;
+    }
+
+    // 2. String/Name matching for seeded or legacy items
+    const userTokens = [
+      currentUser.name,
+      currentUser.legalName,
+      currentUser.businessName,
+    ]
+      .filter(Boolean)
+      .map((s) => s!.toLowerCase().trim());
+
+    if (userTokens.length === 0) return false;
+
+    const creatorTokens = [
+      creatorNameVal,
+      creatorLegalNameVal,
+      creatorBusinessNameVal,
+    ]
+      .filter(Boolean)
+      .map((s) => s!.toLowerCase().trim());
+
+    if (creatorTokens.length === 0) return false;
+
+    return userTokens.some((uToken) => {
+      if (uToken.length < 3) return false;
+      return creatorTokens.some((cToken) => cToken.includes(uToken) || uToken.includes(cToken));
+    });
+  };
+
+  // Filter campaigns belonging ONLY to the logged-in artisan
+  const creatorCampaigns = campaigns.filter((c) =>
+    isArtisanItem(c.artisanId, c.creator, c.creatorLegalName, c.creatorBusinessName)
+  );
+
+  // Filter products belonging ONLY to the logged-in artisan
+  const creatorProducts = products.filter((p) =>
+    isArtisanItem(p.artisanId, p.creator, p.creatorLocation, p.craftHeritage)
+  );
+
+  // Recalculate every stat card strictly from artisan-specific data
+  const totalEscrowPledged = creatorCampaigns.reduce(
+    (sum, c) => sum + (c.pledgedAmount || c.amountRaised || 0),
+    0
+  );
+
+  const fundedCampaignsCount = creatorCampaigns.filter(
+    (c) => c.status === 'funded' || (c.pledgedAmount || c.amountRaised || 0) >= (c.goalAmount || c.fundingGoal || 1)
+  ).length;
+
+  const graduatedShopProductsCount = creatorProducts.filter(
+    (p) => (p.isFundedOnCraftify ?? p.isFundedOnLaunchMart ?? true)
+  ).length;
 
   // Handle Deadline Date Change
   const handleDeadlineDateChange = (dateStr: string) => {
@@ -272,6 +369,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
     const newCode = `CMP-${Math.floor(110 + Math.random() * 880)}`;
     const newCamp: Campaign = {
       id: `cmp-${Date.now().toString().slice(-6)}`,
+      artisanId: currentUser?.id,
       code: newCode,
       title: formTitle,
       creator: creatorName,
@@ -301,6 +399,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       rewardTiers: formTiers,
     };
 
+    registerDynamicCampaignTranslation(newCamp);
     onCampaignCreated(newCamp);
     setFormSuccessMessage(`Campaign "${newCamp.title}" submitted for admin review (${newCamp.code})! It will appear publicly once approved.`);
     setActiveTab('my-campaigns');
@@ -342,6 +441,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
 
     const newProduct: Product = {
       id: `prd-${Date.now().toString().slice(-6)}`,
+      artisanId: currentUser?.id,
       sku: `SKU-${Math.floor(100 + Math.random() * 900)}`,
       title: prodTitle,
       creator: creatorName,
@@ -363,6 +463,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       batchGraduated: 'Artisan Workshop Direct Listing',
     };
 
+    registerDynamicProductTranslation(newProduct);
     if (onProductCreated) {
       onProductCreated(newProduct);
     }
@@ -382,14 +483,12 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
       {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-1.5 text-xs text-[#878787] mb-3">
         <button onClick={() => onNavigate('home')} className="hover:text-[#2874F0]">
-          Home
-        </button>
+          {t('home', 'Home')}</button>
         <span>/</span>
         <button onClick={() => onNavigate('account')} className="hover:text-[#2874F0]">
-          Account
-        </button>
+          {t('account', 'Account')}</button>
         <span>/</span>
-        <span className="text-[#212121] font-bold">Artisan Studio Console</span>
+        <span className="text-[#212121] font-bold">{t('artisanStudioConsole', 'Artisan Studio Console')}</span>
       </div>
 
       {/* Header Banner: The Bridge between Crowdfunding & Marketplace */}
@@ -399,14 +498,13 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 rounded-full bg-[#2874F0]"></span>
               <span className="text-[11px] uppercase tracking-wider text-[#2874F0] font-bold">
-                Artisan Studio & Escrow Settlement Console
-              </span>
+                {t('artisanStudioEscrowSettlementConsol', 'Artisan Studio & Escrow Settlement Console')}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#212121] tracking-tight">
-              Creator Dashboard
+              {t('creatorDashboard', 'Creator Hub')}
             </h1>
             <p className="text-xs sm:text-sm text-[#878787] mt-1 max-w-2xl leading-relaxed">
-              The direct bridge connecting conditional backer funding to permanent retail. Monitor escrow thresholds, simulate deadline settlements, and graduate funded campaigns to the Craftify Shop.
+              {t('creatorDashboardSubtitle', 'The direct bridge connecting conditional backer funding to permanent retail. Monitor escrow thresholds, simulate deadline settlements, and graduate funded campaigns to the Craftify Shop.')}
             </p>
           </div>
 
@@ -422,12 +520,12 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               }}
               className={`px-3.5 py-2 rounded-[2px] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors border cursor-pointer ${
                 activeTab === 'start-campaign'
-                  ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs'
-                  : 'bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#212121] border-[#D5D5D5]'
+                  ? t('bg2874f0TextFfffffBorder2874f0Shado', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs')
+                  : t('bgFfffffHoverBgF1f3f6Text212121Bord', 'bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#212121] border-[#D5D5D5]')
               }`}
             >
               <PlusCircle className={`w-4 h-4 ${activeTab === 'start-campaign' ? 'text-[#FFFFFF]' : 'text-[#2874F0]'}`} />
-              <span>Start a Campaign</span>
+              <span>{t('startCampaign', 'Start a Campaign')}</span>
             </button>
 
             <button
@@ -435,12 +533,12 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               onClick={() => setActiveTab('list-product')}
               className={`px-3.5 py-2 rounded-[2px] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors border cursor-pointer ${
                 activeTab === 'list-product'
-                  ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs'
-                  : 'bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#212121] border-[#D5D5D5]'
+                  ? t('bg2874f0TextFfffffBorder2874f0Shado', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs')
+                  : t('bgFfffffHoverBgF1f3f6Text212121Bord', 'bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#212121] border-[#D5D5D5]')
               }`}
             >
               <Store className={`w-4 h-4 ${activeTab === 'list-product' ? 'text-[#FFFFFF]' : 'text-[#388E3C]'}`} />
-              <span>List a Product</span>
+              <span>{t('addNewProductBtn', 'List a Product')}</span>
             </button>
 
             <button
@@ -448,12 +546,12 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               onClick={() => setActiveTab('my-campaigns')}
               className={`px-3.5 py-2 rounded-[2px] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors border cursor-pointer ${
                 activeTab === 'my-campaigns'
-                  ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs'
-                  : 'bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#212121] border-[#D5D5D5]'
+                  ? t('bg2874f0TextFfffffBorder2874f0Shado', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0] shadow-xs')
+                  : t('bgFfffffHoverBgF1f3f6Text212121Bord', 'bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#212121] border-[#D5D5D5]')
               }`}
             >
               <Layers className={`w-4 h-4 ${activeTab === 'my-campaigns' ? 'text-[#FFFFFF]' : 'text-[#388E3C]'}`} />
-              <span>My Campaigns ({creatorCampaigns.length})</span>
+              <span>{t('myCampaignsCount', 'My Campaigns')} ({creatorCampaigns.length})</span>
             </button>
           </div>
         </div>
@@ -462,51 +560,48 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
           <div className="p-3 bg-[#F1F3F6] rounded-[4px] border border-[#EAEAEA]">
             <div className="text-[10px] text-[#878787] uppercase tracking-wider font-bold">
-              Studio Escrow Pipeline
+              {t('studioEscrowPipeline', 'Studio Escrow Pipeline')}
             </div>
             <div className="text-lg font-bold text-[#212121] mt-0.5">
               {formatINR(totalEscrowPledged)}
             </div>
             <div className="text-[10px] text-[#878787] mt-0.5">
-              Authorized conditional backer funds
+              {t('authorizedFundsSub', 'Authorized conditional backer funds')}
             </div>
           </div>
 
           <div className="p-3 bg-[#F1F3F6] rounded-[4px] border border-[#EAEAEA]">
             <div className="text-[10px] text-[#878787] uppercase tracking-wider font-bold">
-              Campaigns Over 100%
+              {t('campaignsOver100', 'Campaigns Over 100%')}
             </div>
             <div className="text-lg font-bold text-[#388E3C] mt-0.5">
-              {fundedCampaignsCount} Funded
+              {fundedCampaignsCount} {t('fundedBadge', 'Funded')}
             </div>
             <div className="text-[10px] text-[#388E3C] mt-0.5 font-bold">
-              Eligible for capture & settlement
+              {t('eligibleSettlementSub', 'Eligible for capture & settlement')}
             </div>
           </div>
 
           <div className="p-3 bg-[#F1F3F6] rounded-[4px] border border-[#EAEAEA]">
             <div className="text-[10px] text-[#878787] uppercase tracking-wider font-bold">
-              Shop Graduated Items
+              {t('shopGraduatedItems', 'Shop Graduated Items')}
             </div>
             <div className="text-lg font-bold text-[#212121] mt-0.5 flex items-center gap-1.5">
               <Store className="w-4 h-4 text-[#388E3C]" />
-              <span>{graduatedShopProductsCount} Products</span>
+              <span>{graduatedShopProductsCount} {t('items', 'Products')}</span>
             </div>
             <div className="text-[10px] text-[#878787] mt-0.5">
-              Live in Craftify Marketplace
+              {t('liveMarketplaceSub', 'Live in Craftify Marketplace')}
             </div>
           </div>
 
           <div className="p-3 bg-[#F1F3F6] rounded-[4px] border border-[#EAEAEA]">
             <div className="text-[10px] text-[#878787] uppercase tracking-wider font-bold">
-              Escrow Fee Architecture
-            </div>
+              {t('escrowFeeArchitecture', 'Escrow Fee Architecture')}</div>
             <div className="text-sm font-bold text-[#212121] mt-0.5">
-              5% Platform • 3% Proc.
-            </div>
+              {t('key_5Platform3Proc', '5% Platform • 3% Proc.')}</div>
             <div className="text-[10px] text-[#388E3C] mt-0.5 font-bold">
-              92% Net creator payout on success
-            </div>
+              {t('key_92NetCreatorPayoutOnSuccess', '92% Net creator payout on success')}</div>
           </div>
         </div>
       </div>
@@ -522,8 +617,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             onClick={() => setFormSuccessMessage(null)}
             className="text-xs uppercase tracking-wider font-bold hover:underline cursor-pointer"
           >
-            Dismiss
-          </button>
+            {t('dismiss', 'Dismiss')}</button>
         </div>
       )}
 
@@ -536,18 +630,16 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             </div>
             <div>
               <div className="text-sm font-bold text-[#E65100]">
-                Action Required: Complete Your Artisan Profile
-              </div>
+                {t('actionRequiredCompleteYourArtisanPr', 'Action Required: Complete Your Artisan Profile')}</div>
               <p className="text-xs text-[#5D4037] mt-0.5 max-w-2xl leading-relaxed">
-                To preserve authentic craft trust and ensure secure payouts, Craftify requires all artisans to submit their workshop location, craft story, and bank payout credentials before launching a campaign.
-              </p>
+                {t('toPreserveAuthenticCraftTrustAndEns', 'To preserve authentic craft trust and ensure secure payouts, Craftify requires all artisans to submit their workshop location, craft story, and bank payout credentials before launching a campaign.')}</p>
             </div>
           </div>
           <button
             onClick={() => onNavigate('complete-profile')}
             className="px-4 py-2 bg-[#2874F0] hover:bg-[#1259C3] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] shrink-0 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
-            <span>Complete Profile Now</span>
+            <span>{t('completeProfileNow', 'Complete Profile Now')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -561,11 +653,9 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-[#212121]">
-                My Studio Campaigns
-              </h2>
+                {t('myStudioCampaigns', 'My Studio Campaigns')}</h2>
               <p className="text-xs text-[#878787] mt-0.5">
-                Observe funding meters, run settlement simulations when windows close, and graduate verified runs into permanent shop stock.
-              </p>
+                {t('observeFundingMetersRunSettlementSi', 'Observe funding meters, run settlement simulations when windows close, and graduate verified runs into permanent shop stock.')}</p>
             </div>
 
             <button
@@ -579,13 +669,45 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               className="px-3.5 py-2 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-xs"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Launch New Campaign</span>
+              <span>{t('launchNewCampaign', 'Launch New Campaign')}</span>
             </button>
           </div>
 
-          <div className="space-y-3">
-            {creatorCampaigns.map((camp) => {
-              const percent = Math.min(Math.round((camp.pledgedAmount / camp.goalAmount) * 100), 999);
+          {creatorCampaigns.length === 0 ? (
+            <div id="creator-empty-campaigns-state" className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-8 sm:p-12 text-center space-y-4 shadow-xs">
+              <div className="w-16 h-16 rounded-full bg-[#EBF2FE] text-[#2874F0] flex items-center justify-center mx-auto border border-[#2874F0]/20">
+                <Layers className="w-8 h-8" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h3 className="text-lg font-bold text-[#212121]">
+                  {t('youHavenTLaunchedACampaignYet', 'You haven\'t launched a campaign yet')}</h3>
+                <p className="text-xs text-[#878787] leading-relaxed">
+                  {t('startYourFirstCampaignToBeginBuildi', 'Start your first campaign to begin building your funding pipeline, connecting directly with conscious patrons, and bringing your craft vision to life.')}</p>
+              </div>
+              <div className="pt-2">
+                <button
+                  id="btn-empty-state-launch-campaign"
+                  onClick={() => {
+                    if (!currentUser?.profileCompleted) {
+                      onNavigate('complete-profile');
+                    } else {
+                      setActiveTab('start-campaign');
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>{t('launchNewCampaign', 'Launch New Campaign')}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {creatorCampaigns.map((rawCamp) => {
+                const camp = localizeCampaign(rawCamp);
+                const pledged = camp.pledgedAmount || camp.amountRaised || 0;
+                const goal = Math.max(camp.goalAmount || camp.fundingGoal || 1, 1);
+                const percent = Math.min(Math.round((pledged / goal) * 100), 999);
               const isFunded = camp.pledgedAmount >= camp.goalAmount;
               const isSettled = !!camp.settlement || camp.status === 'funded' || camp.status === 'failed';
               const isUnsuccessful = camp.status === 'failed' || (camp.settlement && camp.settlement.outcome === 'unsuccessful');
@@ -623,20 +745,20 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                         <span
                           className={`block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 text-center rounded-[2px] border ${
                             isPublishedToShop
-                              ? 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/20'
+                              ? t('bgEaf8ebText388e3cBorder388e3c20', 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/20')
                               : isSettledFunded
-                              ? 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/20'
+                              ? t('bgEaf8ebText388e3cBorder388e3c20', 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/20')
                               : isUnsuccessful
-                              ? 'bg-[#FFF3EC] text-[#FB641B] border-[#FB641B]/20'
-                              : 'bg-[#F1F3F6] text-[#2874F0] border-[#2874F0]/20'
+                              ? t('bgFff3ecTextFb641bBorderFb641b20', 'bg-[#FFF3EC] text-[#FB641B] border-[#FB641B]/20')
+                              : t('bgF1f3f6Text2874f0Border2874f020', 'bg-[#F1F3F6] text-[#2874F0] border-[#2874F0]/20')
                           }`}
                         >
                           {isPublishedToShop
-                            ? '✓ Published to Shop'
+                            ? t('publishedToShop', '✓ Published to Shop')
                             : isSettledFunded
-                            ? '✓ Goal Met • Settled'
+                            ? t('goalMetSettled', '✓ Goal Met • Settled')
                             : isUnsuccessful
-                            ? '✕ Unsuccessful • Released'
+                            ? t('unsuccessfulReleased', '✕ Unsuccessful • Released')
                             : `• In Progress (${camp.daysLeft}d left)`}
                         </span>
                       </div>
@@ -647,13 +769,13 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                       <div>
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                           <span className="text-xs font-bold text-[#878787] uppercase tracking-wider">
-                            {camp.category} • Maker: {camp.creator}
+                            {camp.category} {t('maker', '• Maker:')}{camp.creator}
                           </span>
 
                           {isPublishedToShop && (
                             <span className="text-xs text-[#388E3C] font-bold flex items-center gap-1">
                               <Sparkles className="w-3.5 h-3.5" />
-                              <span>Live in Craftify Marketplace</span>
+                              <span>{t('liveInCraftifyMarketplace', 'Live in Craftify Marketplace')}</span>
                             </span>
                           )}
                         </div>
@@ -673,7 +795,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                             <span className="font-bold text-sm text-[#212121]">
                               {formatINR(camp.pledgedAmount)}
                             </span>
-                            <span className="text-[#878787]"> pledged of {formatINR(camp.goalAmount)}</span>
+                            <span className="text-[#878787]"> {t('pledgedOf', 'pledged of')}{formatINR(camp.goalAmount)}</span>
                           </div>
 
                           <div className="flex items-center gap-3 text-xs">
@@ -682,16 +804,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                 percent >= 100 ? 'text-[#388E3C]' : 'text-[#2874F0]'
                               }`}
                             >
-                              {percent}% Funded
-                            </span>
+                              {percent}{t('funded', '% Funded')}</span>
                             <span className="text-[#878787]">•</span>
                             <span className="text-[#212121] font-medium">
-                              {camp.backersCount} backers
-                            </span>
+                              {camp.backersCount} {t('backers', 'backers')}</span>
                             <span className="text-[#878787]">•</span>
                             <span className="text-[#212121] font-medium flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5 text-[#878787]" />
-                              {camp.daysLeft > 0 ? `${camp.daysLeft} days remaining` : 'Deadline passed'}
+                              {camp.daysLeft > 0 ? `${camp.daysLeft} days remaining` : t('deadlinePassed', 'Deadline passed')}
                             </span>
                           </div>
                         </div>
@@ -716,10 +836,10 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                               id={`btn-simulate-settlement-${camp.id}`}
                               onClick={() => onSimulateSettlement(camp.id)}
                               className="px-3 py-1.5 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                              title="Simulate reaching the campaign deadline based on current pledged amount"
+                              title={t('simulateReachingTheCampaignDeadline', 'Simulate reaching the campaign deadline based on current pledged amount')}
                             >
                               <Clock className="w-3.5 h-3.5" />
-                              <span>Simulate: Fast-forward to deadline</span>
+                              <span>{t('simulateFastForwardToDeadline', 'Simulate: Fast-forward to deadline')}</span>
                             </button>
                           )}
 
@@ -727,27 +847,24 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                           <button
                             onClick={() => onSimulateSettlement(camp.id, 'funded')}
                             className="px-2 py-1 rounded-[2px] border border-[#388E3C]/30 hover:border-[#388E3C] bg-[#EAF8EB] hover:bg-[#D4EED6] text-[#388E3C] text-[11px] uppercase tracking-wider font-bold transition-colors cursor-pointer"
-                            title="Simulate deadline reached as successfully funded (>= 100%)"
+                            title={t('simulateDeadlineReachedAsSuccessful', 'Simulate deadline reached as successfully funded (>= 100%)')}
                           >
-                            Simulate Funded
-                          </button>
+                            {t('simulateFunded', 'Simulate Funded')}</button>
 
                           <button
                             onClick={() => onSimulateSettlement(camp.id, 'unsuccessful')}
                             className="px-2 py-1 rounded-[2px] border border-[#FB641B]/30 hover:border-[#FB641B] bg-[#FFF3EC] hover:bg-[#FFE6D9] text-[#FB641B] text-[11px] uppercase tracking-wider font-bold transition-colors cursor-pointer"
-                            title="Simulate deadline reached as unsuccessful (< 100%)"
+                            title={t('simulateDeadlineReachedAsUnsuccessf', 'Simulate deadline reached as unsuccessful (< 100%)')}
                           >
-                            Simulate Unsuccessful
-                          </button>
+                            {t('simulateUnsuccessful', 'Simulate Unsuccessful')}</button>
 
                           {camp.status !== 'in_progress' && (
                             <button
                               onClick={() => onSimulateSettlement(camp.id, 'reset')}
                               className="px-2 py-1 rounded-[2px] border border-[#D5D5D5] hover:border-[#878787] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#666666] text-[11px] uppercase tracking-wider font-semibold transition-colors cursor-pointer"
-                              title="Reset campaign back to previous state"
+                              title={t('resetCampaignBackToPreviousState', 'Reset campaign back to previous state')}
                             >
-                              Reset to Previous State
-                            </button>
+                              {t('resetToPreviousState', 'Reset to Previous State')}</button>
                           )}
                         </div>
 
@@ -758,7 +875,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                             className="px-2.5 py-1 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] bg-[#FFFFFF] text-xs uppercase tracking-wider text-[#212121] flex items-center gap-1 cursor-pointer transition-colors font-bold"
                           >
                             <Users className="w-3.5 h-3.5 text-[#878787]" />
-                            <span>{showBackersForId === camp.id ? 'Hide Backers' : `Backers (${backers.length})`}</span>
+                            <span>{showBackersForId === camp.id ? t('hideBackers', 'Hide Backers') : `Backers (${backers.length})`}</span>
                           </button>
 
                           <button
@@ -766,7 +883,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                             className="px-2.5 py-1 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] bg-[#FFFFFF] text-xs uppercase tracking-wider text-[#212121] flex items-center gap-1 cursor-pointer transition-colors font-bold"
                           >
                             <Eye className="w-3.5 h-3.5 text-[#878787]" />
-                            <span>Public Page</span>
+                            <span>{t('publicPage', 'Public Page')}</span>
                           </button>
                         </div>
                       </div>
@@ -777,12 +894,11 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                           <div className="flex items-center gap-2 text-[#B78103]">
                             <Clock className="w-4 h-4 shrink-0" />
                             <span>
-                              <strong>Payout Pending Settlement:</strong> Authorized holds remain in escrow. Payout will be disbursed only if funding goal is reached by {formatDeadlineDate(camp.deadline, camp.daysLeft)}.
+                              <strong>{t('payoutPendingSettlement', 'Payout Pending Settlement:')}</strong> {t('authorizedHoldsRemainInEscrowPayout', 'Authorized holds remain in escrow. Payout will be disbursed only if funding goal is reached by')}{formatDeadlineDate(camp.deadline, camp.daysLeft)}.
                             </span>
                           </div>
                           <span className="font-bold text-[#B78103] uppercase text-[10px] tracking-wider px-2 py-0.5 bg-[#FFFFFF] rounded-[2px] border border-[#B78103]/30 shrink-0 self-start sm:self-auto">
-                            Pending Settlement
-                          </span>
+                            {t('pendingSettlement', 'Pending Settlement')}</span>
                         </div>
                       )}
                     </div>
@@ -796,8 +912,8 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                       id={`settlement-panel-${camp.id}`}
                       className={`p-4 sm:p-5 border-t ${
                         camp.status === 'funded' || (camp.settlement && camp.settlement.outcome === 'funded')
-                          ? 'bg-[#EAF8EB] border-[#388E3C]/20'
-                          : 'bg-[#FFF3EC] border-[#FB641B]/20'
+                          ? t('bgEaf8ebBorder388e3c20', 'bg-[#EAF8EB] border-[#388E3C]/20')
+                          : t('bgFff3ecBorderFb641b20', 'bg-[#FFF3EC] border-[#FB641B]/20')
                       }`}
                     >
                       {camp.status === 'funded' || (camp.settlement && camp.settlement.outcome === 'funded') ? (
@@ -806,74 +922,69 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                             <div className="flex items-center gap-2">
                               <CheckCircle2 className="w-5 h-5 text-[#388E3C]" />
                               <h4 className="text-base sm:text-lg font-bold text-[#388E3C]">
-                                Campaign funded! Threshold Met & Pre-Authorizations Captured
-                              </h4>
+                                {t('campaignFundedThresholdMetPreAuthor', 'Campaign funded! Threshold Met & Pre-Authorizations Captured')}</h4>
                             </div>
 
                             <span className="text-[11px] font-bold px-2 py-0.5 bg-[#388E3C] text-[#FFFFFF] rounded-[2px] uppercase tracking-wider">
-                              Escrow Settled: {camp.settlement?.settledAt || 'Completed'}
+                              {t('escrowSettled', 'Escrow Settled:')}{camp.settlement?.settledAt || t('completed', 'Completed')}
                             </span>
                           </div>
 
                           <p className="text-xs text-[#212121] leading-relaxed">
-                            All {camp.backersCount} patron pre-authorizations have been successfully transitioned from <span className="font-bold uppercase text-[#2874F0]">authorized</span> to <span className="font-bold uppercase text-[#388E3C]">captured</span>. Funds are debited directly from backer credit lines through the Craftify Escrow Vault.
-                          </p>
+                            {t('all', 'All')}{camp.backersCount} {t('patronPreAuthorizationsHaveBeenSucc', 'patron pre-authorizations have been successfully transitioned from')}<span className="font-bold uppercase text-[#2874F0]">{t('authorized', 'authorized')}</span> {t('to', 'to')}<span className="font-bold uppercase text-[#388E3C]">{t('captured', 'captured')}</span>{t('fundsAreDebitedDirectlyFromBackerCr', '. Funds are debited directly from backer credit lines through the Craftify Escrow Vault.')}</p>
 
                           {/* FINANCIAL PAYOUT BREAKDOWN TABLE */}
                           <div className="bg-[#FFFFFF] border border-[#388E3C]/30 rounded-[4px] p-3.5 text-xs space-y-2">
                             <div className="font-bold text-xs uppercase tracking-wider text-[#212121] border-b border-[#EAEAEA] pb-1.5 flex justify-between">
-                              <span>Escrow Settlement Payout Statement</span>
-                              <span>Ratio</span>
+                              <span>{t('escrowSettlementPayoutStatement', 'Escrow Settlement Payout Statement')}</span>
+                              <span>{t('ratio', 'Ratio')}</span>
                             </div>
 
                             <div className="flex justify-between py-1 text-[#212121]">
-                              <span>Gross Backer Pledges Captured:</span>
+                              <span>{t('grossBackerPledgesCaptured', 'Gross Backer Pledges Captured:')}</span>
                               <span className="font-bold">{formatINR(camp.settlement?.grossPledged ?? grossPledged)} (100.0%)</span>
                             </div>
 
                             <div className="flex justify-between py-1 text-[#FB641B]">
-                              <span>Craftify Platform Fee (5%):</span>
+                              <span>{t('craftifyPlatformFee5', 'Craftify Platform Fee (5%):')}</span>
                               <span className="font-bold">-{formatINR(camp.settlement?.platformFee ?? platformFee)} (5.0%)</span>
                             </div>
 
                             <div className="flex justify-between py-1 text-[#FB641B]">
-                              <span>Payment Processing & Escrow UPI/NEFT Fee (3%):</span>
+                              <span>{t('paymentProcessingEscrowUpiNeftFee3', 'Payment Processing & Escrow UPI/NEFT Fee (3%):')}</span>
                               <span className="font-bold">-{formatINR(camp.settlement?.processingFee ?? processingFee)} (3.0%)</span>
                             </div>
 
                             <div className="flex justify-between py-2 border-t border-[#388E3C]/30 text-[#388E3C] text-sm font-bold bg-[#EAF8EB] rounded-[2px] px-2.5">
-                              <span>Net Payout to Artisan:</span>
+                              <span>{t('netPayoutToArtisan', 'Net Payout to Artisan:')}</span>
                               <span>{formatINR(camp.settlement?.netPayout ?? netPayout)} (92.0%)</span>
                             </div>
 
                             <div className="text-[11px] text-[#878787] pt-1 italic">
-                              * Payout disbursed via Escrow NEFT/UPI directly to verified artisan banking credentials. Backer fulfillment window is now initiated.
-                            </div>
+                              {t('payoutDisbursedViaEscrowNeftUpiDire', '* Payout disbursed via Escrow NEFT/UPI directly to verified artisan banking credentials. Backer fulfillment window is now initiated.')}</div>
                           </div>
 
                           {/* PUBLISH TO SHOP CALL-TO-ACTION */}
                           <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-[#FFFFFF] rounded-[4px] border border-[#EAEAEA]">
                             <div>
                               <div className="font-bold text-sm text-[#212121]">
-                                Graduate this Campaign into the Craftify Shop
-                              </div>
+                                {t('graduateThisCampaignIntoTheCraftify', 'Graduate this Campaign into the Craftify Shop')}</div>
                               <p className="text-xs text-[#878787] mt-0.5">
-                                Add this item permanently to the marketplace retail catalog with the verified "Funded on Craftify" badge.
-                              </p>
+                                {t('addThisItemPermanentlyToTheMarketpl', 'Add this item permanently to the marketplace retail catalog with the verified "Funded on Craftify" badge.')}</p>
                             </div>
 
                             {isPublishedToShop ? (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-[#388E3C] bg-[#EAF8EB] border border-[#388E3C]/30 rounded-[2px] px-3 py-1.5 flex items-center gap-1.5">
                                   <Check className="w-4 h-4" />
-                                  <span>Published to Shop</span>
+                                  <span>{t('publishedToShop', 'Published to Shop')}</span>
                                 </span>
                                 <button
                                   onClick={() => onNavigate('shop')}
                                   className="px-3 py-1.5 rounded-[2px] bg-[#212121] hover:bg-[#333333] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 cursor-pointer"
                                 >
                                   <Store className="w-3.5 h-3.5 text-[#388E3C]" />
-                                  <span>View in Shop →</span>
+                                  <span>{t('viewInShop', 'View in Shop →')}</span>
                                 </button>
                               </div>
                             ) : (
@@ -883,7 +994,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                 className="px-4 py-2 rounded-[2px] bg-[#388E3C] hover:bg-[#2E7D32] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                               >
                                 <Sparkles className="w-4 h-4 text-[#FFFFFF]" />
-                                <span>Publish to Shop</span>
+                                <span>{t('publishToShop', 'Publish to Shop')}</span>
                               </button>
                             )}
                           </div>
@@ -895,15 +1006,12 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                 <div className="flex items-center gap-2">
                                   <Package className="w-5 h-5 text-[#2874F0]" />
                                   <h5 className="text-sm sm:text-base font-bold text-[#212121]">
-                                    Reward Fulfillment
-                                  </h5>
+                                    {t('rewardFulfillment', 'Reward Fulfillment')}</h5>
                                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-[2px] bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/20">
-                                    {backers.length} Backers to Fulfill
-                                  </span>
+                                    {backers.length} {t('backersToFulfill', 'Backers to Fulfill')}</span>
                                 </div>
                                 <p className="text-xs text-[#878787] mt-0.5">
-                                  Track backer reward orders, shipping status, and dispatch progress for this funded campaign.
-                                </p>
+                                  {t('trackBackerRewardOrdersShippingStat', 'Track backer reward orders, shipping status, and dispatch progress for this funded campaign.')}</p>
                               </div>
                             </div>
 
@@ -912,19 +1020,18 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                 <table className="w-full text-left text-xs text-[#212121]">
                                   <thead className="bg-[#FAFAFA] border-b border-[#EAEAEA] uppercase tracking-wider text-[10px] text-[#878787] font-bold">
                                     <tr>
-                                      <th className="px-3.5 py-2.5">Backer</th>
-                                      <th className="px-3.5 py-2.5">Pledge Reward Tier</th>
-                                      <th className="px-3.5 py-2.5">Order ID & Tracking</th>
-                                      <th className="px-3.5 py-2.5">Shipping Status</th>
-                                      <th className="px-3.5 py-2.5 text-right">Fulfillment Action</th>
+                                      <th className="px-3.5 py-2.5">{t('backer', 'Backer')}</th>
+                                      <th className="px-3.5 py-2.5">{t('pledgeRewardTier', 'Pledge Reward Tier')}</th>
+                                      <th className="px-3.5 py-2.5">{t('orderIdTracking', 'Order ID & Tracking')}</th>
+                                      <th className="px-3.5 py-2.5">{t('shippingStatus', 'Shipping Status')}</th>
+                                      <th className="px-3.5 py-2.5 text-right">{t('fulfillmentAction', 'Fulfillment Action')}</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-[#F0F0F0]">
                                     {backers.length === 0 ? (
                                       <tr>
                                         <td colSpan={5} className="px-4 py-6 text-center text-[#878787] text-xs">
-                                          No backer pledges registered yet for this campaign.
-                                        </td>
+                                          {t('noBackerPledgesRegisteredYetForThis', 'No backer pledges registered yet for this campaign.')}</td>
                                       </tr>
                                     ) : (
                                       backers.map((bkr) => {
@@ -949,23 +1056,23 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                           <tr key={bkr.id} id={`backer-fulfillment-row-${bkr.id}`} className="hover:bg-[#F9FBFD] transition-colors">
                                             <td className="px-3.5 py-3">
                                               <div className="font-bold text-[#212121]">{bkr.name}</div>
-                                              <div className="text-[10px] text-[#878787]">Pledged {formatINR(bkr.amount)}</div>
+                                              <div className="text-[10px] text-[#878787]">{t('pledged', 'Pledged')}{formatINR(bkr.amount)}</div>
                                             </td>
                                             <td className="px-3.5 py-3">
                                               <div className="font-medium text-[#212121]">{bkr.tierTitle}</div>
                                             </td>
                                             <td className="px-3.5 py-3 font-mono text-[11px]">
                                               <div className="font-bold text-[#212121]">{orderId}</div>
-                                              <div className="text-[10px] text-[#878787]">Trk: #{trackingNo}</div>
+                                              <div className="text-[10px] text-[#878787]">{t('trk', 'Trk: #')}{trackingNo}</div>
                                             </td>
                                             <td className="px-3.5 py-3">
                                               <span
                                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] text-[11px] font-bold uppercase tracking-wider ${
                                                   isDelivered
-                                                    ? 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/30'
+                                                    ? t('bgEaf8ebText388e3cBorderBorder388e3', 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/30')
                                                     : isShipped
-                                                    ? 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/30'
-                                                    : 'bg-[#FFF8E1] text-[#B78103] border border-[#B78103]/30'
+                                                    ? t('bgEbf2feText2874f0BorderBorder2874f', 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/30')
+                                                    : t('bgFff8e1TextB78103BorderBorderB7810', 'bg-[#FFF8E1] text-[#B78103] border border-[#B78103]/30')
                                                 }`}
                                               >
                                                 <span className={`w-1.5 h-1.5 rounded-full ${isDelivered ? 'bg-[#388E3C]' : isShipped ? 'bg-[#2874F0]' : 'bg-[#B78103]'}`} />
@@ -978,10 +1085,10 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                                   id={`btn-advance-backer-reward-${bkr.id}`}
                                                   onClick={() => onAdvanceStatus(orderId)}
                                                   className="px-2.5 py-1 bg-[#2874F0] hover:bg-[#1C5FD0] text-white text-[11px] font-bold rounded-[2px] transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
-                                                  title="Advance fulfillment stage for this backer reward"
+                                                  title={t('advanceFulfillmentStageForThisBacke', 'Advance fulfillment stage for this backer reward')}
                                                 >
                                                   <PlayCircle className="w-3 h-3" />
-                                                  <span>Advance Stage</span>
+                                                  <span>{t('advanceStage', 'Advance Stage')}</span>
                                                 </button>
                                               )}
                                             </td>
@@ -1001,20 +1108,16 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                           <div className="flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-[#FB641B]" />
                             <h4 className="text-base sm:text-lg font-bold text-[#FB641B]">
-                              Campaign unsuccessful • Escrow Covenant Enforced
-                            </h4>
+                              {t('campaignUnsuccessfulEscrowCovenantE', 'Campaign unsuccessful • Escrow Covenant Enforced')}</h4>
                           </div>
 
                           <div className="p-3.5 bg-[#FFFFFF] border border-[#FB641B]/30 rounded-[4px] text-xs text-[#212121] space-y-2">
                             <p className="leading-relaxed">
-                              Funding goal was not met before the campaign deadline ({formatINR(camp.pledgedAmount)} pledged of {formatINR(camp.goalAmount)} goal).
-                            </p>
+                              {t('fundingGoalWasNotMetBeforeTheCampai', 'Funding goal was not met before the campaign deadline (')}{formatINR(camp.pledgedAmount)} {t('pledgedOf', 'pledged of')}{formatINR(camp.goalAmount)} {t('goal', 'goal).')}</p>
                             <div className="p-2.5 rounded-[2px] bg-[#FFF3EC] border border-[#FB641B]/20 font-bold text-[#FB641B]">
-                              All backer statuses have been switched to <span className="underline uppercase">released</span>. In strict accordance with the Craftify Escrow Covenant, zero backers were charged (₹0 collected, Net Payout: ₹0). All pre-authorization card/UPI holds have been automatically voided.
-                            </div>
+                              {t('allBackerStatusesHaveBeenSwitchedTo', 'All backer statuses have been switched to')}<span className="underline uppercase">{t('released', 'released')}</span>{t('inStrictAccordanceWithTheCraftifyEs', '. In strict accordance with the Craftify Escrow Covenant, zero backers were charged (₹0 collected, Net Payout: ₹0). All pre-authorization card/UPI holds have been automatically voided.')}</div>
                             <p className="text-[11px] text-[#878787]">
-                              No platform fees or processing fees have been assessed. Net payout to artisan: ₹0. The creator retains 100% of intellectual property and may re-issue an amended campaign run at any time.
-                            </p>
+                              {t('noPlatformFeesOrProcessingFeesHaveB', 'No platform fees or processing fees have been assessed. Net payout to artisan: ₹0. The creator retains 100% of intellectual property and may re-issue an amended campaign run at any time.')}</p>
                           </div>
                         </div>
                       )}
@@ -1030,28 +1133,25 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-[#212121]" />
                           <h4 className="text-sm font-bold text-[#212121]">
-                            Enrolled Backers Escrow Roster ({backers.length} Patrons)
-                          </h4>
+                            {t('enrolledBackersEscrowRoster', 'Enrolled Backers Escrow Roster (')}{backers.length} {t('patrons', 'Patrons)')}</h4>
                         </div>
                         <span className="text-xs text-[#878787]">
-                          Live Authorization Ledger
-                        </span>
+                          {t('liveAuthorizationLedger', 'Live Authorization Ledger')}</span>
                       </div>
 
                       {backers.length === 0 ? (
                         <div className="p-4 text-center bg-[#FFFFFF] rounded-[4px] border border-[#EAEAEA] text-xs text-[#878787]">
-                          No backers enrolled yet for this campaign run.
-                        </div>
+                          {t('noBackersEnrolledYetForThisCampaign', 'No backers enrolled yet for this campaign run.')}</div>
                       ) : (
                         <div className="overflow-x-auto border border-[#EAEAEA] rounded-[4px] bg-[#FFFFFF]">
                           <table className="w-full text-left text-xs">
                             <thead className="bg-[#F1F3F6] text-[#878787] border-b border-[#EAEAEA] uppercase tracking-wider text-[10px] font-bold">
                               <tr>
-                                <th className="p-3">Backer Name</th>
-                                <th className="p-3">Reward Tier</th>
-                                <th className="p-3">Pledge Amount</th>
-                                <th className="p-3">Authorized Date</th>
-                                <th className="p-3">Escrow Status</th>
+                                <th className="p-3">{t('backerName', 'Backer Name')}</th>
+                                <th className="p-3">{t('rewardTier', 'Reward Tier')}</th>
+                                <th className="p-3">{t('pledgeAmount', 'Pledge Amount')}</th>
+                                <th className="p-3">{t('authorizedDate', 'Authorized Date')}</th>
+                                <th className="p-3">{t('escrowStatus', 'Escrow Status')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-[#EAEAEA]">
@@ -1065,17 +1165,17 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                                     <span
                                       className={`px-2 py-0.5 text-[10px] rounded-[2px] uppercase tracking-wider font-bold border ${
                                         b.status === 'captured'
-                                          ? 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/30'
+                                          ? t('bgEaf8ebText388e3cBorder388e3c30', 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/30')
                                           : b.status === 'released'
-                                          ? 'bg-[#FDEAEA] text-[#D32F2F] border-[#D32F2F]/30'
-                                          : 'bg-[#FFF8E1] text-[#B78103] border-[#B78103]/30'
+                                          ? t('bgFdeaeaTextD32f2fBorderD32f2f30', 'bg-[#FDEAEA] text-[#D32F2F] border-[#D32F2F]/30')
+                                          : t('bgFff8e1TextB78103BorderB7810330', 'bg-[#FFF8E1] text-[#B78103] border-[#B78103]/30')
                                       }`}
                                     >
                                       {b.status === 'captured'
-                                        ? '✓ Captured'
+                                        ? t('captured', '✓ Captured')
                                         : b.status === 'released'
-                                        ? '✕ Released (₹0 charged)'
-                                        : '• Authorized'}
+                                        ? t('released0Charged', '✕ Released (₹0 charged)')
+                                        : t('authorized', '• Authorized')}
                                     </span>
                                   </td>
                                 </tr>
@@ -1090,6 +1190,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               );
             })}
           </div>
+          )}
         </div>
       )}
 
@@ -1102,25 +1203,22 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="w-16 h-16 rounded-full bg-[#FFF3E0] text-[#E65100] flex items-center justify-center mx-auto mb-4 border border-[#FFE0B2]">
               <ShieldAlert className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-[#212121] mb-2">Artisan Profile Onboarding Required</h3>
+            <h3 className="text-xl font-bold text-[#212121] mb-2">{t('artisanProfileOnboardingRequired', 'Artisan Profile Onboarding Required')}</h3>
             <p className="text-xs sm:text-sm text-[#878787] max-w-md mx-auto mb-6 leading-relaxed">
-              Before creating campaigns, Craftify artisan policy requires you to complete your artisan profile (workshop details, craft heritage narrative, and bank payout credentials).
-            </p>
+              {t('beforeCreatingCampaignsCraftifyArti', 'Before creating campaigns, Craftify artisan policy requires you to complete your artisan profile (workshop details, craft heritage narrative, and bank payout credentials).')}</p>
             <div className="flex justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setActiveTab('my-campaigns')}
                 className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#212121] border border-[#D5D5D5] rounded-[2px] bg-[#FFFFFF] hover:bg-[#F1F3F6] cursor-pointer"
               >
-                Back to Dashboard
-              </button>
+                {t('backToDashboard', 'Back to Dashboard')}</button>
               <button
                 type="button"
                 onClick={() => onNavigate('complete-profile')}
                 className="px-6 py-2 bg-[#2874F0] hover:bg-[#1259C3] text-white text-xs font-bold uppercase tracking-wider rounded-[2px] cursor-pointer shadow-xs"
               >
-                Complete Profile Now →
-              </button>
+                {t('completeProfileNow', 'Complete Profile Now →')}</button>
             </div>
           </div>
         ) : (
@@ -1128,11 +1226,9 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#EAEAEA] pb-3">
             <div>
               <h2 className="text-xl font-bold text-[#212121]">
-                Start a Crowdfunding Campaign
-              </h2>
+                {t('startACrowdfundingCampaign', 'Start a Crowdfunding Campaign')}</h2>
               <p className="text-xs text-[#878787] mt-0.5">
-                Issue a new production run into the Craftify conditional escrow registry.
-              </p>
+                {t('issueANewProductionRunIntoTheCrafti', 'Issue a new production run into the Craftify conditional escrow registry.')}</p>
             </div>
 
             <button
@@ -1141,7 +1237,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               className="px-3 py-1.5 rounded-[2px] border border-[#2874F0]/30 hover:border-[#2874F0] bg-[#F1F3F6] text-[#2874F0] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Fill Example Data (Quick Test)</span>
+              <span>{t('fillExampleDataQuickTest', 'Fill Example Data (Quick Test)')}</span>
             </button>
           </div>
 
@@ -1158,18 +1254,15 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs p-4 sm:p-6 space-y-4">
               <div className="border-b border-[#F0F0F0] pb-2.5">
                 <h3 className="text-base font-bold text-[#212121]">
-                  1. Product & Campaign Specifications
-                </h3>
+                  {t('key_1ProductCampaignSpecifications', '1. Product & Campaign Specifications')}</h3>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Clear, honest documentation of your hardware or design object.
-                </p>
+                  {t('clearHonestDocumentationOfYourHardw', 'Clear, honest documentation of your hardware or design object.')}</p>
               </div>
 
               {/* Title Input */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Campaign Title / Product Name *
-                </label>
+                  {t('campaignTitleProductName', 'Campaign Title / Product Name *')}</label>
                 <SmartInput
                   id="campaign-form-title"
                   type="text"
@@ -1177,7 +1270,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   onValueChange={(val) => setFormTitle(val)}
-                  placeholder="e.g. The Continuous-Feed Titanium Drafting Pencil"
+                  placeholder={t('eGTheContinuousFeedTitaniumDrafting', 'e.g. The Continuous-Feed Titanium Drafting Pencil')}
                   className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] focus:outline-none focus:border-[#2874F0]"
                 />
               </div>
@@ -1186,28 +1279,26 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Category *
-                  </label>
+                    {t('category', 'Category *')}</label>
                   <select
                     id="campaign-form-category"
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
                     className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   >
-                    <option value="Design & Tools">Design & Tools</option>
-                    <option value="Culinary Hardware">Culinary Hardware</option>
-                    <option value="Audio & Acoustics">Audio & Acoustics</option>
-                    <option value="Timepieces">Timepieces</option>
-                    <option value="Carry & Bags">Carry & Bags</option>
-                    <option value="Home & Living">Home & Living</option>
-                    <option value="Ceramic & Stoneware">Ceramic & Stoneware</option>
+                    <option value="Design & Tools">{t('designTools', 'Design & Tools')}</option>
+                    <option value="Culinary Hardware">{t('culinaryHardware', 'Culinary Hardware')}</option>
+                    <option value="Audio & Acoustics">{t('audioAcoustics', 'Audio & Acoustics')}</option>
+                    <option value="Timepieces">{t('timepieces', 'Timepieces')}</option>
+                    <option value="Carry & Bags">{t('carryBags', 'Carry & Bags')}</option>
+                    <option value="Home & Living">{t('homeLiving', 'Home & Living')}</option>
+                    <option value="Ceramic & Stoneware">{t('ceramicStoneware', 'Ceramic & Stoneware')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Creator Name / Studio
-                  </label>
+                    {t('creatorNameStudio', 'Creator Name / Studio')}</label>
                   <input
                     type="text"
                     readOnly
@@ -1215,8 +1306,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     className="w-full px-3 py-2 bg-[#F1F3F6] border border-[#EAEAEA] rounded-[2px] text-xs text-[#878787] cursor-not-allowed"
                   />
                   <span className="text-[10px] text-[#878787] mt-1 block">
-                    Verified creator profile
-                  </span>
+                    {t('verifiedCreatorProfile', 'Verified creator profile')}</span>
                 </div>
               </div>
 
@@ -1245,8 +1335,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               {/* Short Description */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Summary Description *
-                </label>
+                  {t('summaryDescription', 'Summary Description *')}</label>
                 <SmartTextarea
                   id="campaign-form-description"
                   required
@@ -1254,7 +1343,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   onValueChange={(val) => setFormDescription(val)}
-                  placeholder="One or two sentences explaining what is being made, the materials used, and why it endures."
+                  placeholder={t('oneOrTwoSentencesExplainingWhatIsBe', 'One or two sentences explaining what is being made, the materials used, and why it endures.')}
                   className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                 />
               </div>
@@ -1262,15 +1351,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               {/* Detailed Story (Optional) */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Detailed Manufacturing & Design Story
-                </label>
+                  {t('detailedManufacturingDesignStory', 'Detailed Manufacturing & Design Story')}</label>
                 <SmartTextarea
                   id="campaign-form-story"
                   rows={4}
                   value={formFullStory}
                   onChange={(e) => setFormFullStory(e.target.value)}
                   onValueChange={(val) => setFormFullStory(val)}
-                  placeholder="Explain your prototyping journey, CNC or foundry tolerances, and how backer capital will be allocated."
+                  placeholder={t('explainYourPrototypingJourneyCncOrF', 'Explain your prototyping journey, CNC or foundry tolerances, and how backer capital will be allocated.')}
                   className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                 />
               </div>
@@ -1280,19 +1368,16 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs p-4 sm:p-6 space-y-4">
               <div className="border-b border-[#F0F0F0] pb-2.5">
                 <h3 className="text-base font-bold text-[#212121]">
-                  2. Funding Goal & Deadline Window
-                </h3>
+                  {t('key_2FundingGoalDeadlineWindow', '2. Funding Goal & Deadline Window')}</h3>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  All funds are held in conditional escrow. If this threshold is not met by the deadline, no backers are charged.
-                </p>
+                  {t('allFundsAreHeldInConditionalEscrowI', 'All funds are held in conditional escrow. If this threshold is not met by the deadline, no backers are charged.')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Funding Goal */}
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Funding Goal (₹ INR) *
-                  </label>
+                    {t('fundingGoalInr', 'Funding Goal (₹ INR) *')}</label>
                   <div className="relative">
                     <span className="text-sm font-bold text-[#878787] absolute left-3 top-1/2 -translate-y-1/2">₹</span>
                     <input
@@ -1307,16 +1392,15 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     />
                   </div>
                   <div className="text-[11px] text-[#878787] mt-1 flex justify-between">
-                    <span>Minimum threshold: ₹10,000</span>
-                    <span className="text-[#388E3C] font-bold">Net payout (92%): {formatINR(Math.round(formGoalAmount * 0.92))}</span>
+                    <span>{t('minimumThreshold10000', 'Minimum threshold: ₹10,000')}</span>
+                    <span className="text-[#388E3C] font-bold">{t('netPayout92', 'Net payout (92%):')}{formatINR(Math.round(formGoalAmount * 0.92))}</span>
                   </div>
                 </div>
 
                 {/* Deadline */}
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Campaign Deadline Date *
-                  </label>
+                    {t('campaignDeadlineDate', 'Campaign Deadline Date *')}</label>
                   <div className="relative">
                     <Calendar className="w-4 h-4 text-[#878787] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -1329,8 +1413,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     />
                   </div>
                   <span className="text-[11px] text-[#388E3C] font-bold mt-1 block">
-                    Duration: {formDeadlineDays} days from today
-                  </span>
+                    {t('duration', 'Duration:')}{formDeadlineDays} {t('daysFromToday', 'days from today')}</span>
                 </div>
               </div>
             </div>
@@ -1339,17 +1422,15 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs p-4 sm:p-6 space-y-4">
               <div className="border-b border-[#F0F0F0] pb-2.5">
                 <h3 className="text-base font-bold text-[#212121]">
-                  3. Imagery & Craft Photography
-                </h3>
+                  {t('key_3ImageryCraftPhotography', '3. Imagery & Craft Photography')}</h3>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  High-fidelity workshop photography uploaded directly to Cloudinary.
-                </p>
+                  {t('highFidelityWorkshopPhotographyUplo', 'High-fidelity workshop photography uploaded directly to Cloudinary.')}</p>
               </div>
 
               {/* Cloudinary Dropzone Component */}
               <ImageUploadDropzone
                 id="campaign-cloudinary-dropzone"
-                label="Cover Image"
+                label={t('coverImage', 'Cover Image')}
                 sublabel="Click or drag to upload cover image. Supported formats: JPG, PNG, WEBP up to 5MB."
                 value={formImageUrl}
                 onChange={(url) => {
@@ -1366,8 +1447,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               {/* Verified Studio Presets as an Alternative */}
               <div className="pt-2 border-t border-[#F0F0F0] space-y-2">
                 <div className="text-xs uppercase tracking-wider font-bold text-[#212121]">
-                  Or Pick a Verified Studio Preset:
-                </div>
+                  {t('orPickAVerifiedStudioPreset', 'Or Pick a Verified Studio Preset:')}</div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                   {PRESET_WORKSHOP_IMAGES.map((img) => (
                     <button
@@ -1379,8 +1459,8 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                       }}
                       className={`relative aspect-square rounded-[2px] border-2 overflow-hidden transition-all text-left cursor-pointer ${
                         formImageUrl === img.url
-                          ? 'border-[#2874F0] ring-2 ring-[#2874F0]/40'
-                          : 'border-[#EAEAEA] hover:border-[#212121]'
+                          ? t('border2874f0Ring2Ring2874f040', 'border-[#2874F0] ring-2 ring-[#2874F0]/40')
+                          : t('borderEaeaeaHoverBorder212121', 'border-[#EAEAEA] hover:border-[#212121]')
                       }`}
                     >
                       <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
@@ -1398,11 +1478,9 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#F0F0F0] pb-2.5">
                 <div>
                   <h3 className="text-base font-bold text-[#212121]">
-                    4. Pledge Tier Builder
-                  </h3>
+                    {t('key_4PledgeTierBuilder', '4. Pledge Tier Builder')}</h3>
                   <p className="text-xs text-[#878787] mt-0.5">
-                    Structure early bird and production reward tiers. Add or remove tiers dynamically.
-                  </p>
+                    {t('structureEarlyBirdAndProductionRewa', 'Structure early bird and production reward tiers. Add or remove tiers dynamically.')}</p>
                 </div>
 
                 <button
@@ -1412,7 +1490,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   className="px-3 py-1.5 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1 self-start sm:self-auto cursor-pointer shadow-xs"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Add Reward Tier</span>
+                  <span>{t('addRewardTier', 'Add Reward Tier')}</span>
                 </button>
               </div>
 
@@ -1430,7 +1508,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                           {idx + 1}
                         </span>
                         <span className="text-xs uppercase tracking-wider font-bold text-[#212121]">
-                          Reward Tier #{idx + 1}
+                          {t('rewardTier', 'Reward Tier #')}{idx + 1}
                         </span>
                       </div>
 
@@ -1441,7 +1519,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                           className="text-[#FB641B] hover:text-[#E85D19] text-xs flex items-center gap-1 uppercase tracking-wider cursor-pointer font-bold"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>Remove</span>
+                          <span>{t('remove', 'Remove')}</span>
                         </button>
                       )}
                     </div>
@@ -1449,23 +1527,21 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-2">
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Tier Title *
-                        </label>
+                          {t('tierTitle', 'Tier Title *')}</label>
                         <SmartInput
                           type="text"
                           required
                           value={tier.title}
                           onChange={(e) => handleUpdateTier(tier.id, 'title', e.target.value)}
                           onValueChange={(val) => handleUpdateTier(tier.id, 'title', val)}
-                          placeholder="e.g. Early Bird Serialized Run"
+                          placeholder={t('eGEarlyBirdSerializedRun', 'e.g. Early Bird Serialized Run')}
                           className="w-full px-3 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                         />
                       </div>
 
                       <div>
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Pledge Amount (₹) *
-                        </label>
+                          {t('pledgeAmount', 'Pledge Amount (₹) *')}</label>
                         <div className="relative">
                           <span className="text-xs font-bold text-[#878787] absolute left-2.5 top-1/2 -translate-y-1/2">₹</span>
                           <input
@@ -1483,15 +1559,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
 
                     <div>
                       <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        Reward Description *
-                      </label>
+                        {t('rewardDescription', 'Reward Description *')}</label>
                       <SmartTextarea
                         rows={2}
                         required
                         value={tier.description}
                         onChange={(e) => handleUpdateTier(tier.id, 'description', e.target.value)}
                         onValueChange={(val) => handleUpdateTier(tier.id, 'description', val)}
-                        placeholder="Detail what is included in this backer package, finish variations, and serialization."
+                        placeholder={t('detailWhatIsIncludedInThisBackerPac', 'Detail what is included in this backer package, finish variations, and serialization.')}
                         className="w-full px-3 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                       />
                     </div>
@@ -1499,7 +1574,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     {/* AI Fair Price Suggester for Reward Tier */}
                     <AIPriceSuggester
                       craftType={aiCraftType || formCategory}
-                      region={aiRegion || 'India'}
+                      region={aiRegion || t('india', 'India')}
                       onApplyPrice={(suggestedPrice) => handleUpdateTier(tier.id, 'pledgeAmount', suggestedPrice)}
                       defaultMaterialCost={Math.round(tier.pledgeAmount * 0.35)}
                       defaultHoursSpent={6}
@@ -1508,27 +1583,25 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Estimated Backer Delivery
-                        </label>
+                          {t('estimatedBackerDelivery', 'Estimated Backer Delivery')}</label>
                         <SmartInput
                           type="text"
                           value={tier.estimatedDelivery}
                           onChange={(e) => handleUpdateTier(tier.id, 'estimatedDelivery', e.target.value)}
                           onValueChange={(val) => handleUpdateTier(tier.id, 'estimatedDelivery', val)}
-                          placeholder="e.g. Dec 2026"
+                          placeholder={t('eGDec2026', 'e.g. Dec 2026')}
                           className="w-full px-3 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121]"
                         />
                       </div>
 
                       <div>
                         <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                          Patron Limit / Max Backers (Optional)
-                        </label>
+                          {t('patronLimitMaxBackersOptional', 'Patron Limit / Max Backers (Optional)')}</label>
                         <input
                           type="number"
                           value={tier.maxBackers || ''}
                           onChange={(e) => handleUpdateTier(tier.id, 'maxBackers', e.target.value ? Number(e.target.value) : undefined)}
-                          placeholder="e.g. 150 (Leave blank for unlimited)"
+                          placeholder={t('eG150LeaveBlankForUnlimited', 'e.g. 150 (Leave blank for unlimited)')}
                           className="w-full px-3 py-1.5 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121]"
                         />
                       </div>
@@ -1543,11 +1616,9 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div className="text-xs space-y-0.5">
                 <div className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-[#FFE500]">
                   <ShieldCheck className="w-4 h-4 text-[#388E3C]" />
-                  Craftify Escrow Covenant Enforced
-                </div>
+                  {t('craftifyEscrowCovenantEnforced', 'Craftify Escrow Covenant Enforced')}</div>
                 <div className="text-[#878787]">
-                  Pre-authorizations are captured only upon reaching 100% threshold. Zero risk to backers.
-                </div>
+                  {t('preAuthorizationsAreCapturedOnlyUpo', 'Pre-authorizations are captured only upon reaching 100% threshold. Zero risk to backers.')}</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1556,15 +1627,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   onClick={() => setActiveTab('my-campaigns')}
                   className="px-3.5 py-2 rounded-[2px] border border-[#D5D5D5]/30 hover:border-[#D5D5D5] text-xs uppercase tracking-wider font-bold text-[#FFFFFF] cursor-pointer"
                 >
-                  Cancel
-                </button>
+                  {t('cancel', 'Cancel')}</button>
 
                 <button
                   id="btn-submit-campaign-form"
                   type="submit"
                   className="px-5 py-2 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                 >
-                  <span>Submit for Admin Approval</span>
+                  <span>{t('submitForAdminApproval', 'Submit for Admin Approval')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1584,16 +1654,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#388E3C] bg-[#EAF8EB] px-2 py-0.5 rounded-[2px] flex items-center gap-1">
                     <Store className="w-3.5 h-3.5 text-[#388E3C]" />
-                    <span>Craftify Marketplace Direct</span>
+                    <span>{t('craftifyMarketplaceDirect', 'Craftify Marketplace Direct')}</span>
                   </span>
-                  <span className="text-xs text-[#878787]">• Master Artisan Retail</span>
+                  <span className="text-xs text-[#878787]">{t('masterArtisanRetail', '• Master Artisan Retail')}</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-[#212121]">
-                  List Handcrafted Piece in Craftify Shop
-                </h2>
+                  {t('listHandcraftedPieceInCraftifyShop', 'List Handcrafted Piece in Craftify Shop')}</h2>
                 <p className="text-xs sm:text-sm text-[#878787] mt-1 max-w-2xl leading-relaxed">
-                  Directly list in-stock artisan creations in the permanent marketplace with fair trade pricing and authentic storytelling.
-                </p>
+                  {t('directlyListInStockArtisanCreations', 'Directly list in-stock artisan creations in the permanent marketplace with fair trade pricing and authentic storytelling.')}</p>
               </div>
 
               <button
@@ -1612,9 +1680,59 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                 className="px-3 py-1.5 rounded-[2px] bg-[#F1F3F6] hover:bg-[#EAEAEA] text-[#2874F0] border border-[#2874F0]/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Fill Demo Artisan Piece</span>
+                <span>{t('fillDemoArtisanPiece', 'Fill Demo Artisan Piece')}</span>
               </button>
             </div>
+          </div>
+
+          {/* Artisan's Existing Products Section */}
+          <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[#F0F0F0] pb-3">
+              <div>
+                <h3 className="text-base font-bold text-[#212121] flex items-center gap-2">
+                  <Store className="w-4 h-4 text-[#388E3C]" />
+                  <span>{t('myListedShopProducts', 'My Listed Shop Products (')}{creatorProducts.length})</span>
+                </h3>
+                <p className="text-xs text-[#878787] mt-0.5">
+                  {t('directRetailHandicraftListingsActiv', 'Direct retail handicraft listings active under your artisan profile.')}</p>
+              </div>
+            </div>
+
+            {creatorProducts.length === 0 ? (
+              <div id="creator-empty-products-state" className="p-8 text-center bg-[#F1F3F6] rounded-[4px] border border-[#EAEAEA] space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[#FFFFFF] text-[#878787] flex items-center justify-center mx-auto border border-[#EAEAEA]">
+                  <Store className="w-6 h-6 text-[#878787]" />
+                </div>
+                <div className="max-w-md mx-auto space-y-1">
+                  <div className="text-sm font-bold text-[#212121]">
+                    {t('noProductsListedInYourStudioShopYet', 'No products listed in your studio shop yet')}</div>
+                  <p className="text-xs text-[#878787]">
+                    {t('youHavenTListedAnyDirectShopProduct', 'You haven\'t listed any direct shop products yet. Use the form below to publish your first handcrafted piece to the Craftify Marketplace.')}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {creatorProducts.map((rawProd) => {
+                  const prod = localizeProduct(rawProd);
+                  return (
+                  <div key={prod.id} className="p-3 bg-[#F1F3F6] rounded-[4px] border border-[#EAEAEA] flex gap-3 items-center">
+                    <img src={prod.imageUrl} alt={prod.title} className="w-14 h-14 object-cover rounded-[2px] border border-[#EAEAEA] shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-bold text-[#212121] truncate">{prod.title}</div>
+                      <div className="text-[11px] text-[#388E3C] font-bold mt-0.5">{formatINR(prod.price)} • {prod.stockCount} {t('inStock', 'in stock')}</div>
+                      <div className="text-[10px] text-[#878787] font-mono mt-0.5">{prod.sku}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onOpenProductDetail(prod)}
+                      className="px-2 py-1 bg-[#FFFFFF] hover:bg-[#EAEAEA] text-[#2874F0] text-[11px] font-bold rounded-[2px] border border-[#D5D5D5] shrink-0"
+                    >
+                      {t('view', 'View')}</button>
+                  </div>
+                );
+              })}
+              </div>
+            )}
           </div>
 
           {prodSuccess && (
@@ -1631,8 +1749,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                 onClick={() => onNavigate('shop')}
                 className="px-3 py-1 rounded-[2px] bg-[#388E3C] text-[#FFFFFF] text-xs font-bold uppercase tracking-wider hover:bg-[#2E7D32] cursor-pointer"
               >
-                View in Shop
-              </button>
+                {t('viewInShop', 'View in Shop')}</button>
             </div>
           )}
 
@@ -1652,17 +1769,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs p-4 sm:p-6 space-y-4">
               <div className="border-b border-[#F0F0F0] pb-2.5">
                 <h3 className="text-base font-bold text-[#212121]">
-                  1. Product Identity & Craft Heritage
-                </h3>
+                  {t('key_1ProductIdentityCraftHeritage', '1. Product Identity & Craft Heritage')}</h3>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Define the craft provenance, materials, and authentic narrative for conscious buyers.
-                </p>
+                  {t('defineTheCraftProvenanceMaterialsAn', 'Define the craft provenance, materials, and authentic narrative for conscious buyers.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Product Name / Title *
-                </label>
+                  {t('productNameTitle', 'Product Name / Title *')}</label>
                 <SmartInput
                   id="product-form-title"
                   type="text"
@@ -1670,7 +1784,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   value={prodTitle}
                   onChange={(e) => setProdTitle(e.target.value)}
                   onValueChange={(val) => setProdTitle(val)}
-                  placeholder="e.g. Handcrafted Khurja Ceramic Fluted Planter"
+                  placeholder={t('eGHandcraftedKhurjaCeramicFlutedPla', 'e.g. Handcrafted Khurja Ceramic Fluted Planter')}
                   className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-sm text-[#212121] focus:outline-none focus:border-[#2874F0]"
                 />
               </div>
@@ -1678,28 +1792,26 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Category *
-                  </label>
+                    {t('category', 'Category *')}</label>
                   <select
                     id="product-form-category"
                     value={prodCategory}
                     onChange={(e) => setProdCategory(e.target.value)}
                     className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   >
-                    <option value="Handloom Textiles">Handloom Textiles</option>
-                    <option value="Pottery & Ceramics">Pottery & Ceramics</option>
-                    <option value="Metal Craft & Bidri">Metal Craft & Bidri</option>
-                    <option value="Woodcraft">Woodcraft</option>
-                    <option value="Heritage Decor">Heritage Decor</option>
-                    <option value="Design & Tools">Design & Tools</option>
-                    <option value="Culinary Hardware">Culinary Hardware</option>
+                    <option value="Handloom Textiles">{t('handloomTextiles', 'Handloom Textiles')}</option>
+                    <option value="Pottery & Ceramics">{t('potteryCeramics', 'Pottery & Ceramics')}</option>
+                    <option value="Metal Craft & Bidri">{t('metalCraftBidri', 'Metal Craft & Bidri')}</option>
+                    <option value="Woodcraft">{t('woodcraft', 'Woodcraft')}</option>
+                    <option value="Heritage Decor">{t('heritageDecor', 'Heritage Decor')}</option>
+                    <option value="Design & Tools">{t('designTools', 'Design & Tools')}</option>
+                    <option value="Culinary Hardware">{t('culinaryHardware', 'Culinary Hardware')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Artisan Collective / Studio
-                  </label>
+                    {t('artisanCollectiveStudio', 'Artisan Collective / Studio')}</label>
                   <input
                     type="text"
                     readOnly
@@ -1729,8 +1841,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               {/* Product Description Field */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                  Product Description *
-                </label>
+                  {t('productDescription', 'Product Description *')}</label>
                 <SmartTextarea
                   id="product-form-description"
                   required
@@ -1738,7 +1849,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   value={prodDescription}
                   onChange={(e) => setProdDescription(e.target.value)}
                   onValueChange={(val) => setProdDescription(val)}
-                  placeholder="Detailed product story highlighting technique, durability, and craftsmanship..."
+                  placeholder={t('detailedProductStoryHighlightingTec', 'Detailed product story highlighting technique, durability, and craftsmanship...')}
                   className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0] leading-relaxed"
                 />
               </div>
@@ -1748,18 +1859,15 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs p-4 sm:p-6 space-y-4">
               <div className="border-b border-[#F0F0F0] pb-2.5">
                 <h3 className="text-base font-bold text-[#212121]">
-                  2. Pricing & Artisan Living Wage Valuation
-                </h3>
+                  {t('key_2PricingArtisanLivingWageValuat', '2. Pricing & Artisan Living Wage Valuation')}</h3>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Set sustainable retail pricing honoring material expenses and artisan hours.
-                </p>
+                  {t('setSustainableRetailPricingHonoring', 'Set sustainable retail pricing honoring material expenses and artisan hours.')}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Retail Price (₹ INR) *
-                  </label>
+                    {t('retailPriceInr', 'Retail Price (₹ INR) *')}</label>
                   <div className="relative">
                     <span className="text-sm font-bold text-[#878787] absolute left-3 top-1/2 -translate-y-1/2">₹</span>
                     <input
@@ -1774,15 +1882,14 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     />
                   </div>
                   <div className="text-[11px] text-[#878787] mt-1 flex justify-between">
-                    <span>Fair trade retail price</span>
-                    <span className="text-[#388E3C] font-bold">Artisan payout (92%): {formatINR(Math.round(prodPrice * 0.92))}</span>
+                    <span>{t('fairTradeRetailPrice', 'Fair trade retail price')}</span>
+                    <span className="text-[#388E3C] font-bold">{t('artisanPayout92', 'Artisan payout (92%):')}{formatINR(Math.round(prodPrice * 0.92))}</span>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1.5">
-                    Stock Units Available *
-                  </label>
+                    {t('stockUnitsAvailable', 'Stock Units Available *')}</label>
                   <input
                     id="product-form-stock"
                     type="number"
@@ -1794,8 +1901,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                     className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] text-sm font-bold text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                   <span className="text-[11px] text-[#878787] mt-1 block">
-                    Immediate inventory ready in workshop
-                  </span>
+                    {t('immediateInventoryReadyInWorkshop', 'Immediate inventory ready in workshop')}</span>
                 </div>
               </div>
 
@@ -1803,7 +1909,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div id="suggest-a-fair-price-section" data-testid="suggest-a-fair-price-section">
                 <AIPriceSuggester
                   craftType={prodAiCraftType || prodCategory}
-                  region={prodAiRegion || 'India'}
+                  region={prodAiRegion || t('india', 'India')}
                   onApplyPrice={(suggestedPrice) => setProdPrice(suggestedPrice)}
                   defaultMaterialCost={Math.round(prodPrice * 0.35)}
                   defaultHoursSpent={6}
@@ -1815,17 +1921,15 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
             <div className="bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs p-4 sm:p-6 space-y-4">
               <div className="border-b border-[#F0F0F0] pb-2.5">
                 <h3 className="text-base font-bold text-[#212121]">
-                  3. Product Visuals
-                </h3>
+                  {t('key_3ProductVisuals', '3. Product Visuals')}</h3>
                 <p className="text-xs text-[#878787] mt-0.5">
-                  Upload high-resolution photography to Cloudinary or pick a studio preset.
-                </p>
+                  {t('uploadHighResolutionPhotographyToCl', 'Upload high-resolution photography to Cloudinary or pick a studio preset.')}</p>
               </div>
 
               {/* Cloudinary Dropzone Component */}
               <ImageUploadDropzone
                 id="product-cloudinary-dropzone"
-                label="Product Visuals"
+                label={t('productVisuals', 'Product Visuals')}
                 sublabel="Click or drag to upload product image. Supported formats: JPG, PNG, WEBP up to 5MB."
                 value={prodImageUrl}
                 onChange={(url) => {
@@ -1842,8 +1946,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               {/* Verified Studio Presets as an Alternative */}
               <div className="pt-2 border-t border-[#F0F0F0] space-y-2">
                 <div className="text-xs uppercase tracking-wider font-bold text-[#212121]">
-                  Or Pick a Verified Studio Preset:
-                </div>
+                  {t('orPickAVerifiedStudioPreset', 'Or Pick a Verified Studio Preset:')}</div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                   {PRESET_WORKSHOP_IMAGES.map((img) => (
                     <button
@@ -1855,8 +1958,8 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                       }}
                       className={`relative aspect-square rounded-[2px] border-2 overflow-hidden transition-all text-left cursor-pointer ${
                         prodImageUrl === img.url
-                          ? 'border-[#2874F0] ring-2 ring-[#2874F0]/40'
-                          : 'border-[#EAEAEA] hover:border-[#212121]'
+                          ? t('border2874f0Ring2Ring2874f040', 'border-[#2874F0] ring-2 ring-[#2874F0]/40')
+                          : t('borderEaeaeaHoverBorder212121', 'border-[#EAEAEA] hover:border-[#212121]')
                       }`}
                     >
                       <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
@@ -1874,11 +1977,9 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
               <div className="text-xs space-y-0.5">
                 <div className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-[#388E3C]">
                   <ShieldCheck className="w-4 h-4 text-[#388E3C]" />
-                  Verified Master Artisan Listing
-                </div>
+                  {t('verifiedMasterArtisanListing', 'Verified Master Artisan Listing')}</div>
                 <div className="text-[#878787]">
-                  Instant marketplace publishing • Handcrafted batch protection guaranteed
-                </div>
+                  {t('instantMarketplacePublishingHandcra', 'Instant marketplace publishing • Handcrafted batch protection guaranteed')}</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1887,8 +1988,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   onClick={() => setActiveTab('my-campaigns')}
                   className="px-3.5 py-2 rounded-[2px] border border-[#D5D5D5]/30 hover:border-[#D5D5D5] text-xs uppercase tracking-wider font-bold text-[#FFFFFF] cursor-pointer"
                 >
-                  Cancel
-                </button>
+                  {t('cancel', 'Cancel')}</button>
 
                 <button
                   id="btn-submit-product-form"
@@ -1896,7 +1996,7 @@ export const CreatorDashboard: React.FC<CreatorDashboardProps> = ({
                   className="px-5 py-2 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                 >
                   <Store className="w-4 h-4" />
-                  <span>Publish Product to Shop</span>
+                  <span>{t('publishProductToShop', 'Publish Product to Shop')}</span>
                 </button>
               </div>
             </div>

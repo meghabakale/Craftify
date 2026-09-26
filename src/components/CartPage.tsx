@@ -31,7 +31,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   onContinueShopping,
   onDiscoverCampaigns,
 }) => {
-  const { t } = useLanguage();
+  const { t, localizeCartItem } = useLanguage();
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const isFreeShipping = subtotal >= 2000 || subtotal === 0;
   const shippingCost = isFreeShipping ? 0 : 150;
@@ -105,12 +105,14 @@ export const CartPage: React.FC<CartPageProps> = ({
                 {t('cart', 'My Cart')} ({items.reduce((acc, i) => acc + i.quantity, 0)})
               </h1>
               <span className="text-xs text-[#878787]">
-                Deliver to: <strong className="text-[#212121]">Standard Pincode (All-India)</strong>
+                {t('deliverTo', 'Deliver to:')}<strong className="text-[#212121]">{t('standardPincodeAllIndia', 'Standard Pincode (All-India)')}</strong>
               </span>
             </div>
 
             <div className="bg-[#FFFFFF] rounded-[4px] border border-[#EAEAEA] shadow-xs divide-y divide-[#F0F0F0]">
-              {items.map((item) => (
+              {items.map((rawItem) => {
+                const item = localizeCartItem(rawItem);
+                return (
                 <div
                   key={item.id}
                   id={`cart-item-row-${item.id}`}
@@ -143,8 +145,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                           {formatINR(Math.round(item.price * 1.3))}
                         </span>
                         <span className="text-xs font-bold text-[#388E3C]">
-                          23% off
-                        </span>
+                          {t('key_23Off', '23% off')}</span>
                       </div>
                     </div>
                   </div>
@@ -155,7 +156,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                       <button
                         onClick={() => onUpdateQuantity(item.id, -1)}
                         className="p-1.5 text-[#212121] hover:bg-[#F1F3F6] transition-colors cursor-pointer"
-                        aria-label="Decrease quantity"
+                        aria-label={t('decreaseQuantity', 'Decrease quantity')}
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -165,7 +166,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                       <button
                         onClick={() => onUpdateQuantity(item.id, 1)}
                         className="p-1.5 text-[#212121] hover:bg-[#F1F3F6] transition-colors cursor-pointer"
-                        aria-label="Increase quantity"
+                        aria-label={t('increaseQuantity', 'Increase quantity')}
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -180,7 +181,8 @@ export const CartPage: React.FC<CartPageProps> = ({
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
 
             {/* Free Shipping Note */}
@@ -189,16 +191,14 @@ export const CartPage: React.FC<CartPageProps> = ({
                 <Truck className="w-4 h-4 text-[#388E3C]" />
                 {isFreeShipping ? (
                   <span>
-                    <strong>Free Delivery unlocked</strong> for your artisan order.
-                  </span>
+                    <strong>{t('freeDeliveryUnlocked', 'Free Delivery unlocked')}</strong> {t('forYourArtisanOrder', 'for your artisan order.')}</span>
                 ) : (
                   <span>
-                    Add <strong>{formatINR(2000 - subtotal)}</strong> more to unlock Free Delivery.
-                  </span>
+                    {t('add', 'Add')}<strong>{formatINR(2000 - subtotal)}</strong> {t('moreToUnlockFreeDelivery', 'more to unlock Free Delivery.')}</span>
                 )}
               </div>
               <span className="font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-[2px] bg-[#EAF8EB] text-[#388E3C]">
-                {isFreeShipping ? 'FREE' : formatINR(150)}
+                {isFreeShipping ? t('free', 'FREE') : formatINR(150)}
               </span>
             </div>
           </div>
@@ -235,8 +235,7 @@ export const CartPage: React.FC<CartPageProps> = ({
 
                 {isFreeShipping && (
                   <div className="pt-1 text-[#388E3C] font-semibold text-xs border-t border-[#F0F0F0]">
-                    You will save {formatINR(150)} on delivery on this order
-                  </div>
+                    {t('youWillSave', 'You will save')}{formatINR(150)} {t('onDeliveryOnThisOrder', 'on delivery on this order')}</div>
                 )}
               </div>
 

@@ -61,7 +61,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onGoToAccount,
   onTrackOrder,
 }) => {
-  const { t } = useLanguage();
+  const { t, localizeCartItem } = useLanguage();
 
   // Shipping Form State
   const [fullName, setFullName] = useState(currentUser?.name || 'Aarav Sharma');
@@ -158,7 +158,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 {t('thankYouOrder', 'Thank You for Ordering')}
               </h1>
               <p className="text-xs sm:text-sm text-[#878787] max-w-md mx-auto">
-                A verification record and tracking details have been sent to{' '}
+                {t('aVerificationRecordAndTrackingDetai', 'A verification record and tracking details have been sent to')}{' '}
                 <strong className="text-[#212121]">{confirmedOrder.shippingAddress.email}</strong>.
               </p>
             </div>
@@ -180,7 +180,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <div>
                 <span className="text-[#878787] uppercase tracking-wider block text-[11px]">{t('estimatedDelivery', 'Estimated Delivery')}</span>
                 <strong className="text-xs text-[#212121] font-bold">
-                  {confirmedOrder.estimatedDelivery || 'Arriving between 18–22 Sept'}
+                  {confirmedOrder.estimatedDelivery || t('arrivingBetween1822Sept', 'Arriving between 18–22 Sept')}
                 </strong>
               </div>
             </div>
@@ -202,7 +202,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       </div>
                       <div>
                         <strong className="text-[#212121] block text-xs">{item.title}</strong>
-                        <span className="text-[#878787]">Qty: {item.quantity} × {formatINR(item.price)}</span>
+                        <span className="text-[#878787]">{t('qty', 'Qty:')}{item.quantity} × {formatINR(item.price)}</span>
                       </div>
                     </div>
                     <strong className="text-[#212121] text-xs">
@@ -225,8 +225,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 {confirmedOrder.shippingAddress.city}, {confirmedOrder.shippingAddress.state} {confirmedOrder.shippingAddress.zip}, {confirmedOrder.shippingAddress.country}
               </p>
               <div className="text-[11px] text-[#878787] pt-1.5 border-t border-[#388E3C]/20 flex items-center justify-between">
-                <span>Payment: {confirmedOrder.paymentMethod}</span>
-                <span className="text-[#388E3C] font-bold">Status: Order Confirmed</span>
+                <span>{t('payment', 'Payment:')}{confirmedOrder.paymentMethod}</span>
+                <span className="text-[#388E3C] font-bold">{t('statusOrderConfirmed', 'Status: Order Confirmed')}</span>
               </div>
             </div>
 
@@ -308,45 +308,41 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </h2>
                 </div>
                 <span className="text-[11px] text-[#388E3C] font-bold uppercase tracking-wider">
-                  Insured Delivery
-                </span>
+                  {t('insuredDelivery', 'Insured Delivery')}</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Full Name *
-                  </label>
+                    {t('fullName', 'Full Name *')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     onValueChange={(val) => setFullName(val)}
-                    placeholder="e.g. Anand Kumar"
+                    placeholder={t('eGAnandKumar', 'e.g. Anand Kumar')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Email Address *
-                  </label>
+                    {t('emailAddress', 'Email Address *')}</label>
                   <SmartInput
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onValueChange={(val) => setEmail(val)}
-                    placeholder="name@example.com"
+                    placeholder={t('nameExampleCom', 'name@example.com')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Phone Number *
-                  </label>
+                    {t('phoneNumber', 'Phone Number *')}</label>
                   <SmartInput
                     type="tel"
                     required
@@ -360,80 +356,75 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Street Address / Flat / Floor *
-                  </label>
+                    {t('streetAddressFlatFloor', 'Street Address / Flat / Floor *')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                     onValueChange={(val) => setStreet(val)}
-                    placeholder="Flat / House no., building, apartment, street name"
+                    placeholder={t('flatHouseNoBuildingApartmentStreetN', 'Flat / House no., building, apartment, street name')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    City *
-                  </label>
+                    {t('city', 'City *')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     onValueChange={(val) => setCity(val)}
-                    placeholder="e.g. Pune / Varanasi"
+                    placeholder={t('eGPuneVaranasi', 'e.g. Pune / Varanasi')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    State *
-                  </label>
+                    {t('state', 'State *')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     onValueChange={(val) => setState(val)}
-                    placeholder="e.g. Maharashtra / Uttar Pradesh"
+                    placeholder={t('eGMaharashtraUttarPradesh', 'e.g. Maharashtra / Uttar Pradesh')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    PIN Code *
-                  </label>
+                    {t('pinCode', 'PIN Code *')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={zip}
                     onChange={(e) => setZip(e.target.value)}
                     onValueChange={(val) => setZip(val)}
-                    placeholder="e.g. 411001"
+                    placeholder={t('eG411001', 'e.g. 411001')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Country *
-                  </label>
+                    {t('country', 'Country *')}</label>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0] cursor-pointer"
                   >
-                    <option value="India">India</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="United Arab Emirates">United Arab Emirates</option>
-                    <option value="Singapore">Singapore</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
+                    <option value="India">{t('india', 'India')}</option>
+                    <option value="United States">{t('unitedStates', 'United States')}</option>
+                    <option value="United Kingdom">{t('unitedKingdom', 'United Kingdom')}</option>
+                    <option value="United Arab Emirates">{t('unitedArabEmirates', 'United Arab Emirates')}</option>
+                    <option value="Singapore">{t('singapore', 'Singapore')}</option>
+                    <option value="Canada">{t('canada', 'Canada')}</option>
+                    <option value="Australia">{t('australia', 'Australia')}</option>
                   </select>
                 </div>
               </div>
@@ -447,12 +438,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     2
                   </span>
                   <h2 className="text-sm font-bold uppercase tracking-wider text-[#212121]">
-                    Payment Options
-                  </h2>
+                    {t('paymentOptions', 'Payment Options')}</h2>
                 </div>
                 <span className="text-[11px] text-[#388E3C] font-bold uppercase tracking-wider">
-                  100% Protected
-                </span>
+                  {t('key_100Protected', '100% Protected')}</span>
               </div>
 
               {/* Payment selector tabs */}
@@ -462,15 +451,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   onClick={() => setPaymentMethod('upi')}
                   className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
                     paymentMethod === 'upi'
-                      ? 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]'
-                      : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]'
+                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
+                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
                   }`}
                 >
                   <Smartphone className={`w-4 h-4 mb-0.5 ${paymentMethod === 'upi' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">UPI</span>
+                  <span className="font-bold">{t('upi', 'UPI')}</span>
                   <span className="text-[10px] text-[#878787]">
-                    GPay / PhonePe
-                  </span>
+                    {t('gpayPhonepe', 'GPay / PhonePe')}</span>
                 </button>
 
                 <button
@@ -478,15 +466,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   onClick={() => setPaymentMethod('card')}
                   className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
                     paymentMethod === 'card'
-                      ? 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]'
-                      : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]'
+                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
+                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
                   }`}
                 >
                   <CreditCard className={`w-4 h-4 mb-0.5 ${paymentMethod === 'card' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">Credit/Debit</span>
+                  <span className="font-bold">{t('creditDebit', 'Credit/Debit')}</span>
                   <span className="text-[10px] text-[#878787]">
-                    RuPay / Visa / MC
-                  </span>
+                    {t('rupayVisaMc', 'RuPay / Visa / MC')}</span>
                 </button>
 
                 <button
@@ -494,15 +481,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   onClick={() => setPaymentMethod('balance')}
                   className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
                     paymentMethod === 'balance'
-                      ? 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]'
-                      : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]'
+                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
+                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
                   }`}
                 >
                   <Wallet className={`w-4 h-4 mb-0.5 ${paymentMethod === 'balance' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">Wallet / Escrow</span>
+                  <span className="font-bold">{t('walletEscrow', 'Wallet / Escrow')}</span>
                   <span className="text-[10px] text-[#878787]">
-                    Artisan Credit
-                  </span>
+                    {t('artisanCredit', 'Artisan Credit')}</span>
                 </button>
 
                 <button
@@ -510,15 +496,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   onClick={() => setPaymentMethod('wire')}
                   className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
                     paymentMethod === 'wire'
-                      ? 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]'
-                      : 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]'
+                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
+                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
                   }`}
                 >
                   <Building2 className={`w-4 h-4 mb-0.5 ${paymentMethod === 'wire' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">Net Banking</span>
+                  <span className="font-bold">{t('netBanking', 'Net Banking')}</span>
                   <span className="text-[10px] text-[#878787]">
-                    All Major Banks
-                  </span>
+                    {t('allMajorBanks', 'All Major Banks')}</span>
                 </button>
               </div>
 
@@ -527,20 +512,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <div className="space-y-2 pt-1">
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                      UPI ID (e.g. mobile@upi or username@okaxis)
-                    </label>
+                      {t('upiIdEGMobileUpiOrUsernameOkaxis', 'UPI ID (e.g. mobile@upi or username@okaxis)')}</label>
                     <SmartInput
                       type="text"
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
                       onValueChange={(val) => setUpiId(val)}
-                      placeholder="username@okhdfcbank"
+                      placeholder={t('usernameOkhdfcbank', 'username@okhdfcbank')}
                       className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                     />
                   </div>
                   <p className="text-[11px] text-[#878787]">
-                    A payment request will be sent to your UPI app for authorization.
-                  </p>
+                    {t('aPaymentRequestWillBeSentToYourUpiA', 'A payment request will be sent to your UPI app for authorization.')}</p>
                 </div>
               )}
 
@@ -549,8 +532,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <div className="space-y-2 pt-1">
                   <div>
                     <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                      Card Number
-                    </label>
+                      {t('cardNumber', 'Card Number')}</label>
                     <SmartInput
                       type="text"
                       value={cardNumber}
@@ -562,8 +544,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        Valid Thru (MM/YY)
-                      </label>
+                        {t('validThruMmYy', 'Valid Thru (MM/YY)')}</label>
                       <SmartInput
                         type="text"
                         value={cardExpiry}
@@ -574,8 +555,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     </div>
                     <div>
                       <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        CVV
-                      </label>
+                        {t('cvv', 'CVV')}</label>
                       <SmartInput
                         type="text"
                         value={cardCvc}
@@ -590,19 +570,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
               {paymentMethod === 'balance' && (
                 <div className="p-3 rounded-[2px] bg-[#EAF8EB] border border-[#388E3C]/20 text-xs text-[#388E3C]">
-                  <strong>Craftify Escrow Patron Balance:</strong> Available balance ₹25,000. This purchase of {formatINR(total)} will be debited immediately upon confirmation.
-                </div>
+                  <strong>{t('craftifyEscrowPatronBalance', 'Craftify Escrow Patron Balance:')}</strong> {t('availableBalance25000ThisPurchaseOf', 'Available balance ₹25,000. This purchase of')}{formatINR(total)} {t('willBeDebitedImmediatelyUponConfirm', 'will be debited immediately upon confirmation.')}</div>
               )}
 
               {paymentMethod === 'wire' && (
                 <div className="p-3 rounded-[2px] bg-[#F1F3F6] border border-[#EAEAEA] text-xs text-[#878787]">
-                  <strong>Netbanking Transfer:</strong> Select your bank at the next screen or send via IMPS to the designated escrow virtual account.
-                </div>
+                  <strong>{t('netbankingTransfer', 'Netbanking Transfer:')}</strong> {t('selectYourBankAtTheNextScreenOrSend', 'Select your bank at the next screen or send via IMPS to the designated escrow virtual account.')}</div>
               )}
 
               <div className="p-2.5 rounded-[2px] bg-[#F1F3F6] border border-[#EAEAEA] text-[11px] text-[#878787] flex items-center gap-2">
                 <Lock className="w-3.5 h-3.5 text-[#388E3C] shrink-0" />
-                <span>Simulated Sandbox Payment: No real card or bank deduction will occur.</span>
+                <span>{t('simulatedSandboxPaymentNoRealCardOr', 'Simulated Sandbox Payment: No real card or bank deduction will occur.')}</span>
               </div>
             </div>
           </div>
@@ -616,27 +594,30 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
               {/* Items scroll */}
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1 divide-y divide-[#F0F0F0]">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 pt-2 text-xs"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-10 h-10 rounded-[2px] bg-[#FFFFFF] border border-[#F0F0F0] shrink-0 overflow-hidden p-0.5">
-                        <img src={item.imageUrl} alt="" className="w-full h-full object-contain" />
+                {items.map((rawItem) => {
+                  const item = localizeCartItem(rawItem);
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 pt-2 text-xs"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-[2px] bg-[#FFFFFF] border border-[#F0F0F0] shrink-0 overflow-hidden p-0.5">
+                          <img src={item.imageUrl} alt="" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-bold text-[#212121] truncate block text-xs">
+                            {item.title}
+                          </span>
+                          <span className="text-[#878787] text-[11px]">{t('qty', 'Qty:')}{item.quantity}</span>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <span className="font-bold text-[#212121] truncate block text-xs">
-                          {item.title}
-                        </span>
-                        <span className="text-[#878787] text-[11px]">Qty: {item.quantity}</span>
-                      </div>
+                      <span className="font-bold text-[#212121] shrink-0">
+                        {formatINR(item.price * item.quantity)}
+                      </span>
                     </div>
-                    <span className="font-bold text-[#212121] shrink-0">
-                      {formatINR(item.price * item.quantity)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Financial calculations */}

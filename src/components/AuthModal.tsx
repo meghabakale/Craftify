@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { User, UserRole } from '../types';
 import { X, Lock, Mail, User as UserIcon, ShieldCheck, ArrowRight, CheckCircle2, Hammer, ShoppingBag, ShieldAlert } from 'lucide-react';
 import { SmartInput } from './common/SmartInput';
+import { API_BASE_URL } from '../api/config';
+
+import { useLanguage } from '../context/LanguageContext';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,6 +21,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLogin,
   onLogout,
 }) => {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -137,7 +141,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     try {
-      const res = await fetch('/api/auth/token/', {
+      const res = await fetch(`${API_BASE_URL}/auth/token/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -146,10 +150,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (res.ok) {
         const tokenData = await res.json();
         const token = tokenData.access;
+        const refreshToken = tokenData.refresh;
         localStorage.setItem('access_token', token);
+        localStorage.setItem('refresh_token', refreshToken);
         localStorage.setItem('kaarigar_access_token', token);
 
-        const meRes = await fetch('/api/auth/me/', {
+        const meRes = await fetch(`${API_BASE_URL}/auth/me/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -161,6 +167,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             email: me.email || fallbackUser.email,
             role: me.role || roleChoice,
             token,
+            refreshToken,
             avatarInitials: (me.first_name || me.username || 'U').slice(0, 2).toUpperCase(),
             memberSince: 'September 2026',
             craftType: me.craft_type,
@@ -174,7 +181,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       }
     } catch {
-      // Backend request failed, use fallback
+      // Backend request failed
     }
 
     setIsLoading(false);
@@ -208,97 +215,121 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const rawInput = email.trim();
         const usernameAttempt = rawInput.includes('@') ? rawInput.split('@')[0] : rawInput;
 
-        // Attempt backend JWT login
-        const res = await fetch('/api/auth/token/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: usernameAttempt,
-            email: rawInput.includes('@') ? rawInput : '',
-            password,
-          }),
-        }).catch(() => null);
-
-        let userRole: UserRole = 'buyer';
-        let token = '';
-
-        if (res && res.ok) {
-          const data = await res.json();
-          token = data.access;
-          localStorage.setItem('access_token', token);
-          localStorage.setItem('kaarigar_access_token', token);
-
-          // Fetch current user profile
-          const meRes = await fetch('/api/auth/me/', {
-            headers: { Authorization: `Bearer ${token}` },
-          }).catch(() => null);
-
-          if (meRes && meRes.ok) {
-            const meData = await meRes.json();
-            userRole = meData.role || (rawInput.includes('admin') ? 'admin' : rawInput.includes('artisan') ? 'artisan' : 'buyer');
-            const initials = (meData.first_name || meData.username || rawInput).slice(0, 2).toUpperCase();
-            const loggedUser: User = {
-              id: String(meData.id || `usr-${Date.now().toString().slice(-6)}`),
-              name: meData.full_name || meData.username || rawInput,
-              email: meData.email || rawInput,
-              role: userRole,
-              token,
-              avatarInitials: initials,
-              memberSince: 'September 2026',
-              craftType: meData.craft_type,
-              bio: meData.bio,
-            };
-            onLogin(loggedUser);
-            setIsLoading(false);
-            onClose();
-            return;
-          }
-        } else {
-          // Client fallback for development / offline credentials
-          if (rawInput.toLowerCase().includes('admin')) {
-            userRole = 'admin';
-          } else if (rawInput.toLowerCase().includes('artisan') || rawInput.toLowerCase().includes('ansari')) {
-            userRole = 'artisan';
-          } else {
-            userRole = 'buyer';
-          }
+        let res: Response | null = null;
+        try {
+          res = await fetch(`${API_BASE_URL}/auth/token/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: usernameAttempt,
+              email: rawInput.includes('@') ? rawInput : '',
+              password,
+            }),
+          });
+        } catch {
+          setError("Couldn't connect to the server — make sure the backend is running");
+          setIsLoading(false);
+          return;
         }
 
-        const initials = rawInput.slice(0, 2).toUpperCase();
-        const loggedUser: User = {
-          id: `usr-${Date.now().toString().slice(-6)}`,
-          name: rawInput.split('@')[0] || 'Craft Patron',
-          email: rawInput,
-          role: userRole,
-          token,
-          avatarInitials: initials,
-          memberSince: 'September 2026',
-        };
+        if (!res.ok) {
+          setError("Invalid credentials or server error. Make sure the backend is running.");
+          setIsLoading(false);
+          return;
+        }
 
-        onLogin(loggedUser);
-        setIsLoading(false);
-        onClose();
-      } else {
-        // Signup
-        const res = await fetch('/api/auth/register/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: email.split('@')[0],
-            email,
-            password,
-            name,
-            role,
-            craft_type: craftSpecialty,
-            bio: studioName ? `Studio: ${studioName}` : '',
-          }),
+        const data = await res.json();
+        const token = data.access;
+        const refreshToken = data.refresh;
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('refresh_token', refreshToken);
+        localStorage.setItem('kaarigar_access_token', token);
+
+        const meRes = await fetch(`${API_BASE_URL}/auth/me/`, {
+          headers: { Authorization: `Bearer ${token}` },
         }).catch(() => null);
 
-        let token = '';
-        if (res && res.ok) {
-          const data = await res.json();
-          token = data.access_token || data.token || '';
-          if (token) localStorage.setItem('access_token', token);
+        if (meRes && meRes.ok) {
+          const meData = await meRes.json();
+          const userRole = meData.role || 'buyer';
+          const initials = (meData.first_name || meData.username || rawInput).slice(0, 2).toUpperCase();
+          const loggedUser: User = {
+            id: String(meData.id || `usr-${Date.now().toString().slice(-6)}`),
+            name: meData.full_name || meData.username || rawInput,
+            email: meData.email || rawInput,
+            role: userRole,
+            token,
+            refreshToken,
+            avatarInitials: initials,
+            memberSince: 'September 2026',
+            craftType: meData.craft_type,
+            bio: meData.bio,
+          };
+          onLogin(loggedUser);
+          setIsLoading(false);
+          onClose();
+          return;
+        }
+
+        setError("Couldn't connect to the server — make sure the backend is running");
+      } else {
+        // Real Signup POST to /api/auth/register/
+        let res: Response | null = null;
+        try {
+          res = await fetch(`${API_BASE_URL}/auth/register/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: email.split('@')[0],
+              email: email.trim(),
+              password,
+              name: name.trim(),
+              role,
+              craft_type: role === 'artisan' ? craftSpecialty : undefined,
+              bio: role === 'artisan' && studioName ? `Studio: ${studioName}` : undefined,
+            }),
+          });
+        } catch {
+          setError("Couldn't connect to the server — make sure the backend is running");
+          setIsLoading(false);
+          return;
+        }
+
+        if (!res.ok) {
+          let errText = "Couldn't connect to the server — make sure the backend is running";
+          try {
+            const errJson = await res.json();
+            if (errJson && typeof errJson === 'object') {
+              const messages = Object.entries(errJson)
+                .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                .join(' | ');
+              if (messages) errText = messages;
+            }
+          } catch { }
+          setError(errText);
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        const token = data.access || '';
+        const refreshToken = data.refresh || '';
+
+        if (token) {
+          localStorage.setItem('access_token', token);
+          localStorage.setItem('refresh_token', refreshToken);
+          localStorage.setItem('kaarigar_access_token', token);
+        }
+
+        // Immediately fetch /api/auth/me/ with access token to populate logged-in user profile
+        let meData: any = null;
+        if (token) {
+          const meRes = await fetch(`${API_BASE_URL}/auth/me/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => null);
+          if (meRes && meRes.ok) {
+            meData = await meRes.json();
+          }
         }
 
         const initials = name
@@ -307,21 +338,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         const isArtisan = role === 'artisan';
         const registeredUser: User = {
-          id: `usr-${Date.now().toString().slice(-6)}`,
-          name: name || (email.split('@')[0] ?? 'Patron'),
+          id: String(meData?.id || data.user?.id || `usr-${Date.now().toString().slice(-6)}`),
+          name: meData?.full_name || name || (email.split('@')[0] ?? 'Patron'),
           legalName: isArtisan ? name : undefined,
           businessName: isArtisan ? studioName : undefined,
-          email,
-          role,
-          craftType: craftSpecialty,
+          email: meData?.email || email,
+          role: meData?.role || role,
+          craftType: meData?.craft_type || craftSpecialty,
+          bio: meData?.bio || (studioName ? `Studio: ${studioName}` : undefined),
           avatarInitials: initials || 'CP',
           memberSince: 'September 2026',
           profileCompleted: isArtisan ? false : true,
           token,
+          refreshToken,
           shippingAddress: {
             street: '120 Market Street, Suite 300',
-            city: 'Pune',
-            state: 'Maharashtra',
+            city: meData?.city || 'Pune',
+            state: meData?.state || 'Maharashtra',
             zip: '411001',
             country: 'India',
           },
@@ -331,7 +364,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please try again.');
+      setError(err.message || "Couldn't connect to the server — make sure the backend is running");
     } finally {
       setIsLoading(false);
     }
@@ -352,24 +385,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             id="btn-close-auth-modal"
             onClick={onClose}
             className="absolute top-3.5 right-3.5 text-white/80 hover:text-white transition-colors cursor-pointer"
-            aria-label="Close modal"
+            aria-label={t('closeModal', 'Close modal')}
           >
             <X className="w-5 h-5" />
           </button>
           <div className="text-[10px] uppercase font-bold tracking-widest text-[#FFE500]">
-            Craftify Authentication & RBAC
-          </div>
+            {t('craftifyAuthenticationRbac', 'Craftify Authentication & RBAC')}</div>
           <h2 className="text-xl font-bold text-white mt-0.5">
             {currentUser
-              ? 'My Profile'
+              ? t('myProfile', 'My Profile')
               : mode === 'login'
-              ? 'Login to Your Account'
-              : 'Sign Up with Craftify'}
+              ? t('loginToYourAccount', 'Login to Your Account')
+              : t('signUpWithCraftify', 'Sign Up with Craftify')}
           </h2>
           <p className="text-xs text-white/90 mt-0.5">
             {mode === 'login'
-              ? 'Access your orders, backed campaigns, and saved wishlist.'
-              : 'Register as a Craft Patron to back campaigns or an Artisan to launch projects.'}
+              ? t('accessYourOrdersBackedCampaignsAndS', 'Access your orders, backed campaigns, and saved wishlist.')
+              : t('registerAsACraftPatronToBackCampaig', 'Register as a Craft Patron to back campaigns or an Artisan to launch projects.')}
           </p>
         </div>
 
@@ -392,10 +424,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>
                       {currentUser.role === 'admin'
-                        ? 'Platform Administrator'
+                        ? t('platformAdministrator', 'Platform Administrator')
                         : currentUser.role === 'artisan'
-                        ? 'Verified Master Artisan'
-                        : 'Verified Craft Patron'}
+                        ? t('verifiedMasterArtisan', 'Verified Master Artisan')
+                        : t('verifiedCraftPatron', 'Verified Craft Patron')}
                     </span>
                   </div>
                 </div>
@@ -406,8 +438,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   onClick={onClose}
                   className="flex-1 py-2.5 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer shadow-xs"
                 >
-                  Continue to App
-                </button>
+                  {t('continueToApp', 'Continue to App')}</button>
                 <button
                   onClick={() => {
                     onLogout();
@@ -415,8 +446,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   }}
                   className="px-4 py-2.5 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#212121] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer"
                 >
-                  Sign Out
-                </button>
+                  {t('signOut', 'Sign Out')}</button>
               </div>
             </div>
           ) : (
@@ -431,12 +461,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   }}
                   className={`flex-1 py-1.5 rounded-[2px] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer ${
                     mode === 'login'
-                      ? 'bg-[#FFFFFF] text-[#2874F0] shadow-xs'
-                      : 'text-[#878787] hover:text-[#212121]'
+                      ? t('bgFfffffText2874f0ShadowXs', 'bg-[#FFFFFF] text-[#2874F0] shadow-xs')
+                      : t('text878787HoverText212121', 'text-[#878787] hover:text-[#212121]')
                   }`}
                 >
-                  Sign In
-                </button>
+                  {t('signIn', 'Sign In')}</button>
                 <button
                   type="button"
                   onClick={() => {
@@ -445,12 +474,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   }}
                   className={`flex-1 py-1.5 rounded-[2px] text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer ${
                     mode === 'signup'
-                      ? 'bg-[#FFFFFF] text-[#2874F0] shadow-xs'
-                      : 'text-[#878787] hover:text-[#212121]'
+                      ? t('bgFfffffText2874f0ShadowXs', 'bg-[#FFFFFF] text-[#2874F0] shadow-xs')
+                      : t('text878787HoverText212121', 'text-[#878787] hover:text-[#212121]')
                   }`}
                 >
-                  Sign Up
-                </button>
+                  {t('signUp', 'Sign Up')}</button>
               </div>
 
               {error && (
@@ -465,8 +493,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <>
                     <div>
                       <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        Full Name
-                      </label>
+                        {t('fullName', 'Full Name')}</label>
                       <div className="relative">
                         <UserIcon className="w-4 h-4 text-[#878787] absolute left-3 top-2.5 z-10" />
                         <SmartInput
@@ -475,7 +502,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           onValueChange={(val) => setName(val)}
-                          placeholder="e.g., Priya Sharma"
+                          placeholder={t('eGPriyaSharma', 'e.g., Priya Sharma')}
                           className="w-full pl-9 pr-3 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                         />
                       </div>
@@ -484,7 +511,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {/* Role Picker: Strictly Buyer or Artisan ONLY */}
                     <div>
                       <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        Select Account Type <span className="text-[#878787] font-normal lowercase">(Admin accounts are restricted)</span>
+                        {t('selectAccountType', 'Select Account Type')}<span className="text-[#878787] font-normal lowercase">{t('adminAccountsAreRestricted', '(Admin accounts are restricted)')}</span>
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         <button
@@ -492,15 +519,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           onClick={() => setRole('buyer')}
                           className={`p-2.5 rounded-[2px] border text-left text-xs transition-colors cursor-pointer ${
                             role === 'buyer'
-                              ? 'border-[#2874F0] bg-[#EBF2FE]'
-                              : 'border-[#D5D5D5] bg-[#FFFFFF] text-[#878787]'
+                              ? t('border2874f0BgEbf2fe', 'border-[#2874F0] bg-[#EBF2FE]')
+                              : t('borderD5d5d5BgFfffffText878787', 'border-[#D5D5D5] bg-[#FFFFFF] text-[#878787]')
                           }`}
                         >
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <ShoppingBag className={`w-3.5 h-3.5 ${role === 'buyer' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                            <span className={`block font-bold ${role === 'buyer' ? 'text-[#2874F0]' : 'text-[#212121]'}`}>Buyer / Patron</span>
+                            <span className={`block font-bold ${role === 'buyer' ? 'text-[#2874F0]' : 'text-[#212121]'}`}>{t('buyerPatron', 'Buyer / Patron')}</span>
                           </div>
-                          <span className="text-[10px] text-[#878787] block">Pledge, buy & track deliveries</span>
+                          <span className="text-[10px] text-[#878787] block">{t('pledgeBuyTrackDeliveries', 'Pledge, buy & track deliveries')}</span>
                         </button>
 
                         <button
@@ -508,15 +535,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           onClick={() => setRole('artisan')}
                           className={`p-2.5 rounded-[2px] border text-left text-xs transition-colors cursor-pointer ${
                             role === 'artisan'
-                              ? 'border-[#FB641B] bg-[#FFF3EC]'
-                              : 'border-[#D5D5D5] bg-[#FFFFFF] text-[#878787]'
+                              ? t('borderFb641bBgFff3ec', 'border-[#FB641B] bg-[#FFF3EC]')
+                              : t('borderD5d5d5BgFfffffText878787', 'border-[#D5D5D5] bg-[#FFFFFF] text-[#878787]')
                           }`}
                         >
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <Hammer className={`w-3.5 h-3.5 ${role === 'artisan' ? 'text-[#FB641B]' : 'text-[#878787]'}`} />
-                            <span className={`block font-bold ${role === 'artisan' ? 'text-[#FB641B]' : 'text-[#212121]'}`}>Artisan / Maker</span>
+                            <span className={`block font-bold ${role === 'artisan' ? 'text-[#FB641B]' : 'text-[#212121]'}`}>{t('artisanMaker', 'Artisan / Maker')}</span>
                           </div>
-                          <span className="text-[10px] text-[#878787] block">Launch campaigns & sell crafts</span>
+                          <span className="text-[10px] text-[#878787] block">{t('launchCampaignsSellCrafts', 'Launch campaigns & sell crafts')}</span>
                         </button>
                       </div>
                     </div>
@@ -526,35 +553,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       <div className="p-3 bg-[#FFFBF7] rounded-[2px] border border-[#FB641B]/20 space-y-2.5">
                         <div className="text-[11px] font-bold text-[#FB641B] uppercase tracking-wider flex items-center gap-1">
                           <Hammer className="w-3 h-3" />
-                          <span>Artisan Profile Details</span>
+                          <span>{t('artisanProfileDetails', 'Artisan Profile Details')}</span>
                         </div>
 
                         <div>
                           <label className="block text-[10px] uppercase font-bold text-[#555] mb-0.5">
-                            Craft Specialty *
-                          </label>
+                            {t('craftSpecialty', 'Craft Specialty *')}</label>
                           <SmartInput
                             type="text"
                             required={role === 'artisan'}
                             value={craftSpecialty}
                             onChange={(e) => setCraftSpecialty(e.target.value)}
                             onValueChange={(val) => setCraftSpecialty(val)}
-                            placeholder='e.g., "Woodworking", "Pottery", "Textiles"'
+                            placeholder={t('eGWoodworkingPotteryTextiles', 'e.g., "Woodworking", "Pottery", "Textiles"')}
                             className="w-full px-2.5 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#FB641B]"
                           />
                         </div>
 
                         <div>
                           <label className="block text-[10px] uppercase font-bold text-[#555] mb-0.5">
-                            Workshop / Studio Name *
-                          </label>
+                            {t('workshopStudioName', 'Workshop / Studio Name *')}</label>
                           <SmartInput
                             type="text"
                             required={role === 'artisan'}
                             value={studioName}
                             onChange={(e) => setStudioName(e.target.value)}
                             onValueChange={(val) => setStudioName(val)}
-                            placeholder='e.g., "Atelier Monolith" or "Channapatna Craft Collective"'
+                            placeholder={t('eGAtelierMonolithOrChannapatnaCraft', 'e.g., "Atelier Monolith" or "Channapatna Craft Collective"')}
                             className="w-full px-2.5 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#FB641B]"
                           />
                         </div>
@@ -565,8 +590,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <div>
                   <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Email Address
-                  </label>
+                    {t('emailAddress', 'Email Address')}</label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-[#878787] absolute left-3 top-2.5 z-10" />
                     <SmartInput
@@ -575,7 +599,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onValueChange={(val) => setEmail(val)}
-                      placeholder="name@example.com"
+                      placeholder={t('nameExampleCom', 'name@example.com')}
                       className="w-full pl-9 pr-3 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                     />
                   </div>
@@ -583,8 +607,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <div>
                   <label className="block text-[11px] uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    Password
-                  </label>
+                    {t('password', 'Password')}</label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-[#878787] absolute left-3 top-2.5" />
                     <input
@@ -604,7 +627,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     disabled={isLoading}
                     className="w-full py-2.5 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] disabled:opacity-50 text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                   >
-                    <span>{isLoading ? 'Processing...' : mode === 'login' ? 'Continue' : 'Create Account'}</span>
+                    <span>{isLoading ? t('processing', 'Processing...') : mode === 'login' ? t('continue', 'Continue') : t('createAccount', 'Create Account')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -613,7 +636,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {/* Quick Demo Identities for role-based testing */}
               <div className="mt-4 pt-3 border-t border-[#F0F0F0]">
                 <div className="text-[10px] uppercase font-bold tracking-widest text-[#878787] mb-1 flex items-center justify-between">
-                  <span>Quick Demo Login (Password: Demo@1234):</span>
+                  <span>{t('quickDemoLoginPasswordDemo1234', 'Quick Demo Login (Password: Demo@1234):')}</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-1.5">
                   <button
@@ -621,36 +644,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onClick={() => handleDemoLogin('buyer')}
                     className="py-1.5 px-2 rounded-[2px] border border-[#D5D5D5] bg-[#F1F3F6] hover:bg-[#E8ECF2] text-left text-[11px] text-[#212121] truncate cursor-pointer transition-colors"
                   >
-                    <span className="font-bold block text-[#2874F0]">Buyer</span>
-                    <span className="text-[9px] text-[#878787] truncate block">arjun_mehta</span>
+                    <span className="font-bold block text-[#2874F0]">{t('buyer', 'Buyer')}</span>
+                    <span className="text-[9px] text-[#878787] truncate block">{t('arjunMehta', 'arjun_mehta')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDemoLogin('potter')}
                     className="py-1.5 px-2 rounded-[2px] border border-[#D5D5D5] bg-[#F1F3F6] hover:bg-[#E8ECF2] text-left text-[11px] text-[#212121] truncate cursor-pointer transition-colors"
                   >
-                    <span className="font-bold block text-[#FB641B]">Artisan (Potter)</span>
-                    <span className="text-[9px] text-[#878787] truncate block">ramesh_potter</span>
+                    <span className="font-bold block text-[#FB641B]">{t('artisanPotter', 'Artisan (Potter)')}</span>
+                    <span className="text-[9px] text-[#878787] truncate block">{t('rameshPotter', 'ramesh_potter')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDemoLogin('artisan')}
                     className="py-1.5 px-2 rounded-[2px] border border-[#D5D5D5] bg-[#F1F3F6] hover:bg-[#E8ECF2] text-left text-[11px] text-[#212121] truncate cursor-pointer transition-colors"
                   >
-                    <span className="font-bold block text-[#FB641B]">Artisan (Weaver)</span>
-                    <span className="text-[9px] text-[#878787] truncate block">ansari_weaver</span>
+                    <span className="font-bold block text-[#FB641B]">{t('artisanWeaver', 'Artisan (Weaver)')}</span>
+                    <span className="text-[9px] text-[#878787] truncate block">{t('ansariWeaver', 'ansari_weaver')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDemoLogin('admin')}
                     className="py-1.5 px-2 rounded-[2px] border border-[#D5D5D5] bg-[#F1F3F6] hover:bg-[#EAE8FE] text-left text-[11px] text-[#212121] truncate cursor-pointer transition-colors"
                   >
-                    <span className="font-bold block text-[#5E35B1]">Admin</span>
-                    <span className="text-[9px] text-[#878787] truncate block">admin</span>
+                    <span className="font-bold block text-[#5E35B1]">{t('admin', 'Admin')}</span>
+                    <span className="text-[9px] text-[#878787] truncate block">{t('admin', 'admin')}</span>
                   </button>
                 </div>
                 <p className="text-[9px] text-[#878787] text-center">
-                  Or enter any seeded username (e.g. <code>admin</code>, <code>ansari_weaver</code>, <code>ramesh_chitrakar</code>) with <code>Demo@1234</code>.
+                  {t('orEnterAnySeededUsernameEG', 'Or enter any seeded username (e.g.')}<code>{t('admin', 'admin')}</code>, <code>{t('ansariWeaver', 'ansari_weaver')}</code>, <code>{t('rameshChitrakar', 'ramesh_chitrakar')}</code>{t('with', ') with')}<code>{t('demo1234', 'Demo@1234')}</code>.
                 </p>
               </div>
             </>

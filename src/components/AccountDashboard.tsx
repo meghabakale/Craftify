@@ -61,7 +61,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
   onAdvanceStatus,
   initialTab,
 }) => {
-  const { t } = useLanguage();
+  const { t, localizeProduct, localizeCampaign, localizeOrder, localizePledge } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pledges' | 'orders' | 'wishlist' | 'shipping' | 'creator'>(initialTab || 'pledges');
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [street, setStreet] = useState(user.shippingAddress?.street ?? '');
@@ -124,19 +124,19 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                 <span
                   className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-[2px] border ${
                     user.role === 'creator'
-                      ? 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0]'
-                      : 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/20'
+                      ? t('bg2874f0TextFfffffBorder2874f0', 'bg-[#2874F0] text-[#FFFFFF] border-[#2874F0]')
+                      : t('bgEaf8ebText388e3cBorder388e3c20', 'bg-[#EAF8EB] text-[#388E3C] border-[#388E3C]/20')
                   }`}
                 >
-                  {user.role === 'creator' ? 'Verified Artisan' : 'Active Patron'}
+                  {user.role === 'creator' ? t('verifiedArtisan', 'Verified Artisan') : t('activePatron', 'Active Patron')}
                 </span>
               </div>
               <div className="text-xs text-[#878787] mt-1 flex flex-wrap items-center gap-2">
                 <span>{user.email}</span>
                 <span>•</span>
-                <span>Member since {user.memberSince}</span>
+                <span>{t('memberSince', 'Member since')}{user.memberSince}</span>
                 <span>•</span>
-                <span className="text-[#388E3C] font-semibold">ID: {user.id}</span>
+                <span className="text-[#388E3C] font-semibold">{t('id', 'ID:')}{user.id}</span>
               </div>
             </div>
           </div>
@@ -152,7 +152,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
               className="px-3 py-1.5 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] bg-[#FFFFFF] text-xs uppercase tracking-wider font-bold text-[#2874F0] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Switch to {user.role === 'backer' ? 'Creator' : 'Backer'} Mode</span>
+              <span>{t('switchTo', 'Switch to')}{user.role === 'backer' ? t('creator', 'Creator') : t('backer', 'Backer')} {t('mode', 'Mode')}</span>
             </button>
 
             <button
@@ -169,26 +169,22 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 pt-4">
           <div className="p-3 rounded-[4px] bg-[#F1F3F6] border border-[#EAEAEA]">
             <div className="text-[11px] text-[#878787] uppercase font-bold">
-              Pending Holds
-            </div>
+              {t('pendingHolds', 'Pending Holds')}</div>
             <div className="text-lg font-bold text-[#2874F0] mt-0.5">
               {formatINR(totalAuthorized)}
             </div>
             <div className="text-[10px] text-[#878787] mt-0.5">
-              ₹0 billed until goals reached
-            </div>
+              {t('key_0BilledUntilGoalsReached', '₹0 billed until goals reached')}</div>
           </div>
 
           <div className="p-3 rounded-[4px] bg-[#F1F3F6] border border-[#EAEAEA]">
             <div className="text-[11px] text-[#878787] uppercase font-bold">
-              Captured / Funded
-            </div>
+              {t('capturedFunded', 'Captured / Funded')}</div>
             <div className="text-lg font-bold text-[#388E3C] mt-0.5">
               {formatINR(totalCaptured)}
             </div>
             <div className="text-[10px] text-[#878787] mt-0.5">
-              {pledges.filter((p) => p.status === 'captured').length} campaigns in make
-            </div>
+              {pledges.filter((p) => p.status === 'captured').length} {t('campaignsInMake', 'campaigns in make')}</div>
           </div>
 
           <div className="p-3 rounded-[4px] bg-[#F1F3F6] border border-[#EAEAEA]">
@@ -199,8 +195,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
               {orders.length} {t('items')}
             </div>
             <div className="text-[10px] text-[#878787] mt-0.5">
-              Express Courier
-            </div>
+              {t('expressCourier', 'Express Courier')}</div>
           </div>
 
           <div
@@ -212,24 +207,21 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
               <Heart className="w-3.5 h-3.5 text-[#FB641B] fill-[#FB641B] group-hover:scale-110 transition-transform" />
             </div>
             <div className="text-lg font-bold text-[#FB641B] mt-0.5">
-              {wishlistProducts.length} {wishlistProducts.length === 1 ? 'Item' : 'Items'}
+              {wishlistProducts.length} {wishlistProducts.length === 1 ? t('item', 'Item') : t('items', 'Items')}
             </div>
             <div className="text-[10px] text-[#FB641B] mt-0.5">
-              View saved items →
-            </div>
+              {t('viewSavedItems', 'View saved items →')}</div>
           </div>
 
           <div className="p-3 rounded-[4px] bg-[#F1F3F6] border border-[#EAEAEA]">
             <div className="text-[11px] text-[#878787] uppercase font-bold">
-              Artisan Trust
-            </div>
+              {t('artisanTrust', 'Artisan Trust')}</div>
             <div className="text-sm font-bold text-[#388E3C] mt-1 flex items-center gap-1">
               <Shield className="w-3.5 h-3.5 text-[#388E3C]" />
               {t('escrowProtected')}
             </div>
             <div className="text-[10px] text-[#388E3C] mt-0.5">
-              Strict money-back covenant
-            </div>
+              {t('strictMoneyBackCovenant', 'Strict money-back covenant')}</div>
           </div>
         </div>
       </div>
@@ -240,8 +232,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           onClick={() => setActiveTab('pledges')}
           className={`px-4 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
             activeTab === 'pledges'
-              ? 'border-[#2874F0] text-[#2874F0]'
-              : 'border-transparent text-[#878787] hover:text-[#212121]'
+              ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+              : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
           }`}
         >
           {t('myPledges')} ({pledges.length})
@@ -252,8 +244,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           onClick={() => setActiveTab('orders')}
           className={`px-4 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
             activeTab === 'orders'
-              ? 'border-[#2874F0] text-[#2874F0]'
-              : 'border-transparent text-[#878787] hover:text-[#212121]'
+              ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+              : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
           }`}
         >
           {t('myOrders')} ({orders.length})
@@ -264,11 +256,11 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           onClick={() => setActiveTab('wishlist')}
           className={`px-4 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'wishlist'
-              ? 'border-[#2874F0] text-[#2874F0]'
-              : 'border-transparent text-[#878787] hover:text-[#212121]'
+              ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+              : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
           }`}
         >
-          <Heart className={`w-3.5 h-3.5 ${activeTab === 'wishlist' ? 'fill-[#2874F0] text-[#2874F0]' : 'text-current'}`} />
+          <Heart className={`w-3.5 h-3.5 ${activeTab === 'wishlist' ? t('fill2874f0Text2874f0', 'fill-[#2874F0] text-[#2874F0]') : 'text-current'}`} />
           <span>{t('wishlist')} ({wishlistProducts.length})</span>
         </button>
 
@@ -276,8 +268,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           onClick={() => setActiveTab('shipping')}
           className={`px-4 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] cursor-pointer ${
             activeTab === 'shipping'
-              ? 'border-[#2874F0] text-[#2874F0]'
-              : 'border-transparent text-[#878787] hover:text-[#212121]'
+              ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+              : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
           }`}
         >
           {t('deliveryAddress')}
@@ -287,8 +279,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           onClick={() => setActiveTab('creator')}
           className={`px-4 py-3 text-xs uppercase tracking-wider font-bold whitespace-nowrap transition-colors border-b-2 -mb-[1px] flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'creator'
-              ? 'border-[#2874F0] text-[#2874F0]'
-              : 'border-transparent text-[#878787] hover:text-[#212121]'
+              ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+              : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 text-[#FB641B]" />
@@ -302,38 +294,33 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-[#212121]">
-                Active Campaign Pledges
-              </h2>
+                {t('activeCampaignPledges', 'Active Campaign Pledges')}</h2>
               <p className="text-xs text-[#878787] mt-0.5">
-                Authorizations are captured only when the artisan meets 100% of the project target.
-              </p>
+                {t('authorizationsAreCapturedOnlyWhenTh', 'Authorizations are captured only when the artisan meets 100% of the project target.')}</p>
             </div>
             <button
               onClick={() => onNavigate('campaigns')}
               className="text-xs text-[#2874F0] hover:underline uppercase tracking-wider font-bold cursor-pointer"
             >
-              Browse more campaigns →
-            </button>
+              {t('browseMoreCampaigns', 'Browse more campaigns →')}</button>
           </div>
 
           {pledges.length === 0 ? (
             <div className="p-8 text-center bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs">
               <p className="text-base font-bold text-[#212121] mb-1">
-                No active pledges in your ledger
-              </p>
+                {t('noActivePledgesInYourLedger', 'No active pledges in your ledger')}</p>
               <p className="text-xs text-[#878787] mb-4">
-                Back an upcoming artisan project to receive verified production batch goods.
-              </p>
+                {t('backAnUpcomingArtisanProjectToRecei', 'Back an upcoming artisan project to receive verified production batch goods.')}</p>
               <button
                 onClick={() => onNavigate('campaigns')}
                 className="px-5 py-2 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold cursor-pointer shadow-xs hover:bg-[#1C5FD0] transition-colors"
               >
-                Discover Campaigns
-              </button>
+                {t('discoverCampaigns', 'Discover Campaigns')}</button>
             </div>
           ) : (
             <div className="space-y-3">
-              {pledges.map((p) => {
+              {pledges.map((rawP) => {
+                const p = localizePledge(rawP);
                 const targetCampaign = campaigns.find((c) => c.id === p.campaignId);
                 const isCaptured = p.status === 'captured';
 
@@ -350,13 +337,11 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                         {isCaptured ? (
                           <span className="text-xs font-semibold text-[#388E3C] flex items-center gap-1 bg-[#EAF8EB] px-2 py-0.5 rounded-[2px] border border-[#388E3C]/20">
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            Goal Reached • Escrow Captured
-                          </span>
+                            {t('goalReachedEscrowCaptured', 'Goal Reached • Escrow Captured')}</span>
                         ) : (
                           <span className="text-xs font-semibold text-[#2874F0] flex items-center gap-1 bg-[#F1F3F6] px-2 py-0.5 rounded-[2px] border border-[#2874F0]/20">
                             <Clock className="w-3.5 h-3.5" />
-                            Authorized Hold • ₹0 Billed
-                          </span>
+                            {t('authorizedHold0Billed', 'Authorized Hold • ₹0 Billed')}</span>
                         )}
                       </div>
 
@@ -367,16 +352,16 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                       <div className="text-xs text-[#878787] flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-[#212121]">{p.tierTitle}</span>
                         <span>•</span>
-                        <span>Authorized on {p.dateAuthorized}</span>
+                        <span>{t('authorizedOn', 'Authorized on')}{p.dateAuthorized}</span>
                         <span>•</span>
-                        <span>Est. Delivery: {p.estimatedDelivery}</span>
+                        <span>{t('estDelivery', 'Est. Delivery:')}{p.estimatedDelivery}</span>
                       </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row md:flex-col items-start md:items-end justify-between gap-2 border-t md:border-t-0 border-[#F0F0F0] pt-2 md:pt-0">
                       <div className="text-right">
                         <span className="text-[11px] text-[#878787] uppercase block">
-                          {isCaptured ? 'Captured Total' : 'Authorized Hold'}
+                          {isCaptured ? t('capturedTotal', 'Captured Total') : t('authorizedHold', 'Authorized Hold')}
                         </span>
                         <span className="text-xl font-bold text-[#212121]">
                           {formatINR(p.amount)}
@@ -388,7 +373,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                           onClick={() => onOpenCampaignDetail(targetCampaign)}
                           className="px-3 py-1 rounded-[2px] border border-[#D5D5D5] hover:border-[#2874F0] hover:text-[#2874F0] text-xs uppercase tracking-wider font-bold transition-colors flex items-center gap-1 cursor-pointer"
                         >
-                          <span>View Campaign</span>
+                          <span>{t('viewCampaign', 'View Campaign')}</span>
                           <ExternalLink className="w-3 h-3" />
                         </button>
                       )}
@@ -407,18 +392,16 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-bold text-[#212121]">
-                Marketplace Store Orders
-              </h2>
+                {t('marketplaceStoreOrders', 'Marketplace Store Orders')}</h2>
               <p className="text-xs text-[#878787] mt-0.5">
-                Authentic craft shipments dispatched with insured logistics from master artisan studios.
-              </p>
+                {t('authenticCraftShipmentsDispatchedWi', 'Authentic craft shipments dispatched with insured logistics from master artisan studios.')}</p>
             </div>
 
             <button
               onClick={() => onNavigate('my-orders')}
               className="text-xs text-[#2874F0] font-bold hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
             >
-              <span>View Full Orders Hub</span>
+              <span>{t('viewFullOrdersHub', 'View Full Orders Hub')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -426,20 +409,19 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           {orders.length === 0 ? (
             <div className="p-8 text-center bg-[#FFFFFF] border border-[#EAEAEA] rounded-[4px] shadow-xs">
               <Package className="w-10 h-10 text-[#878787]/40 mx-auto mb-2" />
-              <p className="text-sm font-bold text-[#212121]">No past orders yet</p>
+              <p className="text-sm font-bold text-[#212121]">{t('noPastOrdersYet', 'No past orders yet')}</p>
               <p className="text-xs text-[#878787] mt-1 mb-3">
-                Explore handpicked creations crafted across India's premier artisan heritage clusters.
-              </p>
+                {t('exploreHandpickedCreationsCraftedAc', 'Explore handpicked creations crafted across India\'s premier artisan heritage clusters.')}</p>
               <button
                 onClick={() => onNavigate('shop')}
                 className="px-4 py-2 bg-[#2874F0] text-white text-xs uppercase font-bold rounded-[2px] cursor-pointer"
               >
-                Browse Shop
-              </button>
+                {t('browseShop', 'Browse Shop')}</button>
             </div>
           ) : (
             <div className="space-y-3">
-              {orders.map((order) => {
+              {orders.map((rawOrder) => {
+                const order = localizeOrder(rawOrder);
                 const isDelivered = order.status === 'delivered';
                 return (
                   <div
@@ -451,15 +433,15 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#F0F0F0] gap-2 text-xs">
                       <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                         <div>
-                          <span className="text-[#878787] text-[11px] block">ORDER ID</span>
+                          <span className="text-[#878787] text-[11px] block">{t('orderId', 'ORDER ID')}</span>
                           <span className="font-bold font-mono text-[#212121]">{order.id}</span>
                         </div>
                         <div>
-                          <span className="text-[#878787] text-[11px] block">DATE</span>
+                          <span className="text-[#878787] text-[11px] block">{t('date', 'DATE')}</span>
                           <span className="font-semibold text-[#212121]">{order.orderDate}</span>
                         </div>
                         <div>
-                          <span className="text-[#878787] text-[11px] block">TOTAL</span>
+                          <span className="text-[#878787] text-[11px] block">{t('total', 'TOTAL')}</span>
                           <span className="font-bold text-[#388E3C]">{formatINR(order.total)}</span>
                         </div>
                       </div>
@@ -468,8 +450,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                         <span
                           className={`text-xs px-2.5 py-0.5 rounded-[2px] font-bold uppercase tracking-wider ${
                             isDelivered
-                              ? 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/20'
-                              : 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/20'
+                              ? t('bgEaf8ebText388e3cBorderBorder388e3', 'bg-[#EAF8EB] text-[#388E3C] border border-[#388E3C]/20')
+                              : t('bgEbf2feText2874f0BorderBorder2874f', 'bg-[#EBF2FE] text-[#2874F0] border border-[#2874F0]/20')
                           }`}
                         >
                           {STAGE_DISPLAY_LABELS[order.status]}
@@ -478,11 +460,11 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                         {onAdvanceStatus && (
                           <button
                             onClick={() => onAdvanceStatus(order.id)}
-                            title="Simulate advancing to next stage"
+                            title={t('simulateAdvancingToNextStage', 'Simulate advancing to next stage')}
                             className="hidden sm:flex items-center gap-1 text-[10px] text-[#878787] hover:text-[#2874F0] p-1 rounded hover:bg-[#EBF2FE] cursor-pointer"
                           >
                             <PlayCircle className="w-3 h-3" />
-                            <span>Simulate</span>
+                            <span>{t('simulate', 'Simulate')}</span>
                           </button>
                         )}
                       </div>
@@ -506,12 +488,11 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                                 {item.title}
                               </h4>
                               <div className="text-xs text-[#878787]">
-                                Qty: <strong className="text-[#212121]">{item.quantity}</strong> × {formatINR(item.price)} • {item.artisanName || 'Artisan Guild'}
+                                {t('qty', 'Qty:')}<strong className="text-[#212121]">{item.quantity}</strong> × {formatINR(item.price)} • {item.artisanName || t('artisanGuild', 'Artisan Guild')}
                               </div>
                               {(item.isFundedOnCraftify ?? item.isFundedOnLaunchMart) && (
                                 <span className="inline-block text-[10px] text-[#B78103] font-bold bg-[#FFFBF0] px-1.5 py-0.2 rounded-[2px] border border-[#FFE8A3] mt-0.5">
-                                  Funded on Craftify
-                                </span>
+                                  {t('fundedOnCraftify', 'Funded on Craftify')}</span>
                               )}
                             </div>
                           </div>
@@ -527,7 +508,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                       <div className="text-[#878787] flex items-center gap-1.5">
                         <Truck className="w-3.5 h-3.5 text-[#2874F0]" />
                         <span>
-                          {order.carrierName} • Tracking #{order.trackingNumber} • {order.estimatedDeliveryRange}
+                          {order.carrierName} {t('tracking', '• Tracking #')}{order.trackingNumber} • {order.estimatedDeliveryRange}
                         </span>
                       </div>
 
@@ -538,7 +519,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                           className="px-4 py-2 bg-[#2874F0] hover:bg-[#1C5FD0] text-white text-xs uppercase font-bold rounded-[2px] flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                         >
                           <Truck className="w-3.5 h-3.5" />
-                          <span>Track Order</span>
+                          <span>{t('trackOrder', 'Track Order')}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       )}
@@ -559,15 +540,13 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
               <div className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-[#FB641B] fill-[#FB641B]" />
                 <h2 className="text-lg font-bold text-[#212121]">
-                  My Wishlist
-                </h2>
+                  {t('myWishlist', 'My Wishlist')}</h2>
                 <span className="text-xs font-bold px-2 py-0.5 rounded-[2px] bg-[#FFF3EC] text-[#FB641B] border border-[#FB641B]/20">
                   {wishlistProducts.length} {wishlistProducts.length === 1 ? 'item' : 'items'}
                 </span>
               </div>
               <p className="text-xs text-[#878787] mt-0.5">
-                Authentic handcrafted products saved to your profile for later.
-              </p>
+                {t('authenticHandcraftedProductsSavedTo', 'Authentic handcrafted products saved to your profile for later.')}</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -578,15 +557,14 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                   className="px-3 py-1.5 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Add All to Cart</span>
+                  <span>{t('addAllToCart', 'Add All to Cart')}</span>
                 </button>
               )}
               <button
                 onClick={() => onNavigate('shop')}
                 className="text-xs text-[#2874F0] hover:underline uppercase tracking-wider font-bold cursor-pointer"
               >
-                Browse Catalog →
-              </button>
+                {t('browseCatalog', 'Browse Catalog →')}</button>
             </div>
           </div>
 
@@ -596,23 +574,23 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                 <Heart className="w-6 h-6" />
               </div>
               <p className="text-base font-bold text-[#212121] mb-1">
-                Your wishlist is empty
-              </p>
+                {t('yourWishlistIsEmpty', 'Your wishlist is empty')}</p>
               <p className="text-xs text-[#878787] max-w-md mx-auto mb-4">
-                Explore our curated retail store and click the heart icon on any product to save it here.
-              </p>
+                {t('exploreOurCuratedRetailStoreAndClic', 'Explore our curated retail store and click the heart icon on any product to save it here.')}</p>
               <button
                 id="btn-empty-wishlist-shop"
                 onClick={() => onNavigate('shop')}
                 className="px-5 py-2 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold cursor-pointer shadow-xs hover:bg-[#1C5FD0] transition-colors inline-flex items-center gap-2"
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Explore Store</span>
+                <span>{t('exploreStore', 'Explore Store')}</span>
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {wishlistProducts.map((prod) => (
+              {wishlistProducts.map((rawProd) => {
+                const prod = localizeProduct(rawProd);
+                return (
                 <div
                   key={prod.id}
                   id={`wishlist-item-${prod.id}`}
@@ -634,8 +612,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                         <button
                           onClick={() => onToggleWishlist(prod)}
                           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white text-[#FB641B] border border-[#EAEAEA] shadow-xs flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
-                          title="Remove from Wishlist"
-                          aria-label="Remove from Wishlist"
+                          title={t('removeFromWishlist', 'Remove from Wishlist')}
+                          aria-label={t('removeFromWishlist', 'Remove from Wishlist')}
                         >
                           <Heart className="w-3.5 h-3.5 fill-[#FB641B]" />
                         </button>
@@ -646,7 +624,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                     <div className="p-3 space-y-1">
                       <div className="flex items-center justify-between text-[11px] text-[#878787]">
                         <span className="text-[#388E3C] font-semibold">{prod.category}</span>
-                        <span>{prod.stockCount} in stock</span>
+                        <span>{prod.stockCount} {t('inStock', 'in stock')}</span>
                       </div>
 
                       <h3
@@ -682,7 +660,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                         className="py-1.5 px-2 rounded-[2px] bg-[#FF9F00] hover:bg-[#F29500] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Add to Cart</span>
+                        <span>{t('addToCart', 'Add to Cart')}</span>
                       </button>
                     )}
 
@@ -690,12 +668,13 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                       onClick={() => onOpenProductDetail?.(prod)}
                       className="py-1.5 px-2 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#2874F0] text-xs uppercase tracking-wider font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      <span>View</span>
+                      <span>{t('view', 'View')}</span>
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
@@ -710,48 +689,46 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#2874F0]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[#212121]">
-                  Delivery Address
-                </h3>
+                  {t('deliveryAddress', 'Delivery Address')}</h3>
               </div>
               {!isEditingAddress && (
                 <button
                   onClick={() => setIsEditingAddress(true)}
                   className="text-xs text-[#2874F0] hover:underline uppercase tracking-wider font-bold cursor-pointer"
                 >
-                  Edit
-                </button>
+                  {t('edit', 'Edit')}</button>
               )}
             </div>
 
             {isEditingAddress ? (
               <form onSubmit={handleSaveAddress} className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-[#878787] uppercase font-bold mb-1">Street Address</label>
+                  <label className="block text-[#878787] uppercase font-bold mb-1">{t('streetAddress', 'Street Address')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                     onValueChange={(val) => setStreet(val)}
-                    placeholder="Street address / apartment"
+                    placeholder={t('streetAddressApartment', 'Street address / apartment')}
                     className="w-full px-3 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[#878787] uppercase font-bold mb-1">City</label>
+                    <label className="block text-[#878787] uppercase font-bold mb-1">{t('city', 'City')}</label>
                     <SmartInput
                       type="text"
                       required
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       onValueChange={(val) => setCity(val)}
-                      placeholder="City"
+                      placeholder={t('city', 'City')}
                       className="w-full px-3 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] focus:outline-none focus:border-[#2874F0]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[#878787] uppercase font-bold mb-1">State / Pincode</label>
+                    <label className="block text-[#878787] uppercase font-bold mb-1">{t('statePincode', 'State / Pincode')}</label>
                     <div className="flex gap-1">
                       <SmartInput
                         type="text"
@@ -759,7 +736,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                         value={stateCode}
                         onChange={(e) => setStateCode(e.target.value)}
                         onValueChange={(val) => setStateCode(val)}
-                        placeholder="State"
+                        placeholder={t('state', 'State')}
                         className="w-20 px-2 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] focus:outline-none focus:border-[#2874F0]"
                         containerClassName="w-24"
                       />
@@ -777,14 +754,14 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[#878787] uppercase font-bold mb-1">Country</label>
+                  <label className="block text-[#878787] uppercase font-bold mb-1">{t('country', 'Country')}</label>
                   <SmartInput
                     type="text"
                     required
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     onValueChange={(val) => setCountry(val)}
-                    placeholder="India"
+                    placeholder={t('india', 'India')}
                     className="w-full px-3 py-1.5 rounded-[2px] border border-[#D5D5D5] bg-[#FFFFFF] text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
                 </div>
@@ -794,15 +771,13 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                     type="submit"
                     className="px-4 py-1.5 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF] font-bold uppercase tracking-wider transition-colors cursor-pointer"
                   >
-                    Save Address
-                  </button>
+                    {t('saveAddress', 'Save Address')}</button>
                   <button
                     type="button"
                     onClick={() => setIsEditingAddress(false)}
                     className="px-3 py-1.5 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-[#212121] uppercase tracking-wider font-bold transition-colors cursor-pointer"
                   >
-                    Cancel
-                  </button>
+                    {t('cancel', 'Cancel')}</button>
                 </div>
               </form>
             ) : (
@@ -823,25 +798,23 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
             <div className="flex items-center gap-2 pb-2 border-b border-[#F0F0F0]">
               <CreditCard className="w-4 h-4 text-[#2874F0]" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-[#212121]">
-                Saved Payment Method
-              </h3>
+                {t('savedPaymentMethod', 'Saved Payment Method')}</h3>
             </div>
 
             <div className="p-4 rounded-[4px] bg-[#172337] text-[#FFFFFF] shadow-sm text-xs space-y-2.5">
               <div className="flex justify-between items-center text-[10px] text-[#FFFFFF]/70 uppercase tracking-widest">
-                <span>Craftify Patron Card</span>
-                <span className="text-[#388E3C] bg-[#EAF8EB] px-2 py-0.5 rounded-[2px] font-bold">Verified</span>
+                <span>{t('craftifyPatronCard', 'Craftify Patron Card')}</span>
+                <span className="text-[#388E3C] bg-[#EAF8EB] px-2 py-0.5 rounded-[2px] font-bold">{t('verified', 'Verified')}</span>
               </div>
               <div className="font-mono text-base tracking-widest text-[#FFFFFF]">•••• •••• •••• 4281</div>
               <div className="flex justify-between text-[11px] text-[#FFFFFF]/80">
                 <span>{user.name.toUpperCase()}</span>
-                <span>EXP 08/29</span>
+                <span>{t('exp0829', 'EXP 08/29')}</span>
               </div>
             </div>
 
             <p className="text-[11px] text-[#878787] leading-relaxed">
-              Backing authorizations are queued conditionally. If a pledged campaign does not reach 100% of target by deadline, holds are released with 0% penalty.
-            </p>
+              {t('backingAuthorizationsAreQueuedCondi', 'Backing authorizations are queued conditionally. If a pledged campaign does not reach 100% of target by deadline, holds are released with 0% penalty.')}</p>
           </div>
         </div>
       )}
@@ -852,11 +825,9 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-[#212121]">
-                Artisan Studio & Campaigns
-              </h2>
+                {t('artisanStudioCampaigns', 'Artisan Studio & Campaigns')}</h2>
               <p className="text-xs text-[#878787] mt-0.5">
-                Manage crowdfunding runs, track escrow backings, and graduate completed crafts to retail.
-              </p>
+                {t('manageCrowdfundingRunsTrackEscrowBa', 'Manage crowdfunding runs, track escrow backings, and graduate completed crafts to retail.')}</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -866,7 +837,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                 className="px-3.5 py-1.5 rounded-[2px] bg-[#2874F0] hover:bg-[#1C5FD0] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Open Creator Dashboard</span>
+                <span>{t('openCreatorDashboard', 'Open Creator Dashboard')}</span>
               </button>
 
               <button
@@ -874,7 +845,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                 className="px-3.5 py-1.5 rounded-[2px] border border-[#2874F0] bg-[#FFFFFF] hover:bg-[#F1F3F6] text-[#2874F0] text-xs uppercase tracking-wider font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
-                <span>Launch Campaign</span>
+                <span>{t('launchCampaign', 'Launch Campaign')}</span>
               </button>
             </div>
           </div>
@@ -883,18 +854,16 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
           <div className="p-4 rounded-[4px] bg-[#EAF8EB] border border-[#388E3C]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="font-bold text-sm text-[#388E3C] flex items-center gap-2">
-                <span>Escrow Settlement & Graduation Console</span>
+                <span>{t('escrowSettlementGraduationConsole', 'Escrow Settlement & Graduation Console')}</span>
               </div>
               <p className="text-xs text-[#878787] mt-0.5 max-w-2xl">
-                Simulate reaching your campaign deadline, inspect the fee breakdown statement, capture backer authorizations, and graduate funded hardware directly into the Shop.
-              </p>
+                {t('simulateReachingYourCampaignDeadlin', 'Simulate reaching your campaign deadline, inspect the fee breakdown statement, capture backer authorizations, and graduate funded hardware directly into the Shop.')}</p>
             </div>
             <button
               onClick={() => onNavigate('creator-dashboard')}
               className="px-3.5 py-1.5 rounded-[2px] bg-[#388E3C] hover:bg-[#2E7D32] text-[#FFFFFF] text-xs uppercase tracking-wider font-bold whitespace-nowrap self-start sm:self-auto transition-colors cursor-pointer shadow-xs"
             >
-              Go to Settlement Console →
-            </button>
+              {t('goToSettlementConsole', 'Go to Settlement Console →')}</button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -910,7 +879,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                       camp.status === 'funded' ? 'text-[#388E3C]' : 'text-[#FB641B]'
                     }`}
                   >
-                    {camp.status === 'funded' ? '✓ Goal Achieved' : '• In Progress'}
+                    {camp.status === 'funded' ? t('goalAchieved', '✓ Goal Achieved') : t('inProgress', '• In Progress')}
                   </span>
                 </div>
 
@@ -920,18 +889,18 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
 
                 <div className="text-xs text-[#878787] space-y-1">
                   <div className="flex justify-between">
-                    <span>Pledged to date:</span>
+                    <span>{t('pledgedToDate', 'Pledged to date:')}</span>
                     <span className="font-bold text-[#212121]">
-                      {formatINR(camp.pledgedAmount)} of {formatINR(camp.goalAmount)}
+                      {formatINR(camp.pledgedAmount)} {t('of', 'of')}{formatINR(camp.goalAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Backers enrolled:</span>
-                    <span className="font-bold text-[#212121]">{camp.backersCount} patrons</span>
+                    <span>{t('backersEnrolled', 'Backers enrolled:')}</span>
+                    <span className="font-bold text-[#212121]">{camp.backersCount} {t('patrons', 'patrons')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Time remaining:</span>
-                    <span className="font-bold text-[#212121]">{camp.daysLeft} days</span>
+                    <span>{t('timeRemaining', 'Time remaining:')}</span>
+                    <span className="font-bold text-[#212121]">{camp.daysLeft} {t('days', 'days')}</span>
                   </div>
                 </div>
 
@@ -940,8 +909,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                     onClick={() => onOpenCampaignDetail(camp)}
                     className="w-full py-1.5 rounded-[2px] border border-[#D5D5D5] hover:border-[#2874F0] hover:text-[#2874F0] bg-[#FFFFFF] text-xs uppercase tracking-wider font-bold text-center transition-colors cursor-pointer shadow-2xs"
                   >
-                    Inspect Campaign Detail & Tiers →
-                  </button>
+                    {t('inspectCampaignDetailTiers', 'Inspect Campaign Detail & Tiers →')}</button>
                 </div>
               </div>
             ))}

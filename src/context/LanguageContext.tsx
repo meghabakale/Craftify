@@ -21,7 +21,7 @@ interface LanguageContextValue {
   localizeProduct: (product: Product) => Product;
   localizeCampaign: (campaign: Campaign) => Campaign;
   localizeOrder: (order: CustomerOrder) => CustomerOrder;
-  localizePledge: (pledge: UserPledgeRecord) => UserPledgeRecord;
+  localizePledge: <T extends { id?: string | number; campaignId?: string | number; campaignTitle: string; tierTitle: string }>(pledge: T) => T;
   localizeCartItem: (item: CartItem) => CartItem;
   localizeCategory: (categoryName: string) => string;
   localizeProducts: (products: Product[]) => Product[];
@@ -91,7 +91,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return localizeOrder(order, language);
   };
 
-  const localizePledgeItem = (pledge: UserPledgeRecord): UserPledgeRecord => {
+  const localizePledgeItem = <T extends { id?: string | number; campaignId?: string | number; campaignTitle: string; tierTitle: string }>(pledge: T): T => {
     return localizePledge(pledge, language);
   };
 

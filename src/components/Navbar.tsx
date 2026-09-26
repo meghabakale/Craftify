@@ -384,7 +384,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex flex-col text-left group focus:outline-none cursor-pointer"
             >
               <div className="font-sans text-2xl font-bold tracking-tight text-[#FFFFFF] italic leading-none flex items-center gap-1.5">
-                <span>Craftify</span>
+                <span>{t('craftify', 'Craftify')}</span>
                 {/* Golden craft emblem from reference image */}
                 <svg className="w-5 h-5 text-[#FFE500]" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C13.2 6.2 14.8 7.8 19 9C14.8 10.2 13.2 11.8 12 16C10.8 11.8 9.2 10.2 5 9C9.2 7.8 10.8 6.2 12 2Z" />
@@ -393,8 +393,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </svg>
               </div>
               <div className="text-[11px] font-medium text-[#F0F0F0] italic flex items-center gap-0.5 mt-0.5">
-                <span>Explore</span>
-                <span className="text-[#FFE500] font-bold">Plus</span>
+                <span>{t('explore', 'Explore')}</span>
+                <span className="text-[#FFE500] font-bold">{t('plus', 'Plus')}</span>
                 <span className="text-[#FFE500] text-xs leading-none">✦</span>
               </div>
             </button>
@@ -428,7 +428,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   }}
                   onFocus={() => setIsSearchFocused(true)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
+                    if (e.key === t('escape', 'Escape')) {
                       setIsSearchFocused(false);
                     }
                   }}
@@ -450,7 +450,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         if (onSearchChange) onSearchChange('');
                       }}
                       className="text-[#878787] hover:text-[#212121] p-1 cursor-pointer transition-colors"
-                      title="Clear search"
+                      title={t('clearSearch', 'Clear search')}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -459,10 +459,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     type="submit"
                     id="nav-search-submit-btn"
                     className="bg-[#2874F0] hover:bg-[#1A5DC8] text-white px-3 py-1 rounded-[2px] text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
-                    title="Search"
+                    title={t('search', 'Search')}
                   >
                     <Search className="w-3 h-3" />
-                    <span>Search</span>
+                    <span>{t('search', 'Search')}</span>
                   </button>
                 </div>
               </div>
@@ -479,7 +479,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#878787] uppercase tracking-wider mb-2">
                         <TrendingUp className="w-3.5 h-3.5 text-[#2874F0]" />
-                        <span>Popular Craft Searches</span>
+                        <span>{t('popularCraftSearches', 'Popular Craft Searches')}</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {TRENDING_SEARCHES.map((term) => (
@@ -498,14 +498,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                     <div className="pt-2 border-t border-[#F0F0F0]">
                       <div className="text-xs font-bold text-[#878787] uppercase tracking-wider mb-2">
-                        Explore Crafts by Category
-                      </div>
+                        {t('exploreCraftsByCategory', 'Explore Crafts by Category')}</div>
                       <div className="grid grid-cols-2 gap-2">
                         {[
-                          { label: 'Pottery & Ceramics', icon: '🏺' },
-                          { label: 'Handloom & Textiles', icon: '🧶' },
-                          { label: 'Jewellery & Metalwork', icon: '🪔' },
-                          { label: 'Woodcraft', icon: '🪵' },
+                          { label: t('potteryCeramics', 'Pottery & Ceramics'), icon: '🏺' },
+                          { label: t('handloomTextiles', 'Handloom & Textiles'), icon: '🧶' },
+                          { label: t('jewelleryMetalwork', 'Jewellery & Metalwork'), icon: '🪔' },
+                          { label: t('woodcraft', 'Woodcraft'), icon: '🪵' },
                         ].map((item) => (
                           <button
                             key={item.label}
@@ -526,18 +525,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="p-6 text-center">
                         <Search className="w-8 h-8 text-[#878787] mx-auto mb-2 opacity-50" />
                         <p className="text-sm font-semibold text-[#212121]">
-                          No direct matches for "{navSearchQuery}"
+                          {t('noDirectMatchesFor', 'No direct matches for "')}{navSearchQuery}"
                         </p>
                         <p className="text-xs text-[#878787] mt-1 max-w-sm mx-auto">
-                          Press Enter or click below to search the full marketplace, or try searching for keywords like "clay", "silk", "brass", or "wood".
-                        </p>
+                          {t('pressEnterOrClickBelowToSearchTheFu', 'Press Enter or click below to search the full marketplace, or try searching for keywords like "clay", "silk", "brass", or "wood".')}</p>
                         <button
                           type="button"
                           onClick={() => executeSearch(navSearchQuery)}
                           className="mt-3 px-4 py-1.5 bg-[#2874F0] text-white text-xs font-semibold rounded-[2px] hover:bg-[#1A5DC8] cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
                         >
                           <Search className="w-3.5 h-3.5" />
-                          <span>Search Marketplace for "{navSearchQuery}"</span>
+                          <span>{t('searchMarketplaceFor', 'Search Marketplace for "')}{navSearchQuery}"</span>
                         </button>
                       </div>
                     ) : (
@@ -546,8 +544,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {matchedProducts.length > 0 && (
                           <div className="p-2 border-b border-[#F0F0F0]">
                             <div className="px-2 py-1 text-[11px] font-bold text-[#878787] uppercase tracking-wider flex items-center justify-between">
-                              <span>Products in Marketplace ({matchedProducts.length})</span>
-                              <span className="text-[10px] text-[#2874F0]">Ready to Ship</span>
+                              <span>{t('productsInMarketplace', 'Products in Marketplace (')}{matchedProducts.length})</span>
+                              <span className="text-[10px] text-[#2874F0]">{t('readyToShip', 'Ready to Ship')}</span>
                             </div>
                             <div className="space-y-1 mt-1">
                               {matchedProducts.map((p) => (
@@ -568,7 +566,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                         {p.title}
                                       </div>
                                       <div className="text-[11px] text-[#878787] truncate">
-                                        by {p.creator} • {p.category}
+                                        {t('by', 'by')}{p.creator} • {p.category}
                                       </div>
                                     </div>
                                   </div>
@@ -578,8 +576,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                     </span>
                                     {(p.isFundedOnCraftify ?? p.isFundedOnLaunchMart) && (
                                       <div className="text-[9px] text-[#388E3C] font-semibold">
-                                        Craft Assured
-                                      </div>
+                                        {t('craftAssured', 'Craft Assured')}</div>
                                     )}
                                   </div>
                                 </button>
@@ -592,8 +589,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {matchedCampaigns.length > 0 && (
                           <div className="p-2 border-b border-[#F0F0F0]">
                             <div className="px-2 py-1 text-[11px] font-bold text-[#878787] uppercase tracking-wider flex items-center justify-between">
-                              <span>Artisan Campaigns ({matchedCampaigns.length})</span>
-                              <span className="text-[10px] text-[#FB641B]">Pre-Order Escrow</span>
+                              <span>{t('artisanCampaigns', 'Artisan Campaigns (')}{matchedCampaigns.length})</span>
+                              <span className="text-[10px] text-[#FB641B]">{t('preOrderEscrow', 'Pre-Order Escrow')}</span>
                             </div>
                             <div className="space-y-1 mt-1">
                               {matchedCampaigns.map((c) => {
@@ -618,17 +615,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                                           {c.title}
                                         </div>
                                         <div className="text-[11px] text-[#878787] truncate">
-                                          by {c.creator} • {c.creatorLocation || c.artisanRegion || 'India'}
+                                          {t('by', 'by')}{c.creator} • {c.creatorLocation || c.artisanRegion || t('india', 'India')}
                                         </div>
                                       </div>
                                     </div>
                                     <div className="text-right shrink-0 pl-2">
                                       <span className="text-xs font-bold text-[#FB641B]">
-                                        {percent}% funded
-                                      </span>
+                                        {percent}{t('funded', '% funded')}</span>
                                       <div className="text-[10px] text-[#878787]">
-                                        {c.daysLeft} days left
-                                      </div>
+                                        {c.daysLeft} {t('daysLeft', 'days left')}</div>
                                     </div>
                                   </button>
                                 );
@@ -640,14 +635,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {/* View All Results Action Footer */}
                         <div className="px-4 py-2.5 bg-[#F9FAFB] flex items-center justify-between">
                           <span className="text-xs text-[#878787]">
-                            Press <strong>Enter</strong> to search all matching items
-                          </span>
+                            {t('press', 'Press')}<strong>{t('enter', 'Enter')}</strong> {t('toSearchAllMatchingItems', 'to search all matching items')}</span>
                           <button
                             type="button"
                             onClick={() => executeSearch(navSearchQuery)}
                             className="text-xs font-bold text-[#2874F0] hover:underline flex items-center gap-1 cursor-pointer"
                           >
-                            <span>View all results in Shop</span>
+                            <span>{t('viewAllResultsInShop', 'View all results in Shop')}</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -670,7 +664,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-[#EDE7F6] text-[#512DA8] rounded-[2px] text-xs font-bold hover:bg-[#D1C4E9] transition-colors cursor-pointer shadow-xs"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin Review</span>
+                <span>{t('adminReview', 'Admin Review')}</span>
               </button>
             )}
 
@@ -682,7 +676,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-[#FFF3E0] text-[#E65100] rounded-[2px] text-xs font-bold hover:bg-[#FFE0B2] transition-colors cursor-pointer shadow-xs animate-pulse"
               >
                 <AlertCircle className="w-3.5 h-3.5" />
-                <span>Complete Profile (Required)</span>
+                <span>{t('completeProfileRequired', 'Complete Profile (Required)')}</span>
               </button>
             )}
 
@@ -694,7 +688,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-white/20 text-white rounded-[2px] text-xs font-bold hover:bg-white/30 transition-colors cursor-pointer"
               >
                 <Store className="w-3.5 h-3.5" />
-                <span>Creator Studio</span>
+                <span>{t('creatorStudio', 'Creator Studio')}</span>
               </button>
             )}
 
@@ -707,7 +701,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="nav-account-button"
                   onClick={() => setAccountMenuOpen(!accountMenuOpen)}
-                  aria-label="Account menu"
+                  aria-label={t('accountMenu', 'Account menu')}
                   className="flex items-center gap-1.5 text-sm font-semibold hover:opacity-90 cursor-pointer"
                 >
                   <div className="w-6 h-6 rounded-full border border-white/80 flex items-center justify-center text-white text-xs">
@@ -715,7 +709,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                   <span>{currentUser.name.split(' ')[0]}</span>
                   <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 bg-white/20 rounded-[2px]">
-                    {currentUser.role === 'admin' ? 'Admin' : currentUser.role === 'artisan' ? 'Artisan' : 'Patron'}
+                    {currentUser.role === 'admin' ? t('admin', 'Admin') : currentUser.role === 'artisan' ? t('artisan', 'Artisan') : t('patron', 'Patron')}
                   </span>
                   <ChevronDown className="w-3 h-3 opacity-80" />
                 </button>
@@ -733,10 +727,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <CheckCircle2 className="w-3 h-3" />
                         <span>
                           {currentUser.role === 'admin'
-                            ? 'Platform Administrator'
+                            ? t('platformAdministrator', 'Platform Administrator')
                             : currentUser.role === 'artisan'
-                            ? 'Verified Master Artisan'
-                            : 'Verified Craft Patron'}
+                            ? t('verifiedMasterArtisan', 'Verified Master Artisan')
+                            : t('verifiedCraftPatron', 'Verified Craft Patron')}
                         </span>
                       </div>
                     </div>
@@ -751,8 +745,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                         >
                           <ShieldAlert className="w-4 h-4 text-[#5E35B1]" />
                           <div>
-                            <div className="font-bold">Admin Panel</div>
-                            <div className="text-[10px] text-[#878787]">Curation, Stats & Governance</div>
+                            <div className="font-bold">{t('adminPanel', 'Admin Panel')}</div>
+                            <div className="text-[10px] text-[#878787]">{t('curationStatsGovernance', 'Curation, Stats & Governance')}</div>
                           </div>
                         </button>
                       )}
@@ -768,7 +762,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <Layers className="w-4 h-4 text-[#FF9F00]" />
                             <div>
                               <div className="font-semibold">{t('creatorDashboard')}</div>
-                              <div className="text-[10px] text-[#878787]">Campaign escrow & settlement</div>
+                              <div className="text-[10px] text-[#878787]">{t('campaignEscrowSettlement', 'Campaign escrow & settlement')}</div>
                             </div>
                           </button>
 
@@ -780,7 +774,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <PlusCircle className="w-4 h-4 text-[#FB641B]" />
                             <div>
                               <div className="font-semibold">{t('startCampaign')}</div>
-                              <div className="text-[10px] text-[#878787]">Draft new craft initiative</div>
+                              <div className="text-[10px] text-[#878787]">{t('draftNewCraftInitiative', 'Draft new craft initiative')}</div>
                             </div>
                           </button>
 
@@ -792,9 +786,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <UserIcon className="w-4 h-4 text-[#2874F0]" />
                             <div>
                               <div className="font-semibold">
-                                {currentUser.profileCompleted ? 'Edit Artisan Profile' : 'Complete Your Profile'}
+                                {currentUser.profileCompleted ? t('editArtisanProfile', 'Edit Artisan Profile') : t('completeYourProfile', 'Complete Your Profile')}
                               </div>
-                              <div className="text-[10px] text-[#878787]">Workshop details, craft & payout</div>
+                              <div className="text-[10px] text-[#878787]">{t('workshopDetailsCraftPayout', 'Workshop details, craft & payout')}</div>
                             </div>
                           </button>
                         </>
@@ -822,8 +816,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                           >
                             <Bookmark className="w-4 h-4 text-[#2874F0]" />
                             <div>
-                              <div className="font-semibold">My Pledges</div>
-                              <div className="text-[10px] text-[#878787]">Backed campaigns & escrow status</div>
+                              <div className="font-semibold">{t('myPledges', 'My Pledges')}</div>
+                              <div className="text-[10px] text-[#878787]">{t('backedCampaignsEscrowStatus', 'Backed campaigns & escrow status')}</div>
                             </div>
                           </button>
                         </>
@@ -837,7 +831,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <UserIcon className="w-4 h-4 text-[#878787]" />
                         <div>
                           <div className="font-semibold">{t('myAccount')}</div>
-                          <div className="text-[10px] text-[#878787]">Profile, delivery & preferences</div>
+                          <div className="text-[10px] text-[#878787]">{t('profileDeliveryPreferences', 'Profile, delivery & preferences')}</div>
                         </div>
                       </button>
 
@@ -851,7 +845,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             className="w-full text-left px-3 py-2 text-xs text-[#D32F2F] hover:bg-[#FDEAEA] rounded-[2px] flex items-center gap-2.5 cursor-pointer font-semibold"
                           >
                             <LogOut className="w-4 h-4" />
-                            <span>Sign Out</span>
+                            <span>{t('signOut', 'Sign Out')}</span>
                           </button>
                         </div>
                       )}
@@ -875,12 +869,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 id="nav-demo-account-dropdown-btn"
                 onClick={() => setDemoMenuOpen((prev) => !prev)}
                 className="bg-[#1C5FD0] hover:bg-[#154EAE] text-white border border-white/20 px-2 sm:px-2.5 py-1.5 rounded-[2px] font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-                title="Switch demo account (Buyer, Artisan, Admin)"
+                title={t('switchDemoAccountBuyerArtisanAdmin', 'Switch demo account (Buyer, Artisan, Admin)')}
               >
                 <Users className="w-3.5 h-3.5 text-[#FFE500]" />
-                <span className="hidden sm:inline">Demo:</span>
+                <span className="hidden sm:inline">{t('demo', 'Demo:')}</span>
                 <span className="truncate max-w-[80px] sm:max-w-[100px]">
-                  {currentUser ? currentUser.name.split(' ')[0] : 'Demo Login'}
+                  {currentUser ? currentUser.name.split(' ')[0] : t('demoLogin', 'Demo Login')}
                 </span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${demoMenuOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -894,13 +888,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div>
                       <div className="text-xs font-bold text-[#212121] flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-[#2874F0]" />
-                        <span>Demo Account Switcher</span>
+                        <span>{t('demoAccountSwitcher', 'Demo Account Switcher')}</span>
                       </div>
-                      <div className="text-[10px] text-[#878787]">1-click login for escrow testing</div>
+                      <div className="text-[10px] text-[#878787]">{t('key_1ClickLoginForEscrowTesting', '1-click login for escrow testing')}</div>
                     </div>
                     {currentUser && (
                       <span className="text-[10px] font-semibold text-[#388E3C] bg-[#EAF8EB] px-1.5 py-0.5 rounded-[2px]">
-                        Active: {currentUser.name.split(' ')[0]}
+                        {t('active', 'Active:')}{currentUser.name.split(' ')[0]}
                       </span>
                     )}
                   </div>
@@ -947,8 +941,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="w-full text-center py-1 text-xs text-[#D32F2F] hover:bg-[#FDEAEA] rounded-[2px] font-semibold transition-colors cursor-pointer"
                       >
-                        Sign Out Current Account
-                      </button>
+                        {t('signOutCurrentAccount', 'Sign Out Current Account')}</button>
                     </div>
                   )}
                 </div>
@@ -963,7 +956,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden lg:flex items-center gap-1.5 bg-[#5E35B1] hover:bg-[#512DA8] text-white px-3 py-1 rounded-[2px] text-xs font-bold transition-colors cursor-pointer"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Admin Panel</span>
+                <span>{t('adminPanel', 'Admin Panel')}</span>
               </button>
             ) : currentUser?.role === 'artisan' || currentUser?.role === 'creator' ? (
               <button
@@ -972,7 +965,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden lg:flex items-center gap-1.5 hover:text-[#FFE500] transition-colors cursor-pointer text-sm font-medium"
               >
                 <Layers className="w-4 h-4" />
-                <span>Creator Dashboard</span>
+                <span>{t('creatorDashboard', 'Creator Dashboard')}</span>
               </button>
             ) : null}
 
@@ -986,7 +979,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   handleNavClick('account');
                 }
               }}
-              title="Saved Wishlist"
+              title={t('savedWishlist', 'Saved Wishlist')}
               className="relative flex items-center gap-1.5 hover:text-[#FFE500] transition-colors cursor-pointer text-sm font-medium py-1 px-1.5"
             >
               <Heart className="w-4 h-4 text-white fill-white" />
@@ -1003,7 +996,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="nav-cart-button"
               onClick={onOpenCart}
-              title="Shopping Cart"
+              title={t('shoppingCart', 'Shopping Cart')}
               className="relative flex items-center gap-1.5 hover:text-[#FFE500] transition-colors cursor-pointer text-sm font-medium py-1 px-1.5"
             >
               <ShoppingBag className="w-4 h-4 text-white" />
@@ -1037,7 +1030,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               id="nav-mobile-menu-button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-1.5 text-white hover:bg-white/10 rounded cursor-pointer"
-              aria-label="Toggle navigation menu"
+              aria-label={t('toggleNavigationMenu', 'Toggle navigation menu')}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5 text-white" />}
             </button>
@@ -1066,7 +1059,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="whitespace-nowrap flex items-center gap-1.5 text-[#212121] hover:text-[#2874F0] transition-colors cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-[#8C532B]" />
-              <span>Craftify Assured</span>
+              <span>{t('craftifyAssured', 'Craftify Assured')}</span>
             </button>
 
             {/* Role-Specific Actions on Far Right */}
@@ -1075,12 +1068,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => handleNavClick('admin-panel')}
                 className={`whitespace-nowrap px-3.5 py-1 rounded-[2px] font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ml-auto shrink-0 ${
                   activeView === 'admin-panel'
-                    ? 'bg-[#5E35B1] text-white shadow-xs'
-                    : 'bg-[#EAE8FE] text-[#5E35B1] hover:bg-[#D1C4E9]'
+                    ? t('bg5e35b1TextWhiteShadowXs', 'bg-[#5E35B1] text-white shadow-xs')
+                    : t('bgEae8feText5e35b1HoverBgD1c4e9', 'bg-[#EAE8FE] text-[#5E35B1] hover:bg-[#D1C4E9]')
                 }`}
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Admin Panel</span>
+                <span>{t('adminPanel', 'Admin Panel')}</span>
               </button>
             ) : currentUser?.role === 'artisan' || currentUser?.role === 'creator' ? (
               <div className="flex items-center gap-2 ml-auto shrink-0">
@@ -1088,12 +1081,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => handleNavClick('creator-dashboard')}
                   className={`whitespace-nowrap px-3 py-1 rounded-[2px] font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer ${
                     activeView === 'creator-dashboard'
-                      ? 'bg-[#2874F0] text-white'
-                      : 'bg-[#F1F3F6] text-[#212121] hover:bg-[#E0E0E0]'
+                      ? t('bg2874f0TextWhite', 'bg-[#2874F0] text-white')
+                      : t('bgF1f3f6Text212121HoverBgE0e0e0', 'bg-[#F1F3F6] text-[#212121] hover:bg-[#E0E0E0]')
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5 text-[#FF9F00]" />
-                  <span>Creator Dashboard</span>
+                  <span>{t('creatorDashboard', 'Creator Dashboard')}</span>
                 </button>
                 <button
                   onClick={() => handleNavClick('start-campaign')}
@@ -1109,19 +1102,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => handleNavClick('my-pledges')}
                   className={`whitespace-nowrap px-3 py-1 rounded-[2px] font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer ${
                     activeView === 'my-pledges'
-                      ? 'bg-[#2874F0] text-white'
-                      : 'bg-[#EBF2FE] text-[#2874F0] hover:bg-[#DCE7FC]'
+                      ? t('bg2874f0TextWhite', 'bg-[#2874F0] text-white')
+                      : t('bgEbf2feText2874f0HoverBgDce7fc', 'bg-[#EBF2FE] text-[#2874F0] hover:bg-[#DCE7FC]')
                   }`}
                 >
                   <Bookmark className="w-3.5 h-3.5" />
-                  <span>My Pledges</span>
+                  <span>{t('myPledges', 'My Pledges')}</span>
                 </button>
                 <button
                   onClick={() => handleNavClick('my-orders')}
                   className={`whitespace-nowrap px-3 py-1 rounded-[2px] font-semibold text-xs flex items-center gap-1 transition-colors cursor-pointer ${
                     activeView === 'my-orders' || activeView === 'order-tracking'
-                      ? 'bg-[#2874F0] text-white'
-                      : 'bg-[#F1F3F6] text-[#212121] hover:bg-[#E0E0E0]'
+                      ? t('bg2874f0TextWhite', 'bg-[#2874F0] text-white')
+                      : t('bgF1f3f6Text212121HoverBgE0e0e0', 'bg-[#F1F3F6] text-[#212121] hover:bg-[#E0E0E0]')
                   }`}
                 >
                   <Package className="w-3.5 h-3.5 text-[#2874F0]" />
@@ -1168,7 +1161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         if (onSearchChange) onSearchChange('');
                       }}
                       className="text-[#878787] hover:text-[#212121] p-1 cursor-pointer"
-                      title="Clear"
+                      title={t('clear', 'Clear')}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1176,7 +1169,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="submit"
                     className="bg-[#2874F0] text-white px-2 py-1 rounded-[2px] text-xs font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
-                    title="Search"
+                    title={t('search', 'Search')}
                   >
                     <Search className="w-3 h-3" />
                   </button>
@@ -1206,7 +1199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="w-full text-left px-4 py-2.5 text-sm font-bold rounded-[2px] flex items-center gap-3 bg-[#EAE8FE] text-[#5E35B1]"
                 >
                   <ShieldAlert className="w-4 h-4" />
-                  <span>Admin Panel</span>
+                  <span>{t('adminPanel', 'Admin Panel')}</span>
                 </button>
               )}
 
@@ -1235,7 +1228,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="w-full text-left px-4 py-2.5 text-sm font-bold rounded-[2px] flex items-center gap-3 bg-[#F1F3F6] text-[#212121]"
                   >
                     <UserIcon className="w-4 h-4 text-[#2874F0]" />
-                    <span>{currentUser.profileCompleted ? 'Edit Profile' : 'Complete Profile'}</span>
+                    <span>{currentUser.profileCompleted ? t('editProfile', 'Edit Profile') : t('completeProfile', 'Complete Profile')}</span>
                   </button>
                 </>
               )}
@@ -1260,7 +1253,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <div className="flex items-center gap-2">
                       <Bookmark className="w-4 h-4 text-[#2874F0]" />
-                      <span>My Pledges</span>
+                      <span>{t('myPledges', 'My Pledges')}</span>
                     </div>
                   </button>
                 </>
@@ -1286,8 +1279,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }}
               className="w-full text-center px-4 py-2.5 text-sm font-bold rounded-[2px] bg-[#2874F0] text-[#FFFFFF] shadow-xs cursor-pointer"
             >
-              {t('login')} / Sign Up
-            </button>
+              {t('login')} {t('signUp', '/ Sign Up')}</button>
           )}
 
           {/* General Discovery Links for Everyone */}

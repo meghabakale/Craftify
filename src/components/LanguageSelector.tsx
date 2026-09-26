@@ -55,8 +55,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 onClick={() => handleSelect(lang.code)}
                 className={`p-2 rounded-[3px] text-left text-xs transition-colors flex items-center justify-between border cursor-pointer ${
                   isSelected
-                    ? 'bg-[#EBF2FE] text-[#2874F0] border-[#2874F0] font-bold shadow-2xs'
-                    : 'bg-[#FFFFFF] text-[#212121] border-[#E0E0E0] hover:bg-[#F9F9F9]'
+                    ? t('bgEbf2feText2874f0Border2874f0FontB', 'bg-[#EBF2FE] text-[#2874F0] border-[#2874F0] font-bold shadow-2xs')
+                    : t('bgFfffffText212121BorderE0e0e0Hover', 'bg-[#FFFFFF] text-[#212121] border-[#E0E0E0] hover:bg-[#F9F9F9]')
                 }`}
               >
                 <div>
@@ -89,8 +89,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 onClick={() => handleSelect(lang.code)}
                 className={`px-2 py-0.5 rounded-[2px] text-xs transition-colors cursor-pointer ${
                   isSelected
-                    ? 'bg-[#FFE500] text-[#111111] font-bold'
-                    : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
+                    ? t('bgFfe500Text111111FontBold', 'bg-[#FFE500] text-[#111111] font-bold')
+                    : t('bgWhite10TextWhite80HoverBgWhite20H', 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white')
                 }`}
               >
                 {lang.nativeName}
@@ -109,8 +109,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         id="btn-language-selector-trigger"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[2px] hover:bg-white/10 text-white transition-colors cursor-pointer text-xs font-semibold"
-        title="Change App Language / भाषा बदलें"
-        aria-label="Language selection menu"
+        title={t('changeAppLanguage', 'Change App Language / भाषा बदलें')}
+        aria-label={t('languageSelectionMenu', 'Language selection menu')}
         aria-expanded={isOpen}
       >
         <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white uppercase">
@@ -143,8 +143,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   onClick={() => handleSelect(lang.code)}
                   className={`w-full px-3 py-2 text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-[#EBF2FE] text-[#2874F0] font-bold'
-                      : 'hover:bg-[#F5F5F5] text-[#212121]'
+                      ? t('bgEbf2feText2874f0FontBold', 'bg-[#EBF2FE] text-[#2874F0] font-bold')
+                      : t('hoverBgF5f5f5Text212121', 'hover:bg-[#F5F5F5] text-[#212121]')
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -165,7 +165,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
           <div className="px-3 pt-2 pb-1 border-t border-[#F0F0F0] text-[10px] text-[#878787] flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-[#B78103]" />
-            <span>Translations apply to products, campaigns & pages</span>
+            <span>{t('translationsApplyToProductsCampaign', 'Translations apply to products, campaigns & pages')}</span>
           </div>
         </div>
       )}

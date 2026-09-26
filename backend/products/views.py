@@ -28,12 +28,13 @@ class ProductListCreateView(APIView):
 
         name = data.get('name') or data.get('title') or 'Handcrafted Artifact'
         price = float(data.get('price') or 1500)
-        desc = data.get('description') or ''
+        desc = data.get('description') or data.get('shortDescription') or ''
         category = data.get('category') or 'Home & Living'
-        craft = data.get('craft_type') or 'Traditional Craft'
-        region = data.get('region_state') or 'India'
-        stock = int(data.get('stock_quantity') or 10)
+        craft = data.get('craft_heritage_note') or data.get('craft_type') or data.get('craftHeritage') or 'Traditional Craft'
+        region = data.get('region_state') or data.get('artisanRegion') or data.get('creatorLocation') or 'India'
+        stock = int(data.get('stock_quantity') or data.get('stockCount') or 10)
         image = data.get('image') or data.get('imageUrl') or '/images/products/jaipur-blue-pottery-tea-set.jpg'
+        gallery = data.get('gallery_images') or data.get('galleryImages') or [image]
 
         product = Product.objects.create(
             name=name,
@@ -46,7 +47,7 @@ class ProductListCreateView(APIView):
             in_stock=stock > 0,
             stock_quantity=stock,
             image=image,
-            gallery_images=[image]
+            gallery_images=gallery
         )
 
         serializer = ProductSerializer(product)

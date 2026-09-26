@@ -88,6 +88,7 @@ export interface CampaignPreSimulationState {
 
 export interface Campaign {
   id: string;
+  artisanId?: string;
   title: string;
   creator: string;
   creatorBio?: string;
@@ -133,6 +134,7 @@ export interface Campaign {
 export interface ProductReview {
   id: string;
   productId: string;
+  userId?: string;
   author: string;
   rating: number;
   date: string;
@@ -143,6 +145,7 @@ export interface ProductReview {
 
 export interface Product {
   id: string;
+  artisanId?: string;
   title: string;
   creator: string;
   creatorLocation?: string;
@@ -221,6 +224,7 @@ export interface User {
   profileCompleted?: boolean;
   isSuspended?: boolean;
   token?: string;
+  refreshToken?: string;
   shippingAddress?: {
     street: string;
     city: string;
@@ -268,6 +272,7 @@ export interface AdminUserRecord {
 
 export interface UserPledgeRecord {
   id: string;
+  buyerId?: string;
   campaignId: string;
   campaignTitle: string;
   campaignCode: string;

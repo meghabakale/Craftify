@@ -155,14 +155,14 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
             disabled={disabled}
             placeholder={
               isListening
-                ? interimTranscript || '🎙️ Listening... speak in any Indian language or English'
+                ? interimTranscript || t('listeningSpeakInAnyIndianLanguageOr', '🎙️ Listening... speak in any Indian language or English')
                 : placeholder
             }
             onChange={onChange}
             className={`${className} ${
               hasRightControls ? (badgePosition === 'inside' && detectedLang ? 'pr-24' : 'pr-10') : ''
             } ${
-              isListening ? 'ring-2 ring-[#2874F0] border-[#2874F0] bg-[#F4F8FF]' : ''
+              isListening ? t('ring2Ring2874f0Border2874f0BgF4f8ff', 'ring-2 ring-[#2874F0] border-[#2874F0] bg-[#F4F8FF]') : ''
             } transition-all duration-150`}
           />
 
@@ -190,13 +190,13 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
                   disabled={disabled}
                   title={
                     isListening
-                      ? 'Listening now... Click to stop voice typing'
+                      ? t('listeningNowClickToStopVoiceTyping', 'Listening now... Click to stop voice typing')
                       : `Click for Voice Typing (${selectedVoiceLang})`
                   }
                   className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center justify-center ${
                     isListening
-                      ? 'bg-[#D32F2F] text-white shadow-md animate-pulse ring-2 ring-[#D32F2F]/30 scale-105'
-                      : 'text-[#878787] hover:text-[#2874F0] hover:bg-[#F1F3F6]'
+                      ? t('bgD32f2fTextWhiteShadowMdAnimatePul', 'bg-[#D32F2F] text-white shadow-md animate-pulse ring-2 ring-[#D32F2F]/30 scale-105')
+                      : t('text878787HoverText2874f0HoverBgF1f', 'text-[#878787] hover:text-[#2874F0] hover:bg-[#F1F3F6]')
                   }`}
                 >
                   {isListening ? (
@@ -215,7 +215,7 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
                       setShowLangMenu(!showLangMenu);
                     }}
                     className="ml-1 text-[10px] font-bold uppercase text-[#2874F0] hover:underline cursor-pointer bg-white px-1 py-0.5 rounded border border-[#2874F0]/30 shadow-2xs"
-                    title="Change voice recognition dialect"
+                    title={t('changeVoiceRecognitionDialect', 'Change voice recognition dialect')}
                   >
                     {selectedVoiceLang.split('-')[0]}
                   </button>
@@ -230,9 +230,9 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
           <div className="mt-1 flex items-center justify-between gap-2 px-2 py-1 bg-[#EBF2FE] border border-[#2874F0]/30 rounded-[2px] text-[11px] text-[#2874F0] animate-fadeIn">
             <div className="flex items-center gap-1.5 overflow-hidden">
               <span className="w-2 h-2 rounded-full bg-[#D32F2F] animate-ping shrink-0" />
-              <span className="font-semibold shrink-0">Listening ({selectedVoiceLang}):</span>
+              <span className="font-semibold shrink-0">{t('listening', 'Listening (')}{selectedVoiceLang}):</span>
               <span className="italic truncate text-[#212121]">
-                {interimTranscript || 'Speak naturally now...'}
+                {interimTranscript || t('speakNaturallyNow', 'Speak naturally now...')}
               </span>
             </div>
 
@@ -242,15 +242,13 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
                 onClick={() => setShowLangMenu(!showLangMenu)}
                 className="text-[10px] font-bold underline cursor-pointer text-[#2874F0] hover:text-[#1853B0]"
               >
-                Change Language
-              </button>
+                {t('changeLanguage', 'Change Language')}</button>
               <button
                 type="button"
                 onClick={stopListening}
                 className="ml-1 px-1.5 py-0.5 bg-[#D32F2F] text-white text-[10px] font-bold rounded cursor-pointer hover:bg-[#B71C1C]"
               >
-                Done
-              </button>
+                {t('done', 'Done')}</button>
             </div>
           </div>
         )}
@@ -259,7 +257,7 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
         {showLangMenu && (
           <div className="absolute right-0 top-full mt-1 z-30 bg-white border border-[#E0E0E0] rounded-[4px] shadow-lg p-2 w-56 text-xs animate-fadeIn">
             <div className="text-[11px] font-bold text-[#878787] uppercase tracking-wider mb-1.5 px-1 flex items-center justify-between">
-              <span>Voice Recognition Language</span>
+              <span>{t('voiceRecognitionLanguage', 'Voice Recognition Language')}</span>
               <button
                 type="button"
                 onClick={() => setShowLangMenu(false)}
@@ -276,8 +274,8 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
                   onClick={() => handleSelectSpeechLang(item.code, item.speech)}
                   className={`text-left px-2 py-1 rounded text-xs transition-colors flex items-center justify-between cursor-pointer ${
                     selectedVoiceLang === item.speech
-                      ? 'bg-[#EBF2FE] text-[#2874F0] font-bold'
-                      : 'hover:bg-[#F1F3F6] text-[#212121]'
+                      ? t('bgEbf2feText2874f0FontBold', 'bg-[#EBF2FE] text-[#2874F0] font-bold')
+                      : t('hoverBgF1f3f6Text212121', 'hover:bg-[#F1F3F6] text-[#212121]')
                   }`}
                 >
                   <span>{item.label}</span>
@@ -305,7 +303,7 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
               <div className="flex items-center gap-1.5 truncate">
                 <Sparkles className="w-3 h-3 text-[#FF9F00] shrink-0" />
                 <span className="truncate">
-                  Detected <strong className="text-[#212121]">{detectedLang.name}</strong> ({detectedLang.nativeName}).
+                  {t('detected', 'Detected')}<strong className="text-[#212121]">{detectedLang.name}</strong> ({detectedLang.nativeName}).
                 </span>
               </div>
               <button
@@ -314,7 +312,7 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
                 onClick={(e) => handleSwitchAppLanguage(e, detectedLang.code)}
                 className="shrink-0 font-bold text-[#2874F0] hover:underline cursor-pointer ml-1"
               >
-                Switch app to {detectedLang.nativeName}?
+                {t('switchAppTo', 'Switch app to')}{detectedLang.nativeName}?
               </button>
             </div>
           )}
@@ -323,7 +321,7 @@ export const SmartInput = React.forwardRef<HTMLInputElement, SmartInputProps>(
         {enableLanguageDetection && detectedLang && badgePosition === 'below' && (
           <div className="mt-1 flex items-center gap-1 text-[11px] text-[#878787]">
             <Globe className="w-3 h-3 text-[#2874F0]" />
-            <span>Detected Language:</span>
+            <span>{t('detectedLanguage', 'Detected Language:')}</span>
             <strong className="text-[#212121]">
               {detectedLang.name} ({detectedLang.nativeName})
             </strong>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ActiveView, Campaign, User, AdminPlatformStats, AdminUserRecord } from '../types';
 import { DEFAULT_PENDING_CAMPAIGNS, DEFAULT_ADMIN_USERS, DEFAULT_ADMIN_STATS } from '../data/adminData';
+import { API_BASE_URL } from '../api/config';
+import { useLanguage } from '../context/LanguageContext';
 import {
   ShieldAlert,
   CheckCircle2,
@@ -37,6 +39,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onCampaignApproved,
   showToast,
 }) => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'pending' | 'stats' | 'users'>('pending');
   const [loading, setLoading] = useState(false);
   const [pendingCampaigns, setPendingCampaigns] = useState<any[]>([]);
@@ -57,29 +60,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setLoading(true);
     setErrorMessage(null);
     try {
-      if (token) {
-        const res = await fetch('/api/admin/campaigns/pending/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setPendingCampaigns(data);
-            setLoading(false);
-            return;
-          }
-        } else if (res.status === 403) {
-          setErrorMessage("Access denied (403): Administrator permissions required.");
+      const res = await fetch(`${API_BASE_URL}/admin/campaigns/pending/`, { headers });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPendingCampaigns(data);
           setLoading(false);
           return;
         }
+      } else if (res.status === 403) {
+        setErrorMessage("Access denied (403): Administrator permissions required.");
+        setLoading(false);
+        return;
       }
     } catch {
-      // Backend not yet responding, fallback to local unapproved campaigns
+      // Backend not responding
     }
 
     // Fallback: search campaigns with isApproved === false or status === 'pending_review'
@@ -101,11 +100,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         created_at: new Date().toISOString(),
       }));
 
-    // If none are unapproved in list, show sample pending campaign for review demonstration
-    if (fallbackPending.length === 0) {
-      fallbackPending.push(...DEFAULT_PENDING_CAMPAIGNS);
-    }
-
     setPendingCampaigns(fallbackPending);
     setLoading(false);
   };
@@ -116,29 +110,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setLoading(true);
     setErrorMessage(null);
     try {
-      if (token) {
-        const res = await fetch('/api/admin/stats/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        if (res.ok) {
-          const data = await res.json();
-          setStats({
-            total_campaigns: data.total_campaigns ?? 0,
-            total_funded_amount: Number(data.total_funded_amount) || 0,
-            active_artisans_count: data.active_artisans_count ?? 0,
-            total_orders: data.total_orders ?? 0,
-          });
-          setLoading(false);
-          return;
-        } else if (res.status === 403) {
-          setErrorMessage("Access denied (403): Administrator permissions required.");
-          setLoading(false);
-          return;
-        }
+      const res = await fetch(`${API_BASE_URL}/admin/stats/`, { headers });
+
+      if (res.ok) {
+        const data = await res.json();
+        setStats({
+          total_campaigns: data.total_campaigns ?? 0,
+          total_funded_amount: Number(data.total_funded_amount) || 0,
+          active_artisans_count: data.active_artisans_count ?? 0,
+          total_orders: data.total_orders ?? 0,
+        });
+        setLoading(false);
+        return;
+      } else if (res.status === 403) {
+        setErrorMessage("Access denied (403): Administrator permissions required.");
+        setLoading(false);
+        return;
       }
     } catch {
       // Fallback
@@ -163,36 +153,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setLoading(true);
     setErrorMessage(null);
     try {
-      if (token) {
-        const res = await fetch('/api/admin/users/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            const mapped = data.map((u: any) => ({
-              id: u.id,
-              username: u.username || `user_${u.id}`,
-              email: u.email || 'user@kaarigar.in',
-              role: u.role || 'buyer',
-              craft_type: u.craft_type,
-              is_suspended: Boolean(u.is_suspended),
-              is_active: u.is_active ?? !u.is_suspended,
-              date_joined: u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Active',
-            }));
-            setUsersList(mapped);
-            setLoading(false);
-            return;
-          }
-        } else if (res.status === 403) {
-          setErrorMessage("Access denied (403): Administrator permissions required.");
+      const res = await fetch(`${API_BASE_URL}/admin/users/`, { headers });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const mapped = data.map((u: any) => ({
+            id: u.id,
+            username: u.username || `user_${u.id}`,
+            email: u.email || 'user@kaarigar.in',
+            role: u.role || 'buyer',
+            craft_type: u.craft_type,
+            is_suspended: Boolean(u.is_suspended),
+            is_active: u.is_active ?? !u.is_suspended,
+            date_joined: u.created_at ? new Date(u.created_at).toLocaleDateString() : 'Active',
+          }));
+          setUsersList(mapped);
           setLoading(false);
           return;
         }
+      } else if (res.status === 403) {
+        setErrorMessage("Access denied (403): Administrator permissions required.");
+        setLoading(false);
+        return;
       }
     } catch {
       // Fallback
@@ -219,35 +205,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     const token = getAuthToken();
 
     try {
-      if (token) {
-        const res = await fetch(`/api/admin/campaigns/${slugOrId}/approve/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        if (res.ok) {
-          setPendingCampaigns((prev) => prev.filter((c) => c.slug !== slugOrId && c.id !== slugOrId));
-          if (showToast) {
-            showToast(`Campaign "${title}" approved successfully and published to live catalog!`, 'success');
-          }
-          if (onCampaignApproved) {
-            onCampaignApproved(slugOrId);
-          }
-          setActionInProgress(null);
-          return;
-        } else if (res.status === 403) {
-          if (showToast) {
-            showToast("Permission denied: Only administrative accounts can approve campaigns.", 'error');
-          }
-          setActionInProgress(null);
-          return;
+      const res = await fetch(`${API_BASE_URL}/admin/campaigns/${slugOrId}/approve/`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (res.ok) {
+        setPendingCampaigns((prev) => prev.filter((c) => c.slug !== slugOrId && c.id !== slugOrId));
+        if (showToast) {
+          showToast(`Campaign "${title}" approved successfully and published to live catalog!`, 'success');
         }
+        if (onCampaignApproved) {
+          onCampaignApproved(slugOrId);
+        }
+        setActionInProgress(null);
+        return;
+      } else if (res.status === 403) {
+        if (showToast) {
+          showToast("Permission denied: Only administrative accounts can approve campaigns.", 'error');
+        }
+        setActionInProgress(null);
+        return;
       }
     } catch {
-      // Offline / demo approval fallback
+      // Server error
     }
 
     // Local state update
@@ -328,10 +312,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {/* Breadcrumb Trail */}
         <div className="flex items-center gap-2 text-xs text-[#878787] mb-3">
           <button onClick={() => onNavigate('home')} className="hover:text-[#2874F0] cursor-pointer">
-            Home
-          </button>
+            {t('home', 'Home')}</button>
           <span>/</span>
-          <span className="text-[#212121] font-semibold">Admin Panel</span>
+          <span className="text-[#212121] font-semibold">{t('adminPanel', 'Admin Panel')}</span>
         </div>
 
         {/* Admin Header */}
@@ -343,15 +326,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="px-2 py-0.5 rounded-[2px] text-[10px] uppercase font-bold tracking-wider bg-[#2874F0] text-white">
-                  Platform Administrator
+                  {t('adminRoleFilterAdmin', 'Platform Admin')}
                 </span>
-                <span className="text-xs text-[#878787]">Role: {currentUser?.role || 'Admin'}</span>
+                <span className="text-xs text-[#878787]">{t('role', 'Role')}: {currentUser?.role || t('admin', 'Admin')}</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-semibold text-[#212121]">
-                Kaarigar Admin Operations
+                {t('adminPanelTitle', 'Kaarigar Admin Operations')}
               </h1>
               <p className="text-xs sm:text-sm text-[#878787] mt-1">
-                Enforce campaign curation, oversee escrow funding totals, and govern artisan & patron accounts.
+                {t('adminPanelSubtitle', 'Enforce campaign curation, oversee escrow funding totals, and govern artisan & patron accounts.')}
               </p>
             </div>
           </div>
@@ -366,7 +349,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               className="px-3.5 py-2 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-xs font-semibold text-[#212121] flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+              <span>{t('refresh', 'Refresh')}</span>
             </button>
           </div>
         </div>
@@ -384,12 +367,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             onClick={() => setActiveTab('pending')}
             className={`py-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'pending'
-                ? 'border-[#2874F0] text-[#2874F0]'
-                : 'border-transparent text-[#878787] hover:text-[#212121]'
+                ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>Pending Campaigns</span>
+            <span>{t('adminPendingTab', 'Pending Approval')}</span>
             {pendingCampaigns.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#FB641B] text-white font-bold">
                 {pendingCampaigns.length}
@@ -401,24 +384,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             onClick={() => setActiveTab('stats')}
             className={`py-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'stats'
-                ? 'border-[#2874F0] text-[#2874F0]'
-                : 'border-transparent text-[#878787] hover:text-[#212121]'
+                ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Platform Stats</span>
+            <span>{t('adminStatsTab', 'Platform Metrics')}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('users')}
             className={`py-3.5 text-xs font-bold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'users'
-                ? 'border-[#2874F0] text-[#2874F0]'
-                : 'border-transparent text-[#878787] hover:text-[#212121]'
+                ? t('border2874f0Text2874f0', 'border-[#2874F0] text-[#2874F0]')
+                : t('borderTransparentText878787HoverTex', 'border-transparent text-[#878787] hover:text-[#212121]')
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>User Management</span>
+            <span>{t('adminUsersTab', 'User Directory')}</span>
           </button>
         </div>
 
@@ -427,30 +410,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="bg-[#FFFFFF] rounded-b-[4px] p-6 border border-t-0 border-[#EAEAEA] shadow-xs">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
               <div>
-                <h2 className="text-lg font-bold text-[#212121]">Campaign Review Queue</h2>
+                <h2 className="text-lg font-bold text-[#212121]">{t('campaignReviewQueue', 'Campaign Review Queue')}</h2>
                 <p className="text-xs text-[#878787]">
-                  Review draft campaigns submitted by verified artisans before approving them for public crowdfunding.
-                </p>
+                  {t('reviewDraftCampaignsSubmittedByVeri', 'Review draft campaigns submitted by verified artisans before approving them for public crowdfunding.')}</p>
               </div>
               <span className="text-xs font-semibold text-[#878787]">
-                {pendingCampaigns.length} awaiting curation
-              </span>
+                {pendingCampaigns.length} {t('awaitingCuration', 'awaiting curation')}</span>
             </div>
 
             {loading ? (
               <div className="py-12 text-center">
                 <div className="w-8 h-8 border-3 border-[#2874F0] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-xs text-[#878787]">Loading pending campaigns...</p>
+                <p className="text-xs text-[#878787]">{t('loadingPendingCampaigns', 'Loading pending campaigns...')}</p>
               </div>
             ) : pendingCampaigns.length === 0 ? (
               <div className="py-12 text-center max-w-md mx-auto">
                 <div className="w-14 h-14 bg-[#EBF7EE] text-[#388E3C] rounded-full flex items-center justify-center mx-auto mb-3">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-bold text-[#212121]">Queue Clear</h3>
+                <h3 className="text-base font-bold text-[#212121]">{t('queueClear', 'Queue Clear')}</h3>
                 <p className="text-xs text-[#878787] mt-1">
-                  All submitted campaigns have been reviewed and approved. New submissions from registered artisans will appear here.
-                </p>
+                  {t('allSubmittedCampaignsHaveBeenReview', 'All submitted campaigns have been reviewed and approved. New submissions from registered artisans will appear here.')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -472,10 +452,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="px-2 py-0.5 rounded-[2px] text-[10px] uppercase font-bold tracking-wider bg-[#FFF7E6] text-[#B78103] border border-[#B78103]/20">
-                            Awaiting Approval
-                          </span>
+                            {t('awaitingApproval', 'Awaiting Approval')}</span>
                           <span className="text-[11px] text-[#2874F0] font-semibold">{camp.category}</span>
-                          <span className="text-[11px] text-[#878787]">• {camp.region_state || 'India'}</span>
+                          <span className="text-[11px] text-[#878787]">• {camp.region_state || t('india', 'India')}</span>
                         </div>
 
                         <h3 className="text-base font-bold text-[#212121] truncate">{camp.title}</h3>
@@ -485,10 +464,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                         <div className="flex items-center gap-4 mt-2 text-xs text-[#878787]">
                           <div>
-                            <span className="font-semibold text-[#212121]">Artisan:</span> {camp.artisan_name}
+                            <span className="font-semibold text-[#212121]">{t('artisan', 'Artisan:')}</span> {camp.artisan_name}
                           </div>
                           <div>
-                            <span className="font-semibold text-[#212121]">Goal:</span> ₹
+                            <span className="font-semibold text-[#212121]">{t('goal', 'Goal:')}</span> ₹
                             {Number(camp.goal_amount).toLocaleString('en-IN')}
                           </div>
                         </div>
@@ -508,7 +487,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="px-3 py-2 rounded-[2px] border border-[#D5D5D5] hover:bg-[#F1F3F6] text-xs font-semibold text-[#212121] flex items-center gap-1.5 cursor-pointer"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Preview</span>
+                        <span>{t('preview', 'Preview')}</span>
                       </button>
 
                       <button
@@ -517,7 +496,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="px-4 py-2 rounded-[2px] bg-[#388E3C] hover:bg-[#2E7D32] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{actionInProgress === (camp.slug || camp.id) ? 'Approving...' : 'Approve Campaign'}</span>
+                        <span>{actionInProgress === (camp.slug || camp.id) ? t('approving', 'Approving...') : t('approveCampaign', 'Approve Campaign')}</span>
                       </button>
                     </div>
                   </div>
@@ -531,85 +510,84 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {activeTab === 'stats' && (
           <div className="bg-[#FFFFFF] rounded-b-[4px] p-6 border border-t-0 border-[#EAEAEA] shadow-xs">
             <div className="mb-6">
-              <h2 className="text-lg font-bold text-[#212121]">Platform Economic & Ledger Overview</h2>
+              <h2 className="text-lg font-bold text-[#212121]">{t('platformEconomicLedgerOverview', 'Platform Economic & Ledger Overview')}</h2>
               <p className="text-xs text-[#878787]">
-                Aggregated crowdfunding volume, escrow obligations, and artisan participation rates.
-              </p>
+                {t('aggregatedCrowdfundingVolumeEscrowO', 'Aggregated crowdfunding volume, escrow obligations, and artisan participation rates.')}</p>
             </div>
 
             {loading ? (
               <div className="py-12 text-center">
                 <div className="w-8 h-8 border-3 border-[#2874F0] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-xs text-[#878787]">Loading stats...</p>
+                <p className="text-xs text-[#878787]">{t('loadingStats', 'Loading stats...')}</p>
               </div>
             ) : stats ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="p-5 rounded-[4px] border border-[#EAEAEA] bg-[#FAFAFA]">
                     <div className="flex items-center justify-between text-[#878787] mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Total Campaigns</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{t('adminTotalCampaigns', 'Total Campaigns')}</span>
                       <Layers className="w-4 h-4 text-[#2874F0]" />
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-[#212121]">
                       {stats.total_campaigns}
                     </div>
-                    <p className="text-[11px] text-[#388E3C] mt-1 font-medium">All active & past initiatives</p>
+                    <p className="text-[11px] text-[#388E3C] mt-1 font-medium">{t('allActivePastInitiatives', 'All active & past initiatives')}</p>
                   </div>
 
                   <div className="p-5 rounded-[4px] border border-[#EAEAEA] bg-[#FAFAFA]">
                     <div className="flex items-center justify-between text-[#878787] mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Total Funds Raised</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{t('adminTotalEscrowVolume', 'Total Funds Raised')}</span>
                       <IndianRupee className="w-4 h-4 text-[#388E3C]" />
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-[#212121]">
                       ₹{Number(stats.total_funded_amount).toLocaleString('en-IN')}
                     </div>
-                    <p className="text-[11px] text-[#388E3C] mt-1 font-medium">Escrow pre-auths & commitments</p>
+                    <p className="text-[11px] text-[#388E3C] mt-1 font-medium">{t('escrowPreauthsCommitments', 'Escrow pre-auths & commitments')}</p>
                   </div>
 
                   <div className="p-5 rounded-[4px] border border-[#EAEAEA] bg-[#FAFAFA]">
                     <div className="flex items-center justify-between text-[#878787] mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Active Artisans</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{t('adminTotalArtisans', 'Active Artisans')}</span>
                       <Users className="w-4 h-4 text-[#FB641B]" />
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-[#212121]">
                       {stats.active_artisans_count}
                     </div>
-                    <p className="text-[11px] text-[#878787] mt-1">Verified creator accounts</p>
+                    <p className="text-[11px] text-[#878787] mt-1">{t('verifiedCreatorAccounts', 'Verified creator accounts')}</p>
                   </div>
 
                   <div className="p-5 rounded-[4px] border border-[#EAEAEA] bg-[#FAFAFA]">
                     <div className="flex items-center justify-between text-[#878787] mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Graduated Orders</span>
+                      <span className="text-xs font-bold uppercase tracking-wider">{t('graduatedOrders', 'Graduated Orders')}</span>
                       <CheckCircle2 className="w-4 h-4 text-[#7B1FA2]" />
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-[#212121]">
                       {stats.total_orders}
                     </div>
-                    <p className="text-[11px] text-[#878787] mt-1">Direct craft shop orders</p>
+                    <p className="text-[11px] text-[#878787] mt-1">{t('directCraftShopOrders', 'Direct craft shop orders')}</p>
                   </div>
                 </div>
 
                 {/* Escrow Covenant Breakdown */}
                 <div className="p-5 border border-[#EAEAEA] rounded-[4px] bg-[#FFFFFF]">
-                  <h3 className="text-sm font-bold text-[#212121] mb-2">Platform Fee Covenant Distribution</h3>
+                  <h3 className="text-sm font-bold text-[#212121] mb-2">{t('covenantBreakdownTitle', 'Platform Fee Covenant Distribution')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div className="p-3 bg-[#EBF7EE] rounded-[3px] border border-[#388E3C]/20">
-                      <span className="font-bold text-[#388E3C] block mb-0.5">92% Net Milestone Payout</span>
+                      <span className="font-bold text-[#388E3C] block mb-0.5">92% {t('netMilestonePayout', 'Net Milestone Payout')}</span>
                       <p className="text-[#666666]">
-                        Direct disbursement to master craftspeople upon meeting 100% threshold.
+                        {t('directDisbursementDesc', 'Direct disbursement to master craftspeople upon meeting 100% threshold.')}
                       </p>
                     </div>
                     <div className="p-3 bg-[#EBF2FE] rounded-[3px] border border-[#2874F0]/20">
-                      <span className="font-bold text-[#2874F0] block mb-0.5">5% Platform Infrastructure</span>
+                      <span className="font-bold text-[#2874F0] block mb-0.5">5% {t('platformInfrastructure', 'Platform Infrastructure')}</span>
                       <p className="text-[#666666]">
-                        Maintains AI artisan studio tools, craft verification, and multi-lingual UI.
+                        {t('aiStudioToolsDesc', 'Maintains AI artisan studio tools, craft verification, and multi-lingual UI.')}
                       </p>
                     </div>
                     <div className="p-3 bg-[#FFF7E6] rounded-[3px] border border-[#B78103]/20">
-                      <span className="font-bold text-[#B78103] block mb-0.5">3% Payment Escrow Fee</span>
+                      <span className="font-bold text-[#B78103] block mb-0.5">3% {t('paymentEscrowFee', 'Payment Escrow Fee')}</span>
                       <p className="text-[#666666]">
-                        Covers banking pre-authorizations, zero-fraud escrow, and payment gateways.
+                        {t('bankingPreauthDesc', 'Covers banking pre-authorizations, zero-fraud escrow, and payment gateways.')}
                       </p>
                     </div>
                   </div>
@@ -624,9 +602,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="bg-[#FFFFFF] rounded-b-[4px] p-6 border border-t-0 border-[#EAEAEA] shadow-xs">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-lg font-bold text-[#212121]">User & Role Governance</h2>
+                <h2 className="text-lg font-bold text-[#212121]">{t('userGovernanceTitle', 'User & Role Governance')}</h2>
                 <p className="text-xs text-[#878787]">
-                  Supervise user identities, craft specializations, and enforce suspensions when necessary.
+                  {t('userGovernanceDesc', 'Supervise user identities, craft specializations, and enforce suspensions when necessary.')}
                 </p>
               </div>
 
@@ -636,7 +614,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#878787]" />
                   <input
                     type="text"
-                    placeholder="Search by name, email, craft..."
+                    placeholder={t('adminSearchUsersPlaceholder', 'Search by name, email, craft...')}
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#FFFFFF] border border-[#D5D5D5] rounded-[2px] focus:outline-none focus:border-[#2874F0]"
@@ -647,35 +625,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <button
                     onClick={() => setUserRoleFilter('all')}
                     className={`px-2.5 py-1 rounded-[2px] font-semibold cursor-pointer ${
-                      userRoleFilter === 'all' ? 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs' : 'text-[#666666]'
+                      userRoleFilter === 'all' ? t('bgFfffffText2874f0Shadow2xs', 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs') : 'text-[#666666]'
                     }`}
                   >
-                    All ({usersList.length})
+                    {t('adminRoleFilterAll', 'All Roles')} ({usersList.length})
                   </button>
                   <button
                     onClick={() => setUserRoleFilter('artisan')}
                     className={`px-2.5 py-1 rounded-[2px] font-semibold cursor-pointer ${
-                      userRoleFilter === 'artisan' ? 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs' : 'text-[#666666]'
+                      userRoleFilter === 'artisan' ? t('bgFfffffText2874f0Shadow2xs', 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs') : 'text-[#666666]'
                     }`}
                   >
-                    Artisans
+                    {t('adminRoleFilterArtisan', 'Artisans')}
                   </button>
                   <button
                     onClick={() => setUserRoleFilter('buyer')}
                     className={`px-2.5 py-1 rounded-[2px] font-semibold cursor-pointer ${
-                      userRoleFilter === 'buyer' ? 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs' : 'text-[#666666]'
+                      userRoleFilter === 'buyer' ? t('bgFfffffText2874f0Shadow2xs', 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs') : 'text-[#666666]'
                     }`}
                   >
-                    Buyers
+                    {t('adminRoleFilterBuyer', 'Buyers')}
                   </button>
                   <button
                     onClick={() => setUserRoleFilter('admin')}
                     className={`px-2.5 py-1 rounded-[2px] font-semibold cursor-pointer ${
-                      userRoleFilter === 'admin' ? 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs' : 'text-[#666666]'
+                      userRoleFilter === 'admin' ? t('bgFfffffText2874f0Shadow2xs', 'bg-[#FFFFFF] text-[#2874F0] shadow-2xs') : 'text-[#666666]'
                     }`}
                   >
-                    Admins
-                  </button>
+                    {t('admins', 'Admins')}</button>
                 </div>
               </div>
             </div>
@@ -683,23 +660,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             {loading ? (
               <div className="py-12 text-center">
                 <div className="w-8 h-8 border-3 border-[#2874F0] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-xs text-[#878787]">Loading registered users...</p>
+                <p className="text-xs text-[#878787]">{t('loadingRegisteredUsers', 'Loading registered users...')}</p>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="py-8 text-center text-xs text-[#878787]">
-                No users match the search criteria.
-              </div>
+                {t('noUsersMatchTheSearchCriteria', 'No users match the search criteria.')}</div>
             ) : (
               <div className="overflow-x-auto border border-[#EAEAEA] rounded-[4px]">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#F9FAFB] text-[#878787] uppercase font-bold border-b border-[#EAEAEA]">
                     <tr>
-                      <th className="px-4 py-3">User</th>
-                      <th className="px-4 py-3">Role</th>
-                      <th className="px-4 py-3">Craft / Specialization</th>
-                      <th className="px-4 py-3">Account Status</th>
-                      <th className="px-4 py-3">Registered</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-4 py-3">{t('user', 'User')}</th>
+                      <th className="px-4 py-3">{t('role', 'Role')}</th>
+                      <th className="px-4 py-3">{t('craftSpecialization', 'Craft / Specialization')}</th>
+                      <th className="px-4 py-3">{t('accountStatus', 'Account Status')}</th>
+                      <th className="px-4 py-3">{t('registered', 'Registered')}</th>
+                      <th className="px-4 py-3 text-right">{t('actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#EAEAEA]">
@@ -717,10 +693,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <span
                               className={`inline-block px-2 py-0.5 rounded-[2px] text-[10px] font-bold uppercase tracking-wider ${
                                 u.role === 'admin'
-                                  ? 'bg-[#EAE8FE] text-[#5E35B1]'
+                                  ? t('bgEae8feText5e35b1', 'bg-[#EAE8FE] text-[#5E35B1]')
                                   : u.role === 'artisan'
-                                  ? 'bg-[#EBF7EE] text-[#388E3C]'
-                                  : 'bg-[#EBF2FE] text-[#2874F0]'
+                                  ? t('bgEbf7eeText388e3c', 'bg-[#EBF7EE] text-[#388E3C]')
+                                  : t('bgEbf2feText2874f0', 'bg-[#EBF2FE] text-[#2874F0]')
                               }`}
                             >
                               {u.role}
@@ -733,34 +709,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             {isSuspended ? (
                               <span className="inline-flex items-center gap-1 text-[#D32F2F] font-semibold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#D32F2F]"></span>
-                                Suspended
-                              </span>
+                                {t('suspended', 'Suspended')}</span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[#388E3C] font-semibold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#388E3C]"></span>
-                                Active
-                              </span>
+                                {t('active', 'Active')}</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-[#878787]">{u.date_joined || 'Active'}</td>
+                          <td className="px-4 py-3 text-[#878787]">{u.date_joined || t('active', 'Active')}</td>
                           <td className="px-4 py-3 text-right">
                             {isAdmin ? (
-                              <span className="text-[10px] text-[#878787] font-semibold italic">Protected</span>
+                              <span className="text-[10px] text-[#878787] font-semibold italic">{t('protected', 'Protected')}</span>
                             ) : (
                               <button
                                 disabled={actionInProgress === u.id}
                                 onClick={() => handleToggleUserSuspension(u.id, u.username, isSuspended)}
                                 className={`px-2.5 py-1 rounded-[2px] font-bold text-[11px] transition-colors cursor-pointer border ${
                                   isSuspended
-                                    ? 'bg-[#EBF7EE] text-[#388E3C] border-[#388E3C]/30 hover:bg-[#388E3C] hover:text-white'
-                                    : 'bg-[#FDEAEA] text-[#D32F2F] border-[#D32F2F]/30 hover:bg-[#D32F2F] hover:text-white'
+                                    ? t('bgEbf7eeText388e3cBorder388e3c30Hov', 'bg-[#EBF7EE] text-[#388E3C] border-[#388E3C]/30 hover:bg-[#388E3C] hover:text-white')
+                                    : t('bgFdeaeaTextD32f2fBorderD32f2f30Hov', 'bg-[#FDEAEA] text-[#D32F2F] border-[#D32F2F]/30 hover:bg-[#D32F2F] hover:text-white')
                                 }`}
                               >
                                 {actionInProgress === u.id
-                                  ? 'Updating...'
+                                  ? t('updating', 'Updating...')
                                   : isSuspended
-                                  ? 'Unsuspend Account'
-                                  : 'Suspend Account'}
+                                  ? t('unsuspendAccount', 'Unsuspend Account')
+                                  : t('suspendAccount', 'Suspend Account')}
                               </button>
                             )}
                           </td>
