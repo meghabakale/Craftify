@@ -222,6 +222,7 @@ export function transformBackendProduct(item: any): Product {
   }
 
   if (mockMatch) {
+    const verifiedImage = PRODUCT_IMAGES[productKey] || mockMatch.imageUrl || imageUrl;
     return {
       ...mockMatch,
       price,
@@ -231,8 +232,8 @@ export function transformBackendProduct(item: any): Product {
       stockCount,
       badgeLabel,
       badgeType,
-      imageUrl: mockMatch.imageUrl || imageUrl,
-      galleryImages: mockMatch.galleryImages || [mockMatch.imageUrl || imageUrl],
+      imageUrl: verifiedImage,
+      galleryImages: mockMatch.galleryImages && mockMatch.galleryImages.length > 0 ? mockMatch.galleryImages : [verifiedImage],
     };
   }
 

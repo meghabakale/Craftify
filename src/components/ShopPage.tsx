@@ -3,7 +3,7 @@ import { Product } from '../types';
 import { ProductCard } from './ProductCard';
 import { useLanguage } from '../context/LanguageContext';
 import { SmartInput } from './common/SmartInput';
-import { Filter, ArrowUpDown, Sparkles, Search, RotateCcw, ShieldCheck, Truck, Package, Heart } from 'lucide-react';
+import { Filter, ArrowUpDown, Sparkles, Search, RotateCcw, ShieldCheck, Truck, Package, Heart, MapPin } from 'lucide-react';
 
 interface ShopPageProps {
   products: Product[];
@@ -30,6 +30,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 }) => {
   const { t, localizeCategory } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedState, setSelectedState] = useState<string>('All');
   const [onlyFunded, setOnlyFunded] = useState<boolean>(false);
   const [onlyWishlisted, setOnlyWishlisted] = useState<boolean>(false);
   const [internalSearchQuery, setInternalSearchQuery] = useState<string>('');
@@ -51,11 +52,23 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     return ['All', ...Array.from(set)];
   }, [products]);
 
+  // Extract unique states for "Shop by State" filter
+  const states = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.state) set.add(p.state);
+    });
+    return ['All', ...Array.from(set).sort()];
+  }, [products]);
+
   // Filter & sort logic
   const filteredProducts = useMemo(() => {
     return products
       .filter((p) => {
         if (selectedCategory !== 'All' && p.category !== selectedCategory) {
+          return false;
+        }
+        if (selectedState !== 'All' && p.state !== selectedState) {
           return false;
         }
         if (onlyFunded && !(p.isFundedOnCraftify ?? p.isFundedOnLaunchMart)) {
@@ -66,12 +79,14 @@ export const ShopPage: React.FC<ShopPageProps> = ({
         }
         if (activeSearchQuery.trim()) {
           const q = activeSearchQuery.toLowerCase();
-          const matchTitle = p.title.toLowerCase().includes(q);
-          const matchDesc = p.shortDescription.toLowerCase().includes(q);
-          const matchCreator = p.creator.toLowerCase().includes(q);
-          const matchSku = p.sku.toLowerCase().includes(q);
-          const matchCategory = p.category.toLowerCase().includes(q);
-          if (!matchTitle && !matchDesc && !matchCreator && !matchSku && !matchCategory) return false;
+          const matchTitle = (p.title || p.name || '').toLowerCase().includes(q);
+          const matchDesc = (p.shortDescription || p.description || '').toLowerCase().includes(q);
+          const matchCreator = (p.creator || '').toLowerCase().includes(q);
+          const matchSku = (p.sku || '').toLowerCase().includes(q);
+          const matchCategory = (p.category || '').toLowerCase().includes(q);
+          const matchState = (p.state || '').toLowerCase().includes(q);
+          const matchOrigin = (p.placeOfOrigin || '').toLowerCase().includes(q);
+          if (!matchTitle && !matchDesc && !matchCreator && !matchSku && !matchCategory && !matchState && !matchOrigin) return false;
         }
         return true;
       })
@@ -91,13 +106,14 @@ export const ShopPage: React.FC<ShopPageProps> = ({
         if (!aFunded && bFunded) return 1;
         return 0;
       });
-  }, [products, selectedCategory, onlyFunded, onlyWishlisted, wishlistProductIds, activeSearchQuery, sortBy]);
+  }, [products, selectedCategory, selectedState, onlyFunded, onlyWishlisted, wishlistProductIds, activeSearchQuery, sortBy]);
 
   const fundedCount = products.filter((p) => (p.isFundedOnCraftify ?? p.isFundedOnLaunchMart)).length;
   const wishlistedCount = products.filter((p) => wishlistProductIds.includes(p.id)).length;
 
   const handleResetFilters = () => {
     setSelectedCategory('All');
+    setSelectedState('All');
     setOnlyFunded(false);
     setOnlyWishlisted(false);
     handleUpdateSearch('');
@@ -199,6 +215,25 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               <span>{t('craftAssuredBadge', 'Craft-Assured')} ({fundedCount})</span>
             </button>
 
+            {/* Active State Filter Chip */}
+            {selectedState !== 'All' && (
+              <span
+                id="active-state-filter-chip"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EBF2FE] border border-[#2874F0] text-[#2874F0] text-xs font-bold rounded-[2px] shadow-xs"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{selectedState}</span>
+                <button
+                  onClick={() => setSelectedState('All')}
+                  className="ml-1 hover:text-[#0F47AF] cursor-pointer text-sm font-bold leading-none"
+                  aria-label="Remove state filter"
+                  title="Remove state filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+
             {/* Sort Dropdown */}
             <div className="flex items-center gap-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] px-2.5 py-1">
               <ArrowUpDown className="w-3.5 h-3.5 text-[#878787] shrink-0" />
@@ -234,7 +269,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     {t('exploreCategories', 'Filters & Categories')}
                   </span>
                 </div>
-                {(selectedCategory !== t('all', 'All') || onlyFunded || searchQuery) && (
+                {(selectedCategory !== t('all', 'All') || selectedState !== 'All' || onlyFunded || searchQuery) && (
                   <button
                     onClick={handleResetFilters}
                     className="text-xs font-bold text-[#2874F0] hover:underline flex items-center gap-1 cursor-pointer"
@@ -265,6 +300,55 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                     >
                       <span>{displayName}</span>
                       <span className={`text-[11px] ${isSelected ? 'text-[#2874F0]' : 'text-[#878787]'}`}>
+                        ({count})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Shop by State Filter Box */}
+            <div id="filter-shop-by-state-box" className="rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] p-4 shadow-xs">
+              <div className="flex items-center justify-between pb-2.5 border-b border-[#F0F0F0] mb-3">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-[#2874F0]" />
+                  <span className="text-xs uppercase tracking-wider font-bold text-[#212121]">
+                    {t('shopByState', 'Shop by State')}
+                  </span>
+                </div>
+                {selectedState !== 'All' && (
+                  <button
+                    id="btn-reset-state-filter"
+                    onClick={() => setSelectedState('All')}
+                    className="text-xs font-bold text-[#2874F0] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>{t('all', 'All')}</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-0.5 max-h-64 overflow-y-auto pr-1">
+                {states.map((st) => {
+                  const count = st === 'All'
+                    ? products.length
+                    : products.filter((p) => p.state === st).length;
+                  const isSelected = selectedState === st;
+
+                  return (
+                    <button
+                      key={st}
+                      id={`filter-state-${st.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                      onClick={() => setSelectedState(st)}
+                      className={`w-full text-left px-3 py-2 rounded-[2px] text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#EBF2FE] text-[#2874F0] font-bold border-l-2 border-[#2874F0]'
+                          : 'text-[#212121] hover:bg-[#F9F9F9]'
+                      }`}
+                    >
+                      <span className="truncate">{st === 'All' ? t('allStates', 'All States & UTs') : st}</span>
+                      <span className={`text-[11px] shrink-0 ml-1.5 ${isSelected ? 'text-[#2874F0]' : 'text-[#878787]'}`}>
                         ({count})
                       </span>
                     </button>

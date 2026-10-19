@@ -145,16 +145,26 @@ export interface ProductReview {
 
 export interface Product {
   id: string;
+  slug?: string;
+  name?: string;
   artisanId?: string;
+  category: string;
+  description?: string;
+  price: number;
+  imageUrl: string;
+  stockQuantity?: number;
+  state?: string;
+  placeOfOrigin?: string;
+  craftHeritageNote?: string;
+  isFundedOnPlatform?: boolean;
+  // Craftify compatibility fields
   title: string;
   creator: string;
   creatorLocation?: string;
   artisanRegion?: string;
   craftHeritage?: string;
-  category: string;
   shortDescription: string;
   longDescription?: string;
-  price: number;
   graduatedFromCampaignId: string;
   originalPledgedAmount: number;
   isFundedOnCraftify?: boolean;
@@ -168,7 +178,6 @@ export interface Product {
   stockCount: number;
   badgeLabel?: string;
   badgeType?: 'in_stock' | 'pre_order' | 'limited_stock';
-  imageUrl: string;
   galleryImages?: string[];
   sku: string; // e.g. LM-094
   features?: string[];

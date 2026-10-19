@@ -134,6 +134,12 @@ function CraftifyApp() {
                 map.set(lc.id, {
                   ...existing,
                   ...lc,
+                  title: existing.title || lc.title,
+                  creator: existing.creator || lc.creator,
+                  category: existing.category || lc.category,
+                  shortDescription: existing.shortDescription || lc.shortDescription,
+                  fullStory: existing.fullStory || lc.fullStory,
+                  craftHeritage: existing.craftHeritage || lc.craftHeritage,
                   imageUrl: existing.imageUrl || lc.imageUrl,
                   galleryImages: existing.galleryImages && existing.galleryImages.length > 0 ? existing.galleryImages : lc.galleryImages,
                   rewardTiers: existing.rewardTiers && existing.rewardTiers.length > 0 ? existing.rewardTiers : lc.rewardTiers,
@@ -172,8 +178,17 @@ function CraftifyApp() {
                 map.set(lp.id, {
                   ...existing,
                   ...lp,
+                  // Strictly preserve the 40 authentic craft names, provenance, descriptions, and verified images
+                  name: existing.name || lp.name,
+                  title: existing.title || lp.title,
+                  placeOfOrigin: existing.placeOfOrigin || lp.placeOfOrigin,
+                  state: existing.state || lp.state,
+                  description: existing.description || lp.description,
+                  craftHeritageNote: existing.craftHeritageNote || lp.craftHeritageNote,
                   imageUrl: existing.imageUrl || lp.imageUrl,
                   galleryImages: existing.galleryImages && existing.galleryImages.length > 0 ? existing.galleryImages : lp.galleryImages,
+                  isFundedOnPlatform: existing.isFundedOnPlatform ?? lp.isFundedOnPlatform,
+                  graduatedFromCampaignId: existing.graduatedFromCampaignId || lp.graduatedFromCampaignId,
                 });
               } else {
                 map.set(lp.id, lp);
@@ -390,7 +405,7 @@ function CraftifyApp() {
     try {
       const saved = localStorage.getItem('craftify_user_carts');
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch { }
     return {};
   });
 
@@ -417,7 +432,7 @@ function CraftifyApp() {
       const nextUserCarts = { ...prev, [activeCartUserId]: nextCart };
       try {
         localStorage.setItem('craftify_user_carts', JSON.stringify(nextUserCarts));
-      } catch {}
+      } catch { }
       return nextUserCarts;
     });
   };
@@ -464,7 +479,7 @@ function CraftifyApp() {
         setWishlistProductIds(JSON.parse(saved));
         return;
       }
-    } catch {}
+    } catch { }
     if (currentUser?.id === 'usr-001' || currentUser?.id === 'usr-buyer-seeded') {
       setWishlistProductIds(['prod-01', 'prod-03']);
     } else {
@@ -603,7 +618,7 @@ function CraftifyApp() {
         const saved = sessionStorage.getItem(userCategoryKey);
         setViewedCategories(saved ? JSON.parse(saved) : []);
         return;
-      } catch {}
+      } catch { }
     }
     setViewedCategories([]);
   }, [currentUser?.id]);

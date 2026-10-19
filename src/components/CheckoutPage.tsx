@@ -1,23 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CartItem, User } from '../types';
 import { formatINR } from '../utils/format';
 import { useLanguage } from '../context/LanguageContext';
 import { SmartInput } from './common/SmartInput';
 import {
   ShieldCheck,
-  CreditCard,
-  Building2,
-  Wallet,
   CheckCircle2,
   Truck,
   ArrowLeft,
   ShoppingBag,
-  PackageCheck,
-  Calendar,
   Lock,
   ExternalLink,
-  Smartphone,
+  MapPin,
+  ClipboardList,
+  AlertCircle,
 } from 'lucide-react';
+import {
+  StripePaymentElement,
+  StripePaymentResult,
+  StripePaymentElementRef,
+} from './StripePaymentElement';
 
 interface CheckoutPageProps {
   items: CartItem[];
@@ -50,8 +52,6 @@ export interface OrderConfirmationData {
   paymentMethod: string;
 }
 
-type PaymentMethodType = 'upi' | 'card' | 'balance' | 'wire';
-
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   items,
   currentUser,
@@ -62,23 +62,23 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onTrackOrder,
 }) => {
   const { t, localizeCartItem } = useLanguage();
+  const stripePaymentRef = useRef<StripePaymentElementRef>(null);
 
   // Shipping Form State
   const [fullName, setFullName] = useState(currentUser?.name || 'Aarav Sharma');
   const [email, setEmail] = useState(currentUser?.email || 'aarav.sharma@craftify.in');
-  const [street, setStreet] = useState(currentUser?.shippingAddress?.street || 'Flat 402, Lotus Court, Indiranagar');
+  const [street, setStreet] = useState(
+    currentUser?.shippingAddress?.street || 'Flat 402, Lotus Court, Indiranagar'
+  );
   const [city, setCity] = useState(currentUser?.shippingAddress?.city || 'Bengaluru');
   const [state, setState] = useState(currentUser?.shippingAddress?.state || 'Karnataka');
   const [zip, setZip] = useState(currentUser?.shippingAddress?.zip || '560038');
   const [country, setCountry] = useState(currentUser?.shippingAddress?.country || 'India');
   const [phone, setPhone] = useState('+91 98765 43210');
+  const [addressError, setAddressError] = useState<string | null>(null);
 
-  // Payment Selection
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('upi');
-  const [upiId, setUpiId] = useState('aarav@okhdfcbank');
-  const [cardNumber, setCardNumber] = useState('•••• •••• •••• 4242');
-  const [cardExpiry, setCardExpiry] = useState('08/29');
-  const [cardCvc, setCardCvc] = useState('891');
+  // Processing state from Stripe element
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Confirmation state
   const [confirmedOrder, setConfirmedOrder] = useState<OrderConfirmationData | null>(null);
@@ -89,9 +89,43 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const tax = Math.round(subtotal * 0.05);
   const total = subtotal + shippingCost + tax;
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateAddress = (): boolean => {
+    if (!fullName.trim()) {
+      setAddressError('Please enter your full name for delivery.');
+      return false;
+    }
+    if (!email.trim() || !email.includes('@')) {
+      setAddressError('Please enter a valid email address.');
+      return false;
+    }
+    if (!street.trim()) {
+      setAddressError('Please enter your street address.');
+      return false;
+    }
+    if (!city.trim()) {
+      setAddressError('Please enter your city.');
+      return false;
+    }
+    if (!zip.trim()) {
+      setAddressError('Please enter your PIN code.');
+      return false;
+    }
+    setAddressError(null);
+    return true;
+  };
 
+  const handlePayClick = () => {
+    if (!validateAddress()) {
+      const el = document.getElementById('delivery-address-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    if (stripePaymentRef.current) {
+      stripePaymentRef.current.submit();
+    }
+  };
+
+  const handlePaymentSuccess = (paymentDetails: StripePaymentResult) => {
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const orderId = `CRF-2026-${randomNum}`;
 
@@ -125,14 +159,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         zip,
         country,
       },
-      paymentMethod:
-        paymentMethod === 'upi'
-          ? `UPI (${upiId})`
-          : paymentMethod === 'card'
-          ? 'RuPay / Credit Card (•••• 4242)'
-          : paymentMethod === 'balance'
-          ? 'Craftify Artisan Escrow Credit'
-          : 'NEFT / RTGS Direct Bank Transfer',
+      paymentMethod: paymentDetails.summary,
     };
 
     setConfirmedOrder(orderData);
@@ -202,7 +229,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       </div>
                       <div>
                         <strong className="text-[#212121] block text-xs">{item.title}</strong>
-                        <span className="text-[#878787]">{t('qty', 'Qty:')}{item.quantity} × {formatINR(item.price)}</span>
+                        <span className="text-[#878787]">
+                          {t('qty', 'Qty:')}{item.quantity} × {formatINR(item.price)}
+                        </span>
                       </div>
                     </div>
                     <strong className="text-[#212121] text-xs">
@@ -220,12 +249,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <span>{t('shippingAddress', 'Delivery Address')}</span>
               </div>
               <p className="text-[#212121]">
-                <strong>{confirmedOrder.shippingAddress.fullName}</strong><br />
-                {confirmedOrder.shippingAddress.street}<br />
-                {confirmedOrder.shippingAddress.city}, {confirmedOrder.shippingAddress.state} {confirmedOrder.shippingAddress.zip}, {confirmedOrder.shippingAddress.country}
+                <strong>{confirmedOrder.shippingAddress.fullName}</strong>
+                <br />
+                {confirmedOrder.shippingAddress.street}
+                <br />
+                {confirmedOrder.shippingAddress.city}, {confirmedOrder.shippingAddress.state}{' '}
+                {confirmedOrder.shippingAddress.zip}, {confirmedOrder.shippingAddress.country}
               </p>
               <div className="text-[11px] text-[#878787] pt-1.5 border-t border-[#388E3C]/20 flex items-center justify-between">
-                <span>{t('payment', 'Payment:')}{confirmedOrder.paymentMethod}</span>
+                <span>{t('payment', 'Payment:')} {confirmedOrder.paymentMethod}</span>
                 <span className="text-[#388E3C] font-bold">{t('statusOrderConfirmed', 'Status: Order Confirmed')}</span>
               </div>
             </div>
@@ -277,7 +309,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     <div id="checkout-page" className="py-4 sm:py-6 bg-[#F1F3F6] min-h-screen text-[#212121]">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
         {/* Navigation bar */}
-        <div className="flex items-center justify-between py-2.5 px-4 mb-3 bg-[#FFFFFF] rounded-[4px] border border-[#EAEAEA] shadow-xs">
+        <div className="flex items-center justify-between py-2.5 px-4 mb-4 bg-[#FFFFFF] rounded-[4px] border border-[#EAEAEA] shadow-xs">
           <button
             onClick={onBackToCart}
             className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#2874F0] hover:text-[#1C5FD0] font-bold transition-colors cursor-pointer"
@@ -292,35 +324,54 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           </div>
         </div>
 
-        {/* Layout: Form (7 cols) + Summary (5 cols) */}
-        <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Column: Shipping & Payment Form (7 cols) */}
-          <div className="lg:col-span-7 space-y-3">
-            {/* Step 1: Shipping Address */}
-            <div className="p-4 sm:p-5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] space-y-4 shadow-xs">
+        {/* Layout: Main Sequential Flow (8 cols) + Sticky Order Total Sidebar (4 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Main Flow: Delivery Address -> Order Summary -> Stripe Payment Element */}
+          <div className="lg:col-span-8 space-y-4">
+            {/* 1. DELIVERY ADDRESS SECTION */}
+            <div
+              id="delivery-address-section"
+              className="p-4 sm:p-5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] space-y-4 shadow-xs"
+            >
               <div className="flex items-center justify-between pb-2.5 border-b border-[#F0F0F0]">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] font-bold text-xs flex items-center justify-center">
                     1
                   </span>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#212121]">
-                    {t('shippingAddress', 'Delivery Address')}
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#212121] flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-[#2874F0]" />
+                    <span>{t('shippingAddress', 'Delivery Address')}</span>
                   </h2>
                 </div>
                 <span className="text-[11px] text-[#388E3C] font-bold uppercase tracking-wider">
-                  {t('insuredDelivery', 'Insured Delivery')}</span>
+                  {t('insuredDelivery', 'Insured Delivery')}
+                </span>
               </div>
+
+              {addressError && (
+                <div className="p-2.5 rounded-[4px] bg-[#FFF2F4] border border-[#F8D7DA] text-[#DF1B41] text-xs flex items-center gap-2 font-medium">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{addressError}</span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('fullName', 'Full Name *')}</label>
+                    {t('fullName', 'Full Name *')}
+                  </label>
                   <SmartInput
                     type="text"
                     required
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    onValueChange={(val) => setFullName(val)}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (addressError) setAddressError(null);
+                    }}
+                    onValueChange={(val) => {
+                      setFullName(val);
+                      if (addressError) setAddressError(null);
+                    }}
                     placeholder={t('eGAnandKumar', 'e.g. Anand Kumar')}
                     className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
                   />
@@ -328,7 +379,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('emailAddress', 'Email Address *')}</label>
+                    {t('emailAddress', 'Email Address *')}
+                  </label>
                   <SmartInput
                     type="email"
                     required
@@ -342,7 +394,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('phoneNumber', 'Phone Number *')}</label>
+                    {t('phoneNumber', 'Phone Number *')}
+                  </label>
                   <SmartInput
                     type="tel"
                     required
@@ -356,7 +409,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div className="sm:col-span-2">
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('streetAddressFlatFloor', 'Street Address / Flat / Floor *')}</label>
+                    {t('streetAddressFlatFloor', 'Street Address / Flat / Floor *')}
+                  </label>
                   <SmartInput
                     type="text"
                     required
@@ -370,7 +424,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('city', 'City *')}</label>
+                    {t('city', 'City *')}
+                  </label>
                   <SmartInput
                     type="text"
                     required
@@ -384,7 +439,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('state', 'State *')}</label>
+                    {t('state', 'State *')}
+                  </label>
                   <SmartInput
                     type="text"
                     required
@@ -398,7 +454,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('pinCode', 'PIN Code *')}</label>
+                    {t('pinCode', 'PIN Code *')}
+                  </label>
                   <SmartInput
                     type="text"
                     required
@@ -412,7 +469,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                    {t('country', 'Country *')}</label>
+                    {t('country', 'Country *')}
+                  </label>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
@@ -430,186 +488,41 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
             </div>
 
-            {/* Step 2: Payment Selection */}
-            <div className="p-4 sm:p-5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] space-y-4 shadow-xs">
+            {/* 2. ORDER SUMMARY SECTION */}
+            <div
+              id="order-summary-section"
+              className="p-4 sm:p-5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] space-y-4 shadow-xs"
+            >
               <div className="flex items-center justify-between pb-2.5 border-b border-[#F0F0F0]">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] font-bold text-xs flex items-center justify-center">
                     2
                   </span>
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#212121]">
-                    {t('paymentOptions', 'Payment Options')}</h2>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#212121] flex items-center gap-1.5">
+                    <ClipboardList className="w-4 h-4 text-[#2874F0]" />
+                    <span>{t('orderSummary', 'Order Summary')} ({items.reduce((acc, i) => acc + i.quantity, 0)} {t('items', 'items')})</span>
+                  </h2>
                 </div>
-                <span className="text-[11px] text-[#388E3C] font-bold uppercase tracking-wider">
-                  {t('key_100Protected', '100% Protected')}</span>
+                <span className="text-xs text-[#878787] font-semibold">
+                  Subtotal: <strong className="text-[#212121]">{formatINR(subtotal)}</strong>
+                </span>
               </div>
 
-              {/* Payment selector tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('upi')}
-                  className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
-                    paymentMethod === 'upi'
-                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
-                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
-                  }`}
-                >
-                  <Smartphone className={`w-4 h-4 mb-0.5 ${paymentMethod === 'upi' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">{t('upi', 'UPI')}</span>
-                  <span className="text-[10px] text-[#878787]">
-                    {t('gpayPhonepe', 'GPay / PhonePe')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
-                    paymentMethod === 'card'
-                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
-                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
-                  }`}
-                >
-                  <CreditCard className={`w-4 h-4 mb-0.5 ${paymentMethod === 'card' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">{t('creditDebit', 'Credit/Debit')}</span>
-                  <span className="text-[10px] text-[#878787]">
-                    {t('rupayVisaMc', 'RuPay / Visa / MC')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('balance')}
-                  className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
-                    paymentMethod === 'balance'
-                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
-                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
-                  }`}
-                >
-                  <Wallet className={`w-4 h-4 mb-0.5 ${paymentMethod === 'balance' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">{t('walletEscrow', 'Wallet / Escrow')}</span>
-                  <span className="text-[10px] text-[#878787]">
-                    {t('artisanCredit', 'Artisan Credit')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('wire')}
-                  className={`p-2.5 rounded-[2px] border text-left text-xs flex flex-col gap-1 transition-colors cursor-pointer ${
-                    paymentMethod === 'wire'
-                      ? t('bgF1f3f6Border2874f0Text2874f0Ring1', 'bg-[#F1F3F6] border-[#2874F0] text-[#2874F0] ring-1 ring-[#2874F0]')
-                      : t('bgFfffffText212121BorderD5d5d5Hover', 'bg-[#FFFFFF] text-[#212121] border-[#D5D5D5] hover:bg-[#F1F3F6]')
-                  }`}
-                >
-                  <Building2 className={`w-4 h-4 mb-0.5 ${paymentMethod === 'wire' ? 'text-[#2874F0]' : 'text-[#878787]'}`} />
-                  <span className="font-bold">{t('netBanking', 'Net Banking')}</span>
-                  <span className="text-[10px] text-[#878787]">
-                    {t('allMajorBanks', 'All Major Banks')}</span>
-                </button>
-              </div>
-
-              {/* UPI Inputs */}
-              {paymentMethod === 'upi' && (
-                <div className="space-y-2 pt-1">
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                      {t('upiIdEGMobileUpiOrUsernameOkaxis', 'UPI ID (e.g. mobile@upi or username@okaxis)')}</label>
-                    <SmartInput
-                      type="text"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                      onValueChange={(val) => setUpiId(val)}
-                      placeholder={t('usernameOkhdfcbank', 'username@okhdfcbank')}
-                      className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
-                    />
-                  </div>
-                  <p className="text-[11px] text-[#878787]">
-                    {t('aPaymentRequestWillBeSentToYourUpiA', 'A payment request will be sent to your UPI app for authorization.')}</p>
-                </div>
-              )}
-
-              {/* Card Inputs */}
-              {paymentMethod === 'card' && (
-                <div className="space-y-2 pt-1">
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                      {t('cardNumber', 'Card Number')}</label>
-                    <SmartInput
-                      type="text"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      onValueChange={(val) => setCardNumber(val)}
-                      className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        {t('validThruMmYy', 'Valid Thru (MM/YY)')}</label>
-                      <SmartInput
-                        type="text"
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
-                        onValueChange={(val) => setCardExpiry(val)}
-                        className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs uppercase tracking-wider text-[#212121] font-bold mb-1">
-                        {t('cvv', 'CVV')}</label>
-                      <SmartInput
-                        type="text"
-                        value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value)}
-                        onValueChange={(val) => setCardCvc(val)}
-                        className="w-full px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] border border-[#D5D5D5] text-xs text-[#212121] focus:outline-none focus:border-[#2874F0]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {paymentMethod === 'balance' && (
-                <div className="p-3 rounded-[2px] bg-[#EAF8EB] border border-[#388E3C]/20 text-xs text-[#388E3C]">
-                  <strong>{t('craftifyEscrowPatronBalance', 'Craftify Escrow Patron Balance:')}</strong> {t('availableBalance25000ThisPurchaseOf', 'Available balance ₹25,000. This purchase of')}{formatINR(total)} {t('willBeDebitedImmediatelyUponConfirm', 'will be debited immediately upon confirmation.')}</div>
-              )}
-
-              {paymentMethod === 'wire' && (
-                <div className="p-3 rounded-[2px] bg-[#F1F3F6] border border-[#EAEAEA] text-xs text-[#878787]">
-                  <strong>{t('netbankingTransfer', 'Netbanking Transfer:')}</strong> {t('selectYourBankAtTheNextScreenOrSend', 'Select your bank at the next screen or send via IMPS to the designated escrow virtual account.')}</div>
-              )}
-
-              <div className="p-2.5 rounded-[2px] bg-[#F1F3F6] border border-[#EAEAEA] text-[11px] text-[#878787] flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-[#388E3C] shrink-0" />
-                <span>{t('simulatedSandboxPaymentNoRealCardOr', 'Simulated Sandbox Payment: No real card or bank deduction will occur.')}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Order Summary (Craftify Price Details Card) (5 cols) */}
-          <div className="lg:col-span-5">
-            <div className="p-4 sm:p-5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] space-y-4 sticky top-24 shadow-xs">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-[#878787] pb-3 border-b border-[#F0F0F0]">
-                {t('priceDetails', 'Price Details')} ({items.reduce((acc, i) => acc + i.quantity, 0)} {t('items', 'items')})
-              </h2>
-
-              {/* Items scroll */}
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1 divide-y divide-[#F0F0F0]">
+              {/* Line items list */}
+              <div className="divide-y divide-[#F0F0F0] max-h-60 overflow-y-auto pr-1">
                 {items.map((rawItem) => {
                   const item = localizeCartItem(rawItem);
                   return (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between gap-3 pt-2 text-xs"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-10 h-10 rounded-[2px] bg-[#FFFFFF] border border-[#F0F0F0] shrink-0 overflow-hidden p-0.5">
+                    <div key={item.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 rounded-[2px] bg-[#FFFFFF] border border-[#F0F0F0] shrink-0 overflow-hidden p-0.5">
                           <img src={item.imageUrl} alt="" className="w-full h-full object-contain" />
                         </div>
                         <div className="min-w-0">
-                          <span className="font-bold text-[#212121] truncate block text-xs">
-                            {item.title}
+                          <strong className="text-[#212121] block truncate text-xs">{item.title}</strong>
+                          <span className="text-[#878787] text-[11px]">
+                            {t('qty', 'Qty:')} {item.quantity} × {formatINR(item.price)}
                           </span>
-                          <span className="text-[#878787] text-[11px]">{t('qty', 'Qty:')}{item.quantity}</span>
                         </div>
                       </div>
                       <span className="font-bold text-[#212121] shrink-0">
@@ -620,52 +533,137 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 })}
               </div>
 
-              {/* Financial calculations */}
-              <div className="space-y-2 text-xs pt-2 border-t border-[#F0F0F0]">
-                <div className="flex justify-between text-[#212121]">
-                  <span>{t('subtotal', 'Price')} ({items.reduce((acc, i) => acc + i.quantity, 0)} {t('items', 'items')})</span>
-                  <span className="font-bold">{formatINR(subtotal)}</span>
+              {/* Subtotal & calculations breakdown */}
+              <div className="pt-3 border-t border-[#F0F0F0] space-y-1.5 text-xs text-[#666666]">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-[#212121]">{formatINR(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-[#212121]">
-                  <span>{t('deliveryCharges', 'Delivery Charges')}</span>
-                  <span>{isFreeShipping ? <strong className="text-[#388E3C] uppercase">{t('free', 'FREE')}</strong> : formatINR(shippingCost)}</span>
+                <div className="flex justify-between">
+                  <span>Shipping & Handling</span>
+                  <span>
+                    {isFreeShipping ? (
+                      <strong className="text-[#388E3C] uppercase">FREE</strong>
+                    ) : (
+                      formatINR(shippingCost)
+                    )}
+                  </span>
                 </div>
-                <div className="flex justify-between text-[#212121]">
-                  <span>{t('taxGST', 'GST & Platform Cess (5%)')}</span>
-                  <span className="font-bold">{formatINR(tax)}</span>
+                <div className="flex justify-between">
+                  <span>GST & Platform Cess (5%)</span>
+                  <span className="font-semibold text-[#212121]">{formatINR(tax)}</span>
                 </div>
+                <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-[#E0E0E0] text-sm font-bold text-[#212121]">
+                  <span>Total Payable:</span>
+                  <span className="text-base text-[#212121]">{formatINR(total)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. STRIPE-STYLE PAYMENT ELEMENT */}
+            <div id="stripe-payment-section" className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <span className="w-5 h-5 rounded-[2px] bg-[#2874F0] text-[#FFFFFF] font-bold text-xs flex items-center justify-center">
+                  3
+                </span>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-[#212121]">
+                  Payment Method
+                </h2>
+                <span className="text-xs text-[#878787] font-normal">
+                  — Powered by Stripe Elements
+                </span>
+              </div>
+
+              {/* Reusable Stripe Payment Element */}
+              <StripePaymentElement
+                ref={stripePaymentRef}
+                amount={total}
+                buttonText={`Pay ${formatINR(total)}`}
+                loadingText="Confirming payment..."
+                defaultCardholderName={fullName}
+                showButton={true}
+                onSuccess={handlePaymentSuccess}
+                onProcessingChange={setIsProcessing}
+              />
+            </div>
+          </div>
+
+          {/* Sticky Sidebar: Order Total + Stripe Pay Button */}
+          <div className="lg:col-span-4 sticky top-20">
+            <div className="p-4 sm:p-5 rounded-[4px] bg-[#FFFFFF] border border-[#EAEAEA] space-y-4 shadow-xs">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#878787] pb-2.5 border-b border-[#F0F0F0]">
+                Payment Summary
+              </h3>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between text-[#666666]">
+                  <span>Items Total ({items.reduce((acc, i) => acc + i.quantity, 0)})</span>
+                  <span className="font-semibold text-[#212121]">{formatINR(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-[#666666]">
+                  <span>Delivery Charges</span>
+                  <span>
+                    {isFreeShipping ? (
+                      <strong className="text-[#388E3C] uppercase">FREE</strong>
+                    ) : (
+                      formatINR(shippingCost)
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[#666666]">
+                  <span>GST (5%)</span>
+                  <span className="font-semibold text-[#212121]">{formatINR(tax)}</span>
+                </div>
+
                 <div className="pt-3 border-t border-dashed border-[#E0E0E0] flex justify-between items-baseline">
                   <div>
-                    <span className="text-sm font-bold text-[#212121] block">
-                      {t('totalAmount', 'Total Amount')}
-                    </span>
+                    <span className="text-xs uppercase font-bold text-[#878787] block">Order Total</span>
+                    <span className="text-[11px] text-[#388E3C] font-semibold">Includes all taxes</span>
                   </div>
                   <span className="text-2xl font-bold text-[#212121]">{formatINR(total)}</span>
                 </div>
               </div>
 
-              {/* Craftify Signature Orange PLACE ORDER CTA */}
+              {/* Stripe-Styled Pay Button */}
               <button
-                id="btn-checkout-place-order"
-                type="submit"
-                className="w-full py-3.5 px-4 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-sm uppercase tracking-wider font-bold transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer active:scale-[0.99]"
+                id="btn-sticky-stripe-pay"
+                type="button"
+                disabled={isProcessing}
+                onClick={handlePayClick}
+                className="w-full h-11 px-4 rounded-[6px] bg-[#635BFF] hover:bg-[#5851EA] active:bg-[#4F46E5] text-[#FFFFFF] text-sm font-semibold tracking-wide shadow-[0_2px_4px_rgba(99,91,255,0.25)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{t('placeOrder', 'Confirm & Pay')} {formatINR(total)}</span>
+                {isProcessing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span>Confirming payment...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Pay {formatINR(total)}</span>
+                  </>
+                )}
               </button>
 
-              <div className="pt-3 border-t border-[#F0F0F0] text-[11px] text-[#878787] space-y-1">
+              <div className="pt-3 border-t border-[#F0F0F0] space-y-2 text-[11px] text-[#878787]">
                 <div className="flex items-center gap-1.5 text-[#388E3C] font-semibold">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{t('safeAndSecurePayments', '100% Authentic Products • Safe Payments')}</span>
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  <span>100% Authentic Products • Escrow Guarantee</span>
                 </div>
-                <p className="text-[10px]">
-                  {t('artisanProvenance', 'All items are directly sourced from registered craft artisans with tracked delivery.')}
+                <p className="text-[10px] leading-relaxed">
+                  Payments are processed securely via Stripe simulated test gateway. No actual card or bank deduction will occur.
                 </p>
               </div>
             </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

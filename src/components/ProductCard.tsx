@@ -21,16 +21,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { t, localizeProduct } = useLanguage();
   const displayProduct = localizeProduct(product);
-  const provenance = displayProduct.artisanRegion || displayProduct.creatorLocation || 'India';
+  const provenance = displayProduct.placeOfOrigin && displayProduct.state
+    ? `Handmade in ${displayProduct.placeOfOrigin}, ${displayProduct.state}`
+    : (displayProduct.artisanRegion || displayProduct.creatorLocation || 'India');
   // Simulated MRP for discount display
   const mrp = Math.round(displayProduct.price * 1.35);
   const discountPercent = Math.round(((mrp - displayProduct.price) / mrp) * 100);
 
-  // Determine badge type based on product data
+  // Determine stock and badge type based on product data
+  const stock = displayProduct.stockQuantity !== undefined ? displayProduct.stockQuantity : displayProduct.stockCount;
+  const isOutOfStock = stock <= 0 || !displayProduct.inStock;
   const badgeType = displayProduct.badgeType || (
-    !displayProduct.inStock || displayProduct.category === 'Campaign'
+    isOutOfStock
       ? 'pre_order'
-      : displayProduct.stockCount < 12
+      : stock < 12
       ? 'limited_stock'
       : 'in_stock'
   );
@@ -58,6 +62,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             src={displayProduct.imageUrl}
             alt={displayProduct.title}
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              if (!target.src.includes('banarasi-katan-silk-saree.jpg')) {
+                target.src = '/images/products/banarasi-katan-silk-saree.jpg';
+              }
+            }}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 rounded-[2px]"
             loading="lazy"
           />
@@ -160,7 +170,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {/* Free Delivery / Stock */}
             <div className="text-[10px] text-[#212121] flex items-center justify-between mt-1">
               <span className="text-[#388E3C] font-semibold">{t('freeDelivery')}</span>
-              <span className="text-[#878787]">{displayProduct.stockCount} {t('leftInStock')}</span>
+              <span className={isOutOfStock ? "text-[#D32F2F] font-bold" : "text-[#878787]"}>
+                {isOutOfStock ? t('outOfStock', 'Out of Stock') : `${stock} ${t('leftInStock')}`}
+              </span>
             </div>
           </div>
         </div>
@@ -170,14 +182,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-2.5 pt-0 bg-[#FFFFFF]">
         <button
           id={`btn-add-to-cart-${displayProduct.id}`}
+          disabled={isOutOfStock}
           onClick={(e) => {
             e.stopPropagation();
-            onAddToCart(displayProduct);
+            if (!isOutOfStock) {
+              onAddToCart(displayProduct);
+            }
           }}
-          className="w-full py-1.5 px-3 rounded-[2px] bg-[#FF9F00] hover:bg-[#F39700] text-[#FFFFFF] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.99]"
+          className={`w-full py-1.5 px-3 rounded-[2px] text-[#FFFFFF] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.99] ${
+            isOutOfStock
+              ? 'bg-[#BDBDBD] cursor-not-allowed opacity-90'
+              : 'bg-[#FF9F00] hover:bg-[#F39700] cursor-pointer'
+          }`}
         >
           <ShoppingBag className="w-3.5 h-3.5" />
-          <span>{t('addToCart')}</span>
+          <span>{isOutOfStock ? t('outOfStock', 'Out of Stock') : t('addToCart')}</span>
         </button>
       </div>
     </article>

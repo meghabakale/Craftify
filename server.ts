@@ -822,11 +822,14 @@ async function startServer() {
 
   // Campaigns list
   app.get(["/api/campaigns", "/api/campaigns/"], (req, res) => {
+    const currentMockIds = new Set(MOCK_CAMPAIGNS.map((c) => String(c.id)));
+    const customUserCampaigns = campaignsStore.filter((c: any) => !currentMockIds.has(String(c.id)));
+    const mergedCampaigns = [...customUserCampaigns, ...MOCK_CAMPAIGNS.map(formatCampaignForApi)];
     res.json({
-      count: campaignsStore.length,
+      count: mergedCampaigns.length,
       next: null,
       previous: null,
-      results: campaignsStore,
+      results: mergedCampaigns,
     });
   });
 
@@ -1054,11 +1057,14 @@ async function startServer() {
 
   // Products list
   app.get(["/api/products", "/api/products/"], (req, res) => {
+    const currentMockIds = new Set(MOCK_PRODUCTS.map((m) => String(m.id)));
+    const customUserProducts = productsStore.filter((p: any) => !currentMockIds.has(String(p.id)));
+    const mergedProducts = [...customUserProducts, ...MOCK_PRODUCTS.map(formatProductForApi)];
     res.json({
-      count: productsStore.length,
+      count: mergedProducts.length,
       next: null,
       previous: null,
-      results: productsStore,
+      results: mergedProducts,
     });
   });
 

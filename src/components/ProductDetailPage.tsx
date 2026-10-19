@@ -25,6 +25,7 @@ import {
   Tag,
   Award,
   ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 
 interface ProductDetailPageProps {
@@ -59,6 +60,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 }) => {
   const { t, localizeCategory, localizeProduct } = useLanguage();
   const displayProduct = localizeProduct(product);
+  const effectiveStock = displayProduct.stockQuantity !== undefined ? displayProduct.stockQuantity : displayProduct.stockCount;
+  const isOutOfStock = effectiveStock <= 0 || !displayProduct.inStock;
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<ProductReview[]>(product.reviews || []);
@@ -102,7 +105,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   };
 
   const handleIncreaseQuantity = () => {
-    if (quantity < (product.stockCount || 99)) setQuantity((prev) => prev + 1);
+    if (quantity < (effectiveStock || 99)) setQuantity((prev) => prev + 1);
   };
 
   const handleShare = () => {
@@ -219,6 +222,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <img
                   src={currentImage}
                   alt={product.title}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (!target.src.includes('banarasi-katan-silk-saree.jpg')) {
+                      target.src = '/images/products/banarasi-katan-silk-saree.jpg';
+                    }
+                  }}
                   className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                 />
 
@@ -260,20 +270,34 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   id="btn-product-detail-add-to-cart"
-                  onClick={() => onAddToCart(product, quantity)}
-                  className="py-3 px-3 rounded-[2px] bg-[#FF9F00] hover:bg-[#F39700] text-[#FFFFFF] text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-[0.99]"
+                  disabled={isOutOfStock}
+                  onClick={() => {
+                    if (!isOutOfStock) onAddToCart(product, quantity);
+                  }}
+                  className={`py-3 px-3 rounded-[2px] text-[#FFFFFF] text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.99] ${
+                    isOutOfStock
+                      ? 'bg-[#BDBDBD] cursor-not-allowed opacity-90'
+                      : 'bg-[#FF9F00] hover:bg-[#F39700] cursor-pointer'
+                  }`}
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>{t('addToCart', 'Add to Cart')}</span>
+                  <span>{isOutOfStock ? t('outOfStock', 'Out of Stock') : t('addToCart', 'Add to Cart')}</span>
                 </button>
 
                 <button
                   id="btn-product-detail-buy-now"
-                  onClick={() => onBuyNow(product, quantity)}
-                  className="py-3 px-3 rounded-[2px] bg-[#FB641B] hover:bg-[#E85D19] text-[#FFFFFF] text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-[0.99]"
+                  disabled={isOutOfStock}
+                  onClick={() => {
+                    if (!isOutOfStock) onBuyNow(product, quantity);
+                  }}
+                  className={`py-3 px-3 rounded-[2px] text-[#FFFFFF] text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.99] ${
+                    isOutOfStock
+                      ? 'bg-[#E0E0E0] text-[#757575] cursor-not-allowed opacity-90'
+                      : 'bg-[#FB641B] hover:bg-[#E85D19] cursor-pointer'
+                  }`}
                 >
                   <Zap className="w-4 h-4" />
-                  <span>{t('buyNow', 'Buy Now')}</span>
+                  <span>{isOutOfStock ? t('outOfStock', 'Out of Stock') : t('buyNow', 'Buy Now')}</span>
                 </button>
               </div>
 
@@ -333,7 +357,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {/* Provenance Badge */}
                 <div className="flex items-center gap-1.5 text-xs text-[#388E3C] bg-[#EAF8EB] px-2.5 py-0.5 rounded-[2px] border border-[#388E3C]/20 w-fit mb-2">
                   <MapPin className="w-3.5 h-3.5 text-[#388E3C]" />
-                  <span className="font-bold">{t('handmadeIn', 'Handmade in')}{displayProduct.artisanRegion || displayProduct.creatorLocation || t('india', 'India')}</span>
+                  <span className="font-bold">
+                    {displayProduct.placeOfOrigin && displayProduct.state
+                      ? `Handmade in ${displayProduct.placeOfOrigin}, ${displayProduct.state}`
+                      : `${t('handmadeIn', 'Handmade in ')}${displayProduct.artisanRegion || displayProduct.creatorLocation || t('india', 'India')}`}
+                  </span>
                 </div>
 
                 {/* Title */}
@@ -373,10 +401,17 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[#388E3C] text-xs font-bold">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{t('inStock', 'In Stock')} ({displayProduct.stockCount} {t('leftInStock', 'available')})</span>
-                  </div>
+                  {isOutOfStock ? (
+                    <div className="flex items-center gap-1.5 text-[#D32F2F] text-xs font-bold">
+                      <AlertCircle className="w-4 h-4 text-[#D32F2F]" />
+                      <span>{t('outOfStock', 'Out of Stock')}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-[#388E3C] text-xs font-bold">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{t('inStock', 'In Stock')} ({effectiveStock} {t('leftInStock', 'available')})</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Price Display */}
@@ -568,8 +603,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <h4 className="text-base font-bold text-[#212121] mb-1">
                   {t('artisanHeritageCraftStory', 'Artisan Heritage & Craft Story')}</h4>
                 <p className="text-xs sm:text-sm text-[#555555] leading-relaxed whitespace-pre-line">
-                  {product.creatorBio ?? product.shortDescription ?? t('generationalArtisanCommittedToReviv', 'Generational artisan committed to reviving authentic handmade craft traditions and creating heirloom pieces on Craftify.')}
+                  {product.description ?? product.longDescription ?? product.shortDescription ?? product.creatorBio}
                 </p>
+                {product.craftHeritageNote && (
+                  <div className="mt-2 text-xs text-[#2874F0] bg-[#EBF2FE] p-2.5 rounded-[2px] border border-[#2874F0]/20 font-medium">
+                    <span className="font-bold">Heritage Note: </span>
+                    {product.craftHeritageNote}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#F0F0F0] text-xs">
